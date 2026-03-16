@@ -43,7 +43,7 @@
     <div class="hero-code fade-in">
       <div class="hero-code-panel">
         <div class="code-label">Pyro</div>
-        <pre><code><span class="cm">// No main() needed — just write code</span>
+        <pre><code><span class="cm"># No main() needed — just write code</span>
 <span class="bi">print</span>(<span class="str">"Hello, World!"</span>)
 
 nums = [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>]
@@ -157,16 +157,16 @@ age = <span class="num">25</span>
       </div>
       <div class="hero-code-panel">
         <div class="code-label">Pyro</div>
-        <pre><code>name = <span class="str">"Aravind"</span>           <span class="cm">// IDENTICAL</span>
+        <pre><code>name = <span class="str">"Aravind"</span>           <span class="cm"># IDENTICAL</span>
 age = <span class="num">25</span>
 
-<span class="kw">fn</span> <span class="fn">greet</span>(name)             <span class="cm">// shorter, no colon</span>
-    <span class="kw">return</span> <span class="str">"Hi {name}"</span>     <span class="cm">// no f-prefix needed</span>
+<span class="kw">fn</span> <span class="fn">greet</span>(name)             <span class="cm"># shorter, no colon</span>
+    <span class="kw">return</span> <span class="str">"Hi {name}"</span>     <span class="cm"># no f-prefix needed</span>
 
-<span class="kw">for</span> i <span class="kw">in</span> <span class="num">0</span>..<span class="num">10</span>            <span class="cm">// cleaner ranges</span>
+<span class="kw">for</span> i <span class="kw">in</span> <span class="num">0</span>..<span class="num">10</span>            <span class="cm"># cleaner ranges</span>
     <span class="bi">print</span>(i)
 
-<span class="kw">if</span> age &gt; <span class="num">18</span>               <span class="cm">// no colon</span>
+<span class="kw">if</span> age &gt; <span class="num">18</span>               <span class="cm"># no colon</span>
     <span class="bi">print</span>(<span class="str">"adult"</span>)</code></pre>
       </div>
     </div>
@@ -306,12 +306,12 @@ age = <span class="num">25</span>
       </div>
       <div class="tab-body">
         <div class="tab-content active" data-tab-content="hello">
-          <pre><button class="copy-btn">Copy</button><code><span class="cm">// Hello World in Pyro — no main() needed</span>
+          <pre><button class="copy-btn">Copy</button><code><span class="cm"># Hello World in Pyro — no main() needed</span>
 <span class="bi">print</span>(<span class="str">"Hello, World!"</span>)
 <span class="bi">print</span>(<span class="str">"Welcome to Pyro "</span> + <span class="fn">version</span>())</code></pre>
         </div>
         <div class="tab-content" data-tab-content="functions">
-          <pre><button class="copy-btn">Copy</button><code><span class="cm">// Functions, closures, and pattern matching</span>
+          <pre><button class="copy-btn">Copy</button><code><span class="cm"># Functions, closures, and pattern matching</span>
 <span class="kw">fn</span> <span class="fn">fibonacci</span>(n: <span class="type">int</span>) -&gt; <span class="type">int</span> {
     <span class="kw">match</span> n {
         <span class="num">0</span> =&gt; <span class="num">0</span>,
@@ -325,26 +325,26 @@ age = <span class="num">25</span>
 }
 
 double = |x| x * <span class="num">2</span>
-<span class="bi">print</span>(<span class="fn">apply</span>(double, <span class="num">21</span>))  <span class="cm">// 42</span>
-<span class="bi">print</span>(<span class="fn">fibonacci</span>(<span class="num">35</span>))     <span class="cm">// 9227465</span></code></pre>
+<span class="bi">print</span>(<span class="fn">apply</span>(double, <span class="num">21</span>))  <span class="cm"># 42</span>
+<span class="bi">print</span>(<span class="fn">fibonacci</span>(<span class="num">35</span>))     <span class="cm"># 9227465</span></code></pre>
         </div>
         <div class="tab-content" data-tab-content="lists">
-          <pre><button class="copy-btn">Copy</button><code><span class="cm">// Lists, maps, and the pipe operator</span>
-<span class="kw">use</span> math
-<span class="kw">use</span> collections
+          <pre><button class="copy-btn">Copy</button><code><span class="cm"># Lists, maps, and the pipe operator</span>
+<span class="kw">import</span> math
+<span class="kw">import</span> collections
 
 data = [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>, <span class="num">6</span>, <span class="num">7</span>, <span class="num">8</span>, <span class="num">9</span>, <span class="num">10</span>]
 
-<span class="cm">// Pipe operator: data flows left to right</span>
+<span class="cm"># Pipe operator: data flows left to right</span>
 result = data
     |&gt; <span class="fn">filter</span>(|x| x % <span class="num">2</span> == <span class="num">0</span>)
     |&gt; <span class="fn">map</span>(|x| x * x)
     |&gt; <span class="fn">reduce</span>(|a, b| a + b)
 
 <span class="bi">print</span>(<span class="str">"Sum of even squares: "</span> + <span class="fn">str</span>(result))
-<span class="cm">// Sum of even squares: 220</span>
+<span class="cm"># Sum of even squares: 220</span>
 
-<span class="cm">// HashMap with method chaining</span>
+<span class="cm"># HashMap with method chaining</span>
 scores = <span class="type">HashMap</span>::<span class="fn">new</span>()
 scores.<span class="fn">insert</span>(<span class="str">"Alice"</span>, <span class="num">95</span>)
 scores.<span class="fn">insert</span>(<span class="str">"Bob"</span>, <span class="num">87</span>)
@@ -355,9 +355,9 @@ scores |&gt; <span class="fn">entries</span>
        |&gt; <span class="fn">each</span>(|e| <span class="bi">print</span>(e.<span class="num">0</span> + <span class="str">": "</span> + <span class="fn">str</span>(e.<span class="num">1</span>)))</code></pre>
         </div>
         <div class="tab-content" data-tab-content="web">
-          <pre><button class="copy-btn">Copy</button><code><span class="cm">// HTTP web server in Pyro</span>
-<span class="kw">use</span> http
-<span class="kw">use</span> json
+          <pre><button class="copy-btn">Copy</button><code><span class="cm"># HTTP web server in Pyro</span>
+<span class="kw">import</span> http
+<span class="kw">import</span> json
 
 app = <span class="type">http</span>::<span class="fn">Server</span>::<span class="fn">new</span>()
 
@@ -382,16 +382,16 @@ app.<span class="fn">post</span>(<span class="str">"/api/echo"</span>, |req, res
 app.<span class="fn">listen</span>(<span class="num">8080</span>)</code></pre>
         </div>
         <div class="tab-content" data-tab-content="data">
-          <pre><button class="copy-btn">Copy</button><code><span class="cm">// Data science with Pyro</span>
-<span class="kw">use</span> csv
-<span class="kw">use</span> math
-<span class="kw">use</span> stats
-<span class="kw">use</span> plot
+          <pre><button class="copy-btn">Copy</button><code><span class="cm"># Data science with Pyro</span>
+<span class="kw">import</span> csv
+<span class="kw">import</span> math
+<span class="kw">import</span> stats
+<span class="kw">import</span> plot
 
-<span class="cm">// Read CSV data</span>
+<span class="cm"># Read CSV data</span>
 data = <span class="type">csv</span>::<span class="fn">read</span>(<span class="str">"sales.csv"</span>)
 
-<span class="cm">// Compute statistics with pipes</span>
+<span class="cm"># Compute statistics with pipes</span>
 revenue = data
     |&gt; <span class="fn">column</span>(<span class="str">"revenue"</span>)
     |&gt; <span class="fn">map</span>(<span class="fn">float</span>)
@@ -400,20 +400,20 @@ revenue = data
 <span class="bi">print</span>(<span class="str">"Median: "</span> + <span class="fn">str</span>(<span class="type">stats</span>::<span class="fn">median</span>(revenue)))
 <span class="bi">print</span>(<span class="str">"Std:    "</span> + <span class="fn">str</span>(<span class="type">stats</span>::<span class="fn">stdev</span>(revenue)))
 
-<span class="cm">// Linear regression</span>
+<span class="cm"># Linear regression</span>
 months = data |&gt; <span class="fn">column</span>(<span class="str">"month"</span>) |&gt; <span class="fn">map</span>(<span class="fn">float</span>)
 model = <span class="type">stats</span>::<span class="fn">linreg</span>(months, revenue)
 <span class="bi">print</span>(<span class="str">"Slope: "</span> + <span class="fn">str</span>(model.slope))</code></pre>
         </div>
         <div class="tab-content" data-tab-content="crypto">
-          <pre><button class="copy-btn">Copy</button><code><span class="cm">// Cryptography with built-in OpenSSL bindings</span>
-<span class="kw">use</span> crypto
+          <pre><button class="copy-btn">Copy</button><code><span class="cm"># Cryptography with built-in OpenSSL bindings</span>
+<span class="kw">import</span> crypto
 
-<span class="cm">// SHA-256 hashing</span>
+<span class="cm"># SHA-256 hashing</span>
 hash = <span class="type">crypto</span>::<span class="fn">sha256</span>(<span class="str">"Hello, Pyro!"</span>)
 <span class="bi">print</span>(<span class="str">"SHA-256: "</span> + hash)
 
-<span class="cm">// AES-256-GCM encryption</span>
+<span class="cm"># AES-256-GCM encryption</span>
 key = <span class="type">crypto</span>::<span class="fn">random_bytes</span>(<span class="num">32</span>)
 plaintext = <span class="str">"Top secret message"</span>
 
@@ -422,23 +422,23 @@ decrypted = <span class="type">crypto</span>::<span class="fn">aes_decrypt</span
 
 <span class="bi">assert</span>(decrypted == plaintext)
 
-<span class="cm">// PBKDF2 key derivation</span>
+<span class="cm"># PBKDF2 key derivation</span>
 password = <span class="str">"my_password"</span>
 salt = <span class="type">crypto</span>::<span class="fn">random_bytes</span>(<span class="num">16</span>)
 derived = <span class="type">crypto</span>::<span class="fn">pbkdf2</span>(password, salt, <span class="num">100000</span>)
 <span class="bi">print</span>(<span class="str">"Key derived successfully"</span>)</code></pre>
         </div>
         <div class="tab-content" data-tab-content="async">
-          <pre><button class="copy-btn">Copy</button><code><span class="cm">// Async/await concurrency</span>
-<span class="kw">use</span> http
-<span class="kw">use</span> async
+          <pre><button class="copy-btn">Copy</button><code><span class="cm"># Async/await concurrency</span>
+<span class="kw">import</span> http
+<span class="kw">import</span> async
 
 <span class="kw">async</span> <span class="kw">fn</span> <span class="fn">fetch_data</span>(url: <span class="type">str</span>) -&gt; <span class="type">str</span> {
     resp = <span class="kw">await</span> <span class="type">http</span>::<span class="fn">get</span>(url)
     resp.<span class="fn">body</span>()
 }
 
-<span class="cm">// Run multiple requests concurrently</span>
+<span class="cm"># Run multiple requests concurrently</span>
 urls = [
     <span class="str">"https://api.example.com/users"</span>,
     <span class="str">"https://api.example.com/posts"</span>,
@@ -452,7 +452,7 @@ results = urls
 
 results |&gt; <span class="fn">each</span>(|r| <span class="bi">print</span>(<span class="fn">len</span>(r)))
 
-<span class="cm">// Channels for message passing</span>
+<span class="cm"># Channels for message passing</span>
 (tx, rx) = <span class="type">async</span>::<span class="fn">channel</span>()
 
 <span class="type">async</span>::<span class="fn">spawn</span>(|| {
@@ -742,29 +742,29 @@ results |&gt; <span class="fn">each</span>(|r| <span class="bi">print</span>(<sp
       <p>Learn the entire keyword set in minutes.</p>
     </div>
     <div class="modules-list fade-in" style="justify-content: center; gap: 10px; max-width: 800px; margin: 0 auto;">
+      <span class="module-tag cat-core">fn</span>
       <span class="module-tag cat-core">let</span>
       <span class="module-tag cat-core">mut</span>
-      <span class="module-tag cat-core">fn</span>
-      <span class="module-tag cat-core">return</span>
       <span class="module-tag cat-core">if</span>
       <span class="module-tag cat-core">else</span>
       <span class="module-tag cat-core">for</span>
+      <span class="module-tag cat-core">in</span>
       <span class="module-tag cat-core">while</span>
-      <span class="module-tag cat-core">loop</span>
-      <span class="module-tag cat-core">break</span>
-      <span class="module-tag cat-core">continue</span>
-      <span class="module-tag cat-core">match</span>
+      <span class="module-tag cat-core">return</span>
+      <span class="module-tag cat-core">import</span>
       <span class="module-tag cat-core">struct</span>
-      <span class="module-tag cat-core">enum</span>
-      <span class="module-tag cat-core">impl</span>
-      <span class="module-tag cat-core">trait</span>
-      <span class="module-tag cat-core">use</span>
+      <span class="module-tag cat-core">match</span>
       <span class="module-tag cat-core">pub</span>
       <span class="module-tag cat-core">async</span>
       <span class="module-tag cat-core">await</span>
       <span class="module-tag cat-core">true</span>
       <span class="module-tag cat-core">false</span>
       <span class="module-tag cat-core">nil</span>
+      <span class="module-tag cat-core">try</span>
+      <span class="module-tag cat-core">catch</span>
+      <span class="module-tag cat-core">enum</span>
+      <span class="module-tag cat-core">throw</span>
+      <span class="module-tag cat-core">finally</span>
     </div>
   </div>
 </section>

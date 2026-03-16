@@ -35,7 +35,7 @@ Pyro is a modern, minimal programming language that transpiles to C++. It was de
 
 ### Core Philosophy
 
-- **Minimalism.** Pyro has exactly 19 keywords. Not 35, not 50 -- nineteen. Every keyword earns its place.
+- **Minimalism.** Pyro has exactly 23 keywords. Not 35, not 50 -- twenty-three. Every keyword earns its place.
 - **Fully dynamic typing.** No type annotations anywhere. The runtime figures out your types so you can focus on logic, not declarations.
 - **Clarity over cleverness.** Code should read like well-written prose. If you need a manual to understand a line of Pyro, the language has failed.
 - **Performance without pain.** Pyro transpiles to C++20, giving you near-native performance while you write code that feels as fluid as Python.
@@ -44,12 +44,12 @@ Pyro is a modern, minimal programming language that transpiles to C++. It was de
 - **Hack-proof security.** Built-in crypto, auth, and validate modules with auto-sanitization, SQL injection prevention, and XSS prevention.
 - **20 built-in libraries.** Everything you need ships with the language -- math, data, web, viz, crypto, db, io, net, json, time, test, ui, ml, img, cloud, cache, log, validate, queue, and auth.
 
-### The 19 Keywords
+### The 23 Keywords
 
-Pyro's entire keyword set fits on a single line:
+Pyro's entire keyword set fits on two lines:
 
 ```
-fn  let  mut  if  else  for  in  while  return  import  struct  match  pub  async  await  true  false  nil  pipe
+fn  let  mut  if  else  for  in  while  return  import  struct  match  pub  async  await  true  false  nil  try  catch  enum  throw  finally
 ```
 
 That is the whole language surface. Everything else is built from these primitives.
@@ -1457,7 +1457,7 @@ Pyro was designed for developers who love Python's readability but want fewer ke
 
 ### Keyword Comparison
 
-Pyro has 19 keywords. Python (3.12) has 35. Here is the full comparison:
+Pyro has 23 keywords. Python (3.12) has 35. Here is the full comparison:
 
 | #  | Pyro Keyword | Python Equivalent(s)         | Notes                              |
 |----|-------------|------------------------------|------------------------------------|
@@ -1479,19 +1479,21 @@ Pyro has 19 keywords. Python (3.12) has 35. Here is the full comparison:
 | 16 | `true`      | `True`                       | Boolean true                       |
 | 17 | `false`     | `False`                      | Boolean false                      |
 | 18 | `nil`       | `None`                       | Absence of value                   |
-| 19 | `pipe`      | *(none)*                     | Pipe operator `\|>` for chaining   |
+| 19 | `try`       | `try`                        | Try block for error handling       |
+| 20 | `catch`     | `except`                     | Catch errors from try block        |
+| 21 | `enum`      | `enum.Enum`                  | Enumeration type                   |
+| 22 | `throw`     | `raise`                      | Throw an error                     |
+| 23 | `finally`   | `finally`                    | Always-run cleanup block           |
 
-**Python keywords not in Pyro (17 extra):**
+**Python keywords not in Pyro (12 extra):**
 
 | Python Keyword | Why Pyro Omits It                                    |
 |----------------|------------------------------------------------------|
 | `class`        | Replaced by `struct` (simpler, no inheritance)       |
 | `def`          | Replaced by `fn` (shorter)                           |
 | `elif`         | Use `else if` instead (one fewer keyword to learn)   |
-| `except`       | Result type replaces try/except                      |
-| `finally`      | Not needed without exceptions                        |
-| `try`          | Not needed -- errors are values, not exceptions      |
-| `raise`        | Not needed -- return `err()` instead                 |
+| `except`       | Replaced by `catch`                                  |
+| `raise`        | Replaced by `throw`                                  |
 | `with`         | Scoped resource management handled differently       |
 | `as`           | Not needed for imports or exceptions                 |
 | `from`         | Import syntax does not need it                       |

@@ -4,13 +4,13 @@
 >
 > *Async/await concurrency that just works.*
 
-Pyro provides built-in concurrency through `async`/`await` — two of its 18 keywords. No threads to manage, no mutexes to lock, no race conditions to debug. Write concurrent code as naturally as sequential code, and it compiles to optimized C++ coroutines for true parallelism.
+Pyro provides built-in concurrency through `async`/`await` — two of its 23 keywords. No threads to manage, no mutexes to lock, no race conditions to debug. Write concurrent code as naturally as sequential code, and it compiles to optimized C++ coroutines for true parallelism.
 
 ---
 
 ## Table of Contents
 
-- [Why Pyro Concurrency](#why-nova-concurrency)
+- [Why Pyro Concurrency](#why-pyro-concurrency)
 - [Async Functions](#async-functions)
 - [Await](#await)
 - [Parallel Execution](#parallel-execution)
@@ -45,12 +45,12 @@ Any function can be made asynchronous by adding the `async` keyword before `fn`.
 
 ### Declaring Async Functions
 
-```nova
-async fn fetch_data(url: str) -> str
+```pyro
+async fn fetch_data(url)
     let response = await web.get(url)
     return response.body
 
-async fn compute_heavy(n: int) -> int
+async fn compute_heavy(n)
     mut result = 0
     for i in 0..n
         result = result + i * i
@@ -61,7 +61,7 @@ async fn compute_heavy(n: int) -> int
 
 Async functions must be called with `await`:
 
-```nova
+```pyro
 async fn main()
     let data = await fetch_data("https://api.example.com/data")
     print(data)
@@ -74,10 +74,10 @@ async fn main()
 
 Programs that use concurrency need an `async fn main()`:
 
-```nova
+```pyro
 import web
 
-async fn fetch_user(id: int) -> str
+async fn fetch_user(id)
     let res = await web.get("https://api.example.com/users/" + str(id))
     return res.body
 
@@ -88,9 +88,9 @@ async fn main()
 
 ### One-Liner Async Functions
 
-```nova
-async fn get_status() -> str = await web.get("/status").body
-async fn get_count() -> int = await web.get("/count").body["count"]
+```pyro
+async fn get_status() = await web.get("/status").body
+async fn get_count() = await web.get("/count").body["count"]
 ```
 
 ---
@@ -101,7 +101,7 @@ The `await` keyword pauses the current function until the async operation comple
 
 ### Basic Await
 
-```nova
+```pyro
 async fn main()
     let result = await some_async_function()
     print("Got result: ", result)
@@ -111,7 +111,7 @@ async fn main()
 
 Each `await` completes before the next one starts:
 
-```nova
+```pyro
 import web
 import time
 
@@ -133,8 +133,8 @@ async fn main()
 
 ### Await in Expressions
 
-```nova
-async fn get_count(url: str) -> int
+```pyro
+async fn get_count(url)
     let res = await web.get(url)
     return res.body["count"]
 
@@ -157,7 +157,7 @@ Running tasks in parallel is the primary benefit of async programming. Pyro prov
 
 Run multiple async operations concurrently and wait for all to complete:
 
-```nova
+```pyro
 import web
 import time
 
@@ -183,7 +183,7 @@ async fn main()
 
 Run multiple tasks, return the result of the first one to finish:
 
-```nova
+```pyro
 import web
 
 async fn main()
@@ -201,7 +201,7 @@ async fn main()
 
 Like `race`, but ignores failures and returns the first *successful* result:
 
-```nova
+```pyro
 import web
 
 async fn main()
@@ -218,8 +218,8 @@ async fn main()
 
 Start a task without blocking the current function:
 
-```nova
-async fn log_event(event: str)
+```pyro
+async fn log_event(event)
     await web.post("https://logging.example.com/events", {"event": event})
 
 async fn main()
@@ -240,7 +240,7 @@ Channels allow safe communication between concurrent tasks. They are typed, can 
 
 ### Creating Channels
 
-```nova
+```pyro
 # Unbuffered channel (synchronous - sender blocks until receiver is ready)
 let ch = async.channel()
 
@@ -253,7 +253,7 @@ let ch = async.channel(1000)
 
 ### Sending and Receiving
 
-```nova
+```pyro
 async fn producer(ch)
     for i in 0..10
         await ch.send(i)
@@ -278,7 +278,7 @@ async fn main()
 
 Channels support `for...in` loops. The loop ends when the channel is closed:
 
-```nova
+```pyro
 async fn producer(ch)
     let items = ["apple", "banana", "cherry", "date"]
     for item in items
@@ -298,8 +298,8 @@ async fn main()
 
 ### Multiple Producers, Single Consumer
 
-```nova
-async fn worker(id: int, ch)
+```pyro
+async fn worker(id, ch)
     for i in 0..5
         await ch.send({"worker": id, "value": i * 10})
     print("Worker ", id, " done")
@@ -323,7 +323,7 @@ async fn main()
 
 Wait for the first available message from any of several channels:
 
-```nova
+```pyro
 async fn main()
     let ch1 = async.channel(5)
     let ch2 = async.channel(5)
@@ -347,12 +347,12 @@ async fn main()
     # Wait for the first available message from any channel
     let result = await async.select([ch1, ch2, ch3])
     print("First message: ", result.value, " (channel index: ", result.index, ")")
-    # Output: First message: from channel 2 (channel index: 1)
+    # Output: First message: from channel 2 (channel index)
 ```
 
 ### Bidirectional Communication
 
-```nova
+```pyro
 async fn calculator(requests, responses)
     for req in requests
         let result = req["a"] + req["b"]
@@ -383,8 +383,8 @@ Task groups let you manage collections of related async tasks with structured co
 
 ### Basic Task Group
 
-```nova
-async fn process_item(id: int) -> str
+```pyro
+async fn process_item(id)
     await async.sleep(100)   # simulate work
     return "processed-" + str(id)
 
@@ -407,10 +407,10 @@ async fn main()
 
 Control how many tasks run simultaneously to avoid overwhelming resources:
 
-```nova
+```pyro
 import web
 
-async fn download(url: str) -> str
+async fn download(url)
     let res = await web.get(url)
     return res.body
 
@@ -442,10 +442,10 @@ async fn main()
 
 Process results as they complete rather than waiting for all:
 
-```nova
+```pyro
 import math
 
-async fn heavy_task(id: int) -> int
+async fn heavy_task(id)
     await async.sleep(math.randint(50, 500))
     return id * 10
 
@@ -467,7 +467,7 @@ async fn main()
 
 ### Cancelling Tasks
 
-```nova
+```pyro
 async fn long_running()
     for i in 0..1000
         await async.sleep(100)
@@ -486,8 +486,8 @@ async fn main()
 
 ### Nested Task Groups
 
-```nova
-async fn process_batch(batch_id: int, items) -> int
+```pyro
+async fn process_batch(batch_id, items)
     let group = async.group(5)
     for item in items
         group.add(process_single(item))
@@ -498,7 +498,7 @@ async fn process_batch(batch_id: int, items) -> int
     print("Batch ", batch_id, " total: ", total)
     return total
 
-async fn process_single(item: int) -> int
+async fn process_single(item)
     await async.sleep(10)
     return item * 2
 
@@ -524,10 +524,10 @@ async fn main()
 
 ### Handling Failures in Async Code
 
-```nova
+```pyro
 import web
 
-async fn safe_fetch(url: str) -> str
+async fn safe_fetch(url)
     let res = await web.get(url)
     if res.status != 200
         return "Error: HTTP " + str(res.status)
@@ -543,10 +543,10 @@ async fn main()
 
 ### Retry Pattern with Exponential Backoff
 
-```nova
+```pyro
 import web
 
-async fn fetch_with_retry(url: str, max_retries: int) -> str
+async fn fetch_with_retry(url, max_retries)
     mut attempts = 0
     while attempts < max_retries
         let res = await web.get(url)
@@ -568,7 +568,7 @@ async fn main()
 
 Set a maximum duration for an async operation:
 
-```nova
+```pyro
 import web
 
 async fn main()
@@ -583,8 +583,8 @@ async fn main()
 
 ### Error Handling in Task Groups
 
-```nova
-async fn might_fail(id: int) -> str
+```pyro
+async fn might_fail(id)
     if id % 3 == 0
         return "error:" + str(id)
     await async.sleep(50)
@@ -611,21 +611,21 @@ async fn main()
 
 ### Circuit Breaker Pattern
 
-```nova
+```pyro
 import web
 import time
 
 struct CircuitBreaker
-    max_failures: int
-    reset_timeout: int
-    mut failures: int
-    mut state: str        # "closed", "open", "half-open"
-    mut last_failure: int
+    max_failures
+    reset_timeout
+    mut failures
+    mut state             # "closed", "open", "half-open"
+    mut last_failure
 
-fn circuit_breaker(max_failures: int, reset_timeout: int) -> CircuitBreaker
+fn circuit_breaker(max_failures, reset_timeout)
     return CircuitBreaker(max_failures, reset_timeout, 0, "closed", 0)
 
-async fn cb_call(cb: CircuitBreaker, url: str) -> str
+async fn cb_call(cb, url)
     if cb.state == "open"
         if time.millis() - cb.last_failure > cb.reset_timeout
             cb.state = "half-open"
@@ -659,7 +659,7 @@ async fn main()
 
 ### Sleep
 
-```nova
+```pyro
 async fn main()
     print("Starting...")
     await async.sleep(1000)    # sleep 1 second
@@ -672,7 +672,7 @@ async fn main()
 
 Execute something repeatedly at a fixed interval:
 
-```nova
+```pyro
 async fn main()
     let ticker = async.interval(5000)   # every 5 seconds
 
@@ -690,8 +690,8 @@ async fn main()
 
 Only execute after a period of inactivity (useful for search-as-you-type):
 
-```nova
-async fn save_draft(content: str)
+```pyro
+async fn save_draft(content)
     print("Saving: ", content)
     await web.post("/api/drafts", {"content": content})
 
@@ -710,7 +710,7 @@ async fn main()
 
 Limit execution to at most once per time period:
 
-```nova
+```pyro
 async fn update_ui(data)
     print("UI update: ", data)
 
@@ -729,7 +729,7 @@ async fn main()
 
 ### Async File Operations
 
-```nova
+```pyro
 import io
 
 async fn main()
@@ -747,10 +747,10 @@ async fn main()
 
 ### Parallel File Processing
 
-```nova
+```pyro
 import io
 
-async fn process_file(path: str) -> int
+async fn process_file(path)
     let content = await io.read_async(path)
     let lines = content.split("\n")
     print("  ", path, ": ", lines.len(), " lines")
@@ -776,7 +776,7 @@ async fn main()
 
 ### Streaming Large Files
 
-```nova
+```pyro
 import io
 
 async fn main()
@@ -797,10 +797,10 @@ async fn main()
 
 ### Parallel API Calls
 
-```nova
+```pyro
 import web
 
-async fn fetch_user(id: int)
+async fn fetch_user(id)
     let res = await web.get("https://api.example.com/users/" + str(id))
     return res.body
 
@@ -817,14 +817,14 @@ async fn main()
 
 ### Paginated API Fetching
 
-```nova
+```pyro
 import web
 
-async fn fetch_page(page: int) -> list
+async fn fetch_page(page)
     let res = await web.get("https://api.example.com/items?page=" + str(page))
     return res.body["items"]
 
-async fn fetch_all_pages() -> list
+async fn fetch_all_pages()
     # First, get total pages
     let first = await web.get("https://api.example.com/items?page=1")
     let total_pages = first.body["total_pages"]
@@ -852,11 +852,11 @@ async fn main()
 
 ### Long Polling
 
-```nova
+```pyro
 import web
 import json
 
-async fn long_poll(url: str)
+async fn long_poll(url)
     mut last_id = 0
     while true
         let res = await web.get(url + "?since=" + str(last_id))
@@ -877,13 +877,13 @@ async fn main()
 
 ### Producer-Consumer Pattern
 
-```nova
+```pyro
 async fn producer(ch, items)
     for item in items
         await ch.send(item)
     ch.close()
 
-async fn consumer(id: int, ch, results)
+async fn consumer(id, ch, results)
     for item in ch
         let processed = "Worker " + str(id) + ": " + str(item * 2)
         await results.send(processed)
@@ -910,7 +910,7 @@ async fn main()
 
 Chain processing stages with channels:
 
-```nova
+```pyro
 async fn stage_double(input, output)
     for item in input
         await output.send(item * 2)
@@ -960,10 +960,10 @@ async fn main()
 
 Distribute work across many workers, then collect results:
 
-```nova
+```pyro
 import math
 
-async fn process(item: int) -> int
+async fn process(item)
     await async.sleep(math.randint(10, 100))
     return item * item
 
@@ -987,8 +987,8 @@ async fn main()
 
 ### Semaphore (Rate Limiting)
 
-```nova
-async fn rate_limited_fetch(url: str, semaphore) -> str
+```pyro
+async fn rate_limited_fetch(url, semaphore)
     await semaphore.acquire()
     let res = await web.get(url)
     semaphore.release()
@@ -1014,12 +1014,12 @@ async fn main()
 
 ### Async Web Crawler
 
-```nova
+```pyro
 import web
 import json
 import time
 
-async fn crawl(url: str, depth: int, visited) -> list
+async fn crawl(url, depth, visited)
     if depth <= 0
         return []
     if url in visited
@@ -1059,7 +1059,7 @@ async fn main()
 
 ### Real-Time Data Processing Pipeline
 
-```nova
+```pyro
 import web
 import time
 
@@ -1091,7 +1091,7 @@ async fn alert_checker(ch)
     for summary in ch
         print("[", summary["timestamp"], "] Average: ", summary["avg"])
         if summary["avg"] > 100
-            print("  ** ALERT: Average exceeds threshold! **")
+            print("  ** ALERT exceeds threshold! **")
 
 async fn main()
     let raw = async.channel(100)
@@ -1104,12 +1104,12 @@ async fn main()
 
 ### Parallel File Processor
 
-```nova
+```pyro
 import io
 import data
 import time
 
-async fn process_csv(path: str) -> int
+async fn process_csv(path)
     let content = await io.read_async(path)
     let df = data.from_csv_string(content)
     let total = df.col("amount").sum()
@@ -1138,7 +1138,7 @@ async fn main()
 
 ### Concurrent Chat Server
 
-```nova
+```pyro
 import web
 import json
 
@@ -1189,10 +1189,10 @@ async fn main()
 
         web.on("close", fn(client)
             for room_name in rooms
-                rooms[room_name] = rooms[room_name].filter(fn(c) -> bool = c.id != client.id)
+                rooms[room_name] = rooms[room_name].filter(fn(c) = c.id != client.id)
         )
 
-    print("Chat server running on ws://localhost:8080/chat")
+    print("Chat server running on ws://localhost/chat")
     app.listen(8080)
 ```
 

@@ -113,13 +113,13 @@ sudo make install</code></pre>
 
     <h2 id="first-program">Your First Program</h2>
     <p>Let's build a small program that reads a name and greets the user:</p>
-    <pre><button class="copy-btn">Copy</button><code><span class="kw">use</span> io
+    <pre><button class="copy-btn">Copy</button><code><span class="kw">import</span> io
 
 <span class="bi">print</span>(<span class="str">"What is your name?"</span>)
 name = <span class="type">io</span>::<span class="fn">readline</span>()
 <span class="bi">print</span>(<span class="str">"Hello, "</span> + name + <span class="str">"! Welcome to Pyro."</span>)
 
-<span class="cm">// Pipe operator example</span>
+<span class="cm"># Pipe operator example</span>
 [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>]
     |&gt; <span class="fn">map</span>(|x| x * x)
     |&gt; <span class="fn">filter</span>(|x| x &gt; <span class="num">5</span>)
@@ -138,24 +138,24 @@ name = <span class="type">io</span>::<span class="fn">readline</span>()
     <!-- ===== Language Guide ===== -->
     <h2 id="variables">Variables &amp; Types</h2>
     <p>Pyro is statically typed with type inference. Just assign values directly — no keyword needed. Use <code>mut</code> for mutable variables. The optional <code>let</code> keyword can enforce immutability explicitly.</p>
-    <pre><button class="copy-btn">Copy</button><code><span class="cm">// Simple assignment (no keyword needed)</span>
-name = <span class="str">"Pyro"</span>            <span class="cm">// type inferred as str</span>
-age = <span class="num">1</span>                  <span class="cm">// int</span>
-pi = <span class="num">3.14159</span>             <span class="cm">// float</span>
-active = <span class="kw">true</span>            <span class="cm">// bool</span>
-data = <span class="kw">nil</span>               <span class="cm">// nil value</span>
+    <pre><button class="copy-btn">Copy</button><code><span class="cm"># Simple assignment (no keyword needed)</span>
+name = <span class="str">"Pyro"</span>            <span class="cm"># type inferred as str</span>
+age = <span class="num">1</span>                  <span class="cm"># int</span>
+pi = <span class="num">3.14159</span>             <span class="cm"># float</span>
+active = <span class="kw">true</span>            <span class="cm"># bool</span>
+data = <span class="kw">nil</span>               <span class="cm"># nil value</span>
 
-<span class="cm">// Mutable (use mut when you need to reassign)</span>
+<span class="cm"># Mutable (use mut when you need to reassign)</span>
 <span class="kw">mut</span> counter = <span class="num">0</span>
 counter = counter + <span class="num">1</span>
 
-<span class="cm">// Optional: use let for explicit immutability</span>
-<span class="cm">// let locked = 42  // compiler enforces no reassignment</span>
+<span class="cm"># Optional: use let for explicit immutability</span>
+<span class="cm"># let locked = 42  // compiler enforces no reassignment</span>
 
-<span class="cm">// Collections</span>
-list = [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>]                        <span class="cm">// List&lt;int&gt;</span>
-map = { <span class="str">"a"</span>: <span class="num">1</span>, <span class="str">"b"</span>: <span class="num">2</span> }               <span class="cm">// Map&lt;str, int&gt;</span>
-tuple = (<span class="num">1</span>, <span class="str">"hello"</span>, <span class="kw">true</span>)              <span class="cm">// (int, str, bool)</span></code></pre>
+<span class="cm"># Collections</span>
+list = [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>]                        <span class="cm"># List&lt;int&gt;</span>
+map = { <span class="str">"a"</span>: <span class="num">1</span>, <span class="str">"b"</span>: <span class="num">2</span> }               <span class="cm"># Map&lt;str, int&gt;</span>
+tuple = (<span class="num">1</span>, <span class="str">"hello"</span>, <span class="kw">true</span>)              <span class="cm"># (int, str, bool)</span></code></pre>
 
     <h3>Built-in Types</h3>
     <table>
@@ -173,17 +173,17 @@ tuple = (<span class="num">1</span>, <span class="str">"hello"</span>, <span cla
 
     <h2 id="functions">Functions</h2>
     <p>Functions are first-class citizens in Pyro. Declare them with <code>fn</code>.</p>
-    <pre><button class="copy-btn">Copy</button><code><span class="cm">// Basic function</span>
+    <pre><button class="copy-btn">Copy</button><code><span class="cm"># Basic function</span>
 <span class="kw">fn</span> <span class="fn">greet</span>(name: <span class="type">str</span>) -&gt; <span class="type">str</span> {
     <span class="kw">return</span> <span class="str">"Hello, "</span> + name + <span class="str">"!"</span>
 }
 
-<span class="cm">// Implicit return (last expression)</span>
+<span class="cm"># Implicit return (last expression)</span>
 <span class="kw">fn</span> <span class="fn">add</span>(a: <span class="type">int</span>, b: <span class="type">int</span>) -&gt; <span class="type">int</span> {
     a + b
 }
 
-<span class="cm">// Default parameters</span>
+<span class="cm"># Default parameters</span>
 <span class="kw">fn</span> <span class="fn">power</span>(base: <span class="type">int</span>, exp: <span class="type">int</span> = <span class="num">2</span>) -&gt; <span class="type">int</span> {
     <span class="kw">mut</span> result = <span class="num">1</span>
     <span class="kw">for</span> _ <span class="kw">in</span> <span class="num">0</span>..exp {
@@ -192,24 +192,24 @@ tuple = (<span class="num">1</span>, <span class="str">"hello"</span>, <span cla
     result
 }
 
-<span class="cm">// Higher-order functions</span>
+<span class="cm"># Higher-order functions</span>
 <span class="kw">fn</span> <span class="fn">apply_twice</span>(f: <span class="type">fn</span>(<span class="type">int</span>) -&gt; <span class="type">int</span>, val: <span class="type">int</span>) -&gt; <span class="type">int</span> {
     f(f(val))
 }
 
 <span class="bi">print</span>(<span class="fn">greet</span>(<span class="str">"World"</span>))
-    <span class="bi">print</span>(<span class="fn">power</span>(<span class="num">3</span>))         <span class="cm">// 9 (default exp=2)</span>
-    <span class="bi">print</span>(<span class="fn">power</span>(<span class="num">2</span>, <span class="num">10</span>))    <span class="cm">// 1024</span>
-    <span class="bi">print</span>(<span class="fn">apply_twice</span>(|x| x * <span class="num">2</span>, <span class="num">3</span>))  <span class="cm">// 12</span>
+    <span class="bi">print</span>(<span class="fn">power</span>(<span class="num">3</span>))         <span class="cm"># 9 (default exp=2)</span>
+    <span class="bi">print</span>(<span class="fn">power</span>(<span class="num">2</span>, <span class="num">10</span>))    <span class="cm"># 1024</span>
+    <span class="bi">print</span>(<span class="fn">apply_twice</span>(|x| x * <span class="num">2</span>, <span class="num">3</span>))  <span class="cm"># 12</span>
 }</code></pre>
 
     <h2 id="control-flow">Control Flow</h2>
-    <pre><button class="copy-btn">Copy</button><code><span class="cm">// If / else (expressions — they return values)</span>
+    <pre><button class="copy-btn">Copy</button><code><span class="cm"># If / else (expressions — they return values)</span>
 status = <span class="kw">if</span> score &gt;= <span class="num">90</span> { <span class="str">"A"</span> }
              <span class="kw">else</span> <span class="kw">if</span> score &gt;= <span class="num">80</span> { <span class="str">"B"</span> }
              <span class="kw">else</span> { <span class="str">"C"</span> }
 
-<span class="cm">// For loops</span>
+<span class="cm"># For loops</span>
 <span class="kw">for</span> i <span class="kw">in</span> <span class="num">0</span>..<span class="num">10</span> {
     <span class="bi">print</span>(i)
 }
@@ -218,14 +218,14 @@ status = <span class="kw">if</span> score &gt;= <span class="num">90</span> { <s
     <span class="bi">print</span>(item)
 }
 
-<span class="cm">// While loop</span>
+<span class="cm"># While loop</span>
 <span class="kw">mut</span> n = <span class="num">10</span>
 <span class="kw">while</span> n &gt; <span class="num">0</span> {
     <span class="bi">print</span>(n)
     n = n - <span class="num">1</span>
 }
 
-<span class="cm">// Infinite loop with break</span>
+<span class="cm"># Infinite loop with break</span>
 <span class="kw">loop</span> {
     input = <span class="type">io</span>::<span class="fn">readline</span>()
     <span class="kw">if</span> input == <span class="str">"quit"</span> { <span class="kw">break</span> }
@@ -256,7 +256,7 @@ status = <span class="kw">if</span> score &gt;= <span class="num">90</span> { <s
 
 a = <span class="type">Point</span>::<span class="fn">new</span>(<span class="num">0.0</span>, <span class="num">0.0</span>)
     b = <span class="type">Point</span>::<span class="fn">new</span>(<span class="num">3.0</span>, <span class="num">4.0</span>)
-    <span class="bi">print</span>(a.<span class="fn">distance</span>(b))   <span class="cm">// 5.0</span>
+    <span class="bi">print</span>(a.<span class="fn">distance</span>(b))   <span class="cm"># 5.0</span>
 }</code></pre>
 
     <h2 id="enums">Enums</h2>
@@ -292,7 +292,7 @@ a = <span class="type">Point</span>::<span class="fn">new</span>(<span class="nu
     }
 }
 
-<span class="cm">// Destructuring in match</span>
+<span class="cm"># Destructuring in match</span>
 <span class="kw">fn</span> <span class="fn">process</span>(point: (<span class="type">int</span>, <span class="type">int</span>)) {
     <span class="kw">match</span> point {
         (<span class="num">0</span>, <span class="num">0</span>)    =&gt; <span class="bi">print</span>(<span class="str">"origin"</span>),
@@ -327,10 +327,10 @@ a = <span class="type">Point</span>::<span class="fn">new</span>(<span class="nu
 
     <h2 id="pipes">Pipe Operator</h2>
     <p>The pipe operator <code>|&gt;</code> passes the result of the left expression as the first argument to the right function. This makes data transformations read naturally from left to right.</p>
-    <pre><button class="copy-btn">Copy</button><code><span class="cm">// Without pipes (nested, hard to read)</span>
+    <pre><button class="copy-btn">Copy</button><code><span class="cm"># Without pipes (nested, hard to read)</span>
 <span class="bi">print</span>(<span class="fn">join</span>(<span class="fn">sort</span>(<span class="fn">filter</span>(<span class="fn">map</span>(data, square), is_even)), <span class="str">", "</span>))
 
-<span class="cm">// With pipes (clear, left to right)</span>
+<span class="cm"># With pipes (clear, left to right)</span>
 data |&gt; <span class="fn">map</span>(square)
      |&gt; <span class="fn">filter</span>(is_even)
      |&gt; <span class="fn">sort</span>
@@ -338,15 +338,15 @@ data |&gt; <span class="fn">map</span>(square)
      |&gt; <span class="bi">print</span></code></pre>
 
     <h2 id="closures">Closures</h2>
-    <pre><button class="copy-btn">Copy</button><code><span class="cm">// Closures capture their environment</span>
+    <pre><button class="copy-btn">Copy</button><code><span class="cm"># Closures capture their environment</span>
 <span class="kw">fn</span> <span class="fn">make_adder</span>(n: <span class="type">int</span>) -&gt; <span class="type">fn</span>(<span class="type">int</span>) -&gt; <span class="type">int</span> {
-    |x| x + n  <span class="cm">// captures 'n'</span>
+    |x| x + n  <span class="cm"># captures 'n'</span>
 }
 
 add5 = <span class="fn">make_adder</span>(<span class="num">5</span>)
-    <span class="bi">print</span>(add5(<span class="num">10</span>))  <span class="cm">// 15</span>
+    <span class="bi">print</span>(add5(<span class="num">10</span>))  <span class="cm"># 15</span>
 
-    <span class="cm">// Multi-line closure</span>
+    <span class="cm"># Multi-line closure</span>
     process = |items| {
         items |&gt; <span class="fn">filter</span>(|x| x &gt; <span class="num">0</span>)
               |&gt; <span class="fn">map</span>(|x| x * <span class="num">2</span>)
@@ -355,11 +355,11 @@ add5 = <span class="fn">make_adder</span>(<span class="num">5</span>)
 }</code></pre>
 
     <h2 id="error-handling">Error Handling</h2>
-    <pre><button class="copy-btn">Copy</button><code><span class="kw">use</span> fs
-<span class="kw">use</span> errors
+    <pre><button class="copy-btn">Copy</button><code><span class="kw">import</span> fs
+<span class="kw">import</span> errors
 
 <span class="kw">fn</span> <span class="fn">read_config</span>(path: <span class="type">str</span>) -&gt; <span class="type">Result</span>&lt;<span class="type">str</span>, <span class="type">Error</span>&gt; {
-    content = <span class="type">fs</span>::<span class="fn">read</span>(path)?   <span class="cm">// ? propagates errors</span>
+    content = <span class="type">fs</span>::<span class="fn">read</span>(path)?   <span class="cm"># ? propagates errors</span>
     <span class="kw">if</span> content.<span class="fn">is_empty</span>() {
         <span class="kw">return</span> <span class="type">Err</span>(<span class="type">errors</span>::<span class="fn">new</span>(<span class="str">"Config file is empty"</span>))
     }
@@ -373,15 +373,15 @@ add5 = <span class="fn">make_adder</span>(<span class="num">5</span>)
 }</code></pre>
 
     <h2 id="async-await">Async / Await</h2>
-    <pre><button class="copy-btn">Copy</button><code><span class="kw">use</span> async
-<span class="kw">use</span> http
+    <pre><button class="copy-btn">Copy</button><code><span class="kw">import</span> async
+<span class="kw">import</span> http
 
 <span class="kw">async</span> <span class="kw">fn</span> <span class="fn">fetch</span>(url: <span class="type">str</span>) -&gt; <span class="type">str</span> {
     resp = <span class="kw">await</span> <span class="type">http</span>::<span class="fn">get</span>(url)
     resp.<span class="fn">body</span>()
 }
 
-<span class="cm">// Concurrent execution</span>
+<span class="cm"># Concurrent execution</span>
     (a, b) = <span class="kw">await</span> <span class="type">async</span>::<span class="fn">join</span>(
         <span class="fn">fetch</span>(<span class="str">"https://api.example.com/a"</span>),
         <span class="fn">fetch</span>(<span class="str">"https://api.example.com/b"</span>)
@@ -392,22 +392,22 @@ add5 = <span class="fn">make_adder</span>(<span class="num">5</span>)
 }</code></pre>
 
     <h2 id="modules-guide">Modules</h2>
-    <pre><button class="copy-btn">Copy</button><code><span class="cm">// Import a standard library module</span>
-<span class="kw">use</span> json
-<span class="kw">use</span> http
+    <pre><button class="copy-btn">Copy</button><code><span class="cm"># Import a standard library module</span>
+<span class="kw">import</span> json
+<span class="kw">import</span> http
 
-<span class="cm">// Import specific items</span>
-<span class="kw">use</span> math::{PI, sqrt, sin, cos}
+<span class="cm"># Import specific items</span>
+<span class="kw">import</span> math::{PI, sqrt, sin, cos}
 
-<span class="cm">// Import with alias</span>
-<span class="kw">use</span> collections <span class="kw">as</span> col
+<span class="cm"># Import with alias</span>
+<span class="kw">import</span> collections <span class="kw">as</span> col
 
-<span class="cm">// Import a local module</span>
-<span class="kw">use</span> ./utils
-<span class="kw">use</span> ../shared/config
+<span class="cm"># Import a local module</span>
+<span class="kw">import</span> ./utils
+<span class="kw">import</span> ../shared/config
 
-<span class="cm">// Create a public module</span>
-<span class="cm">// file: mylib.ro</span>
+<span class="cm"># Create a public module</span>
+<span class="cm"># file: mylib.ro</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="fn">hello</span>() -&gt; <span class="type">str</span> {
     <span class="str">"hello from mylib"</span>
 }
@@ -572,7 +572,7 @@ add5 = <span class="fn">make_adder</span>(<span class="num">5</span>)
         <tr><td><code>enum</code></td><td>Define an enumeration</td></tr>
         <tr><td><code>impl</code></td><td>Implement methods on a type</td></tr>
         <tr><td><code>trait</code></td><td>Define an interface contract</td></tr>
-        <tr><td><code>use</code></td><td>Import a module</td></tr>
+        <tr><td><code>import</code></td><td>Import a module</td></tr>
         <tr><td><code>pub</code></td><td>Mark item as public</td></tr>
         <tr><td><code>async</code></td><td>Declare an async function</td></tr>
         <tr><td><code>await</code></td><td>Await an async value</td></tr>
@@ -599,17 +599,17 @@ add5 = <span class="fn">make_adder</span>(<span class="num">5</span>)
 
     <h2 id="types-ref">Type System</h2>
     <p>Pyro uses a static type system with full type inference. The compiler infers types at compile time, but you can always annotate explicitly for clarity.</p>
-    <pre><button class="copy-btn">Copy</button><code><span class="cm">// Type inference</span>
-x = <span class="num">42</span>                    <span class="cm">// int</span>
-y = <span class="num">3.14</span>                  <span class="cm">// float</span>
-z = <span class="str">"hello"</span>               <span class="cm">// str</span>
-list = [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>]          <span class="cm">// List&lt;int&gt;</span>
+    <pre><button class="copy-btn">Copy</button><code><span class="cm"># Type inference</span>
+x = <span class="num">42</span>                    <span class="cm"># int</span>
+y = <span class="num">3.14</span>                  <span class="cm"># float</span>
+z = <span class="str">"hello"</span>               <span class="cm"># str</span>
+list = [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>]          <span class="cm"># List&lt;int&gt;</span>
 
-<span class="cm">// Explicit annotation</span>
+<span class="cm"># Explicit annotation</span>
 a: <span class="type">int</span> = <span class="num">42</span>
 b: <span class="type">List</span>&lt;<span class="type">str</span>&gt; = [<span class="str">"a"</span>, <span class="str">"b"</span>]
 
-<span class="cm">// Generic types</span>
+<span class="cm"># Generic types</span>
 <span class="kw">fn</span> <span class="fn">first</span>&lt;T&gt;(list: <span class="type">List</span>&lt;T&gt;) -&gt; <span class="type">Option</span>&lt;T&gt; {
     <span class="kw">if</span> list.<span class="fn">is_empty</span>() { <span class="type">None</span> }
     <span class="kw">else</span> { <span class="type">Some</span>(list[<span class="num">0</span>]) }
@@ -618,13 +618,13 @@ b: <span class="type">List</span>&lt;<span class="type">str</span>&gt; = [<span 
     <h2 id="grammar">Grammar Summary</h2>
     <p>Pyro's grammar is intentionally small. The complete formal grammar fits on a single page:</p>
     <pre><code><span class="cm">program     = declaration*
-declaration = fn_decl | struct_decl | enum_decl | trait_decl | impl_decl | use_decl | statement
+declaration = fn_decl | struct_decl | enum_decl | trait_decl | impl_decl | import_decl | statement
 fn_decl     = ["pub"] ["async"] "fn" IDENT "(" params? ")" ["->" type] block
 struct_decl = ["pub"] "struct" IDENT "{" fields "}"
 enum_decl   = ["pub"] "enum" IDENT "{" variants "}"
 trait_decl  = ["pub"] "trait" IDENT "{" fn_sig* "}"
 impl_decl   = "impl" [IDENT "for"] IDENT "{" fn_decl* "}"
-use_decl    = "use" path ["as" IDENT]
+import_decl = "import" path ["as" IDENT]
 statement   = let_stmt | expr_stmt | return_stmt | for_stmt | while_stmt | loop_stmt
 expression  = assignment | pipe | logical | comparison | arithmetic | unary | call | primary
 pipe        = expression "|>" expression</span></code></pre>

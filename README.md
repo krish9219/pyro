@@ -4,13 +4,13 @@
 
 Created by **Aravind Pilla** | File extension: `.ro` | Transpiles to C++
 
-Pyro is a modern, blazing-fast programming language that compiles to native C++ code. It has **fully dynamic typing** (no type annotations anywhere), a **pipe operator**, **immutable-by-default** variables, **20 built-in libraries**, and **hack-proof security** — all with only **18 keywords**.
+Pyro is a modern, blazing-fast programming language that compiles to native C++ code. It has **fully dynamic typing** (no type annotations anywhere), a **pipe operator**, **immutable-by-default** variables, **20 built-in libraries**, and **hack-proof security** — all with only **23 keywords**.
 
 ## Why Pyro Destroys Python
 
 | Feature | Pyro | Python |
 |---------|------|--------|
-| Keywords | **18** | 35+ |
+| Keywords | **23** | 35+ |
 | Speed | **Native C++ (10-100x faster)** | Interpreted |
 | Type annotations | **None needed** | Optional but everywhere |
 | Pipe operator `\|>` | **Built-in** | Doesn't exist |
@@ -52,15 +52,16 @@ print("Hello, World!")
 
 That's it. No imports, no main function, no semicolons, no types.
 
-## The 18 Keywords
+## The 23 Keywords
 
 ```
 fn  let  mut  if  else  for  in  while
 return  import  struct  match  pub  async
-await  true  false  nil
+await  true  false  nil  try  catch  enum
+throw  finally
 ```
 
-Python has 35+ keywords. Pyro has 18. Learn them in 5 minutes.
+Python has 35+ keywords. Pyro has 23. Learn them in 5 minutes.
 
 ## Feature Highlights
 
@@ -233,7 +234,7 @@ HTTP server:       Pyro: 50k rps  Python: 2k rps   (25x faster)
 CSV processing:    Pyro: 0.1s     Python: 2.5s     (25x faster)
 Startup time:      Pyro: 0.001s   Python: 0.03s    (30x faster)
 Binary size:       Pyro: 2MB      Python: 30MB+    (15x smaller)
-Keywords to learn:  Pyro: 18       Python: 35+      (48% fewer)
+Keywords to learn:  Pyro: 23       Python: 35+      (34% fewer)
 Built-in libs:     Pyro: 20       Python: needs pip
 Security:          Pyro: built-in  Python: needs pip
 ```
