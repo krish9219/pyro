@@ -55,13 +55,13 @@
           </div>
           <div class="tab-content" data-tab-content="qi-macos">
             <div class="install-cmd">
-              <code>brew install aravindlabs/tap/pyro</code>
+              <code>git clone https://github.com/krish9219/pyro.git && cd pyro && ./build.sh</code>
               <button class="copy-inline">Copy</button>
             </div>
           </div>
           <div class="tab-content" data-tab-content="qi-windows">
             <div class="install-cmd">
-              <code>winget install AravindLabs.Pyro</code>
+              <code>git clone https://github.com/krish9219/pyro.git && cd pyro && mkdir build && cd build && cmake .. && cmake --build . --config Release</code>
               <button class="copy-inline">Copy</button>
             </div>
           </div>
@@ -121,10 +121,6 @@ pyro run -e 'print("Hello from Pyro!")'
         <li style="margin-bottom: 6px; color: var(--text-secondary);">Homebrew (recommended)</li>
       </ul>
 
-      <h3 style="font-size: 1.1rem; margin: 24px 0 12px;">Install via Homebrew (recommended)</h3>
-      <pre><button class="copy-btn">Copy</button><code>brew tap aravindlabs/tap
-brew install pyro</code></pre>
-
       <h3 style="font-size: 1.1rem; margin: 24px 0 12px;">Build from source</h3>
       <pre><button class="copy-btn">Copy</button><code><span class="cm"># Install Xcode CLI tools</span>
 xcode-select --install
@@ -157,16 +153,6 @@ pyro run -e 'print("Hello from Pyro!")'</code></pre>
         <li style="margin-bottom: 6px; color: var(--text-secondary);">Windows 10 version 1809 or later</li>
         <li style="margin-bottom: 6px; color: var(--text-secondary);">Visual Studio 2022 with C++ workload (for building from source)</li>
       </ul>
-
-      <h3 style="font-size: 1.1rem; margin: 24px 0 12px;">Install via winget</h3>
-      <pre><button class="copy-btn">Copy</button><code>winget install AravindLabs.Pyro</code></pre>
-
-      <h3 style="font-size: 1.1rem; margin: 24px 0 12px;">Install via Scoop</h3>
-      <pre><button class="copy-btn">Copy</button><code>scoop bucket add aravindlabs https://github.com/aravindpilla/scoop-bucket
-scoop install pyro</code></pre>
-
-      <h3 style="font-size: 1.1rem; margin: 24px 0 12px;">Install via MSI</h3>
-      <p style="color: var(--text-secondary); margin-bottom: 16px;">Download the latest MSI installer from the <a href="https://github.com/krish9219/pyro/releases">GitHub Releases</a> page and run it. The installer adds Pyro to your system PATH automatically.</p>
 
       <h3 style="font-size: 1.1rem; margin: 24px 0 12px;">Build from source (PowerShell)</h3>
       <pre><button class="copy-btn">Copy</button><code>git clone https://github.com/krish9219/pyro.git
@@ -281,11 +267,12 @@ let g:ale_fixers  = {'pyro': ['pyro-fmt']}</code></pre>
       <pre><button class="copy-btn">Copy</button><code>rm -rf ~/.pyro
 <span class="cm"># Remove the PATH entry from ~/.bashrc or ~/.zshrc</span></code></pre>
 
-      <h3 style="font-size: 1.1rem; margin: 24px 0 12px;">macOS (Homebrew)</h3>
-      <pre><button class="copy-btn">Copy</button><code>brew uninstall pyro</code></pre>
+      <h3 style="font-size: 1.1rem; margin: 24px 0 12px;">macOS</h3>
+      <pre><button class="copy-btn">Copy</button><code>sudo rm /usr/local/bin/pyro /usr/local/bin/pyro-lsp
+sudo rm -rf /usr/local/lib/pyro</code></pre>
 
       <h3 style="font-size: 1.1rem; margin: 24px 0 12px;">Windows</h3>
-      <pre><button class="copy-btn">Copy</button><code>winget uninstall AravindLabs.Pyro</code></pre>
+      <p style="color: var(--text-secondary);">Delete the pyro build folder and remove the directory from your system PATH.</p>
     </section>
 
     <div style="text-align: center; padding-top: 32px; border-top: 1px solid var(--border);">
