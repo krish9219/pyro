@@ -5790,7 +5790,7 @@ std::string CodeGenerator::emit_call(const CallExpr& expr) {
 
         static const std::unordered_set<std::string> intercepted_methods = {
             "map", "filter", "reduce", "sort", "find", "contains",
-            "reverse", "join", "push", "pop", "len",
+            "reverse", "join", "push", "pop", "len", "sum", "min", "max",
             // String methods
             "upper", "lower", "split", "trim", "starts_with", "ends_with",
             "replace", "slice", "repeat", "chars",

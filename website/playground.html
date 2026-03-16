@@ -443,8 +443,10 @@ print("Greater than 7: {big}")
 even_squares = nums |> filter(|x| x % 2 == 0) |> map(|x| x * x)
 print("Even squares: {even_squares}")
 
-# Built-in functions — no import needed
-print("Length: {len(nums)}")`,
+# Built-in methods — no import needed
+print("Sum: {nums.sum()}")
+print("Min: {nums.min()}, Max: {nums.max()}")
+print("Length: {nums.len()}")`,
 
   math: `# 76 built-in modules — zero pip install
 import math
