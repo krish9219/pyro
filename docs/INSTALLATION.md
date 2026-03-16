@@ -4,7 +4,7 @@
 >
 > *Install once, code everywhere.*
 
-Pyro runs on **Windows, macOS, and Linux**. Since Pyro transpiles to C++20, you need a C++20-compatible compiler. Pyro ships with **20 built-in libraries** -- no package manager needed. Source files use the `.ro` extension.
+Pyro runs on **Windows, macOS, and Linux**. Since Pyro transpiles to C++20, you need a C++20-compatible compiler. Pyro ships with **76 built-in modules** -- no package manager needed. Source files use the `.ro` extension.
 
 ---
 
@@ -150,7 +150,7 @@ Expected output:
 ```
 Pyro Programming Language v1.0.0
 Created by Aravind Pilla
-Transpiles to C++20 | 20 built-in libraries | .ro files
+Transpiles to C++20 | 76 built-in modules | .ro files
 ```
 
 ---
@@ -523,7 +523,7 @@ Expected output:
 ```
 Pyro Programming Language v1.0.0
 Created by Aravind Pilla
-Transpiles to C++20 | 20 built-in libraries | .ro files
+Transpiles to C++20 | 76 built-in modules | .ro files
 ```
 
 ### Run Hello World
@@ -566,7 +566,7 @@ This shows the C++20 code that Pyro generates, which is useful for understanding
 
 ### Test the Built-in Libraries
 
-Create a file called `test_stdlib.ro` to verify the 20 built-in libraries are available:
+Create a file called `test_stdlib.ro` to verify the 76 built-in modules are available:
 
 ```pyro
 import math
@@ -576,9 +576,9 @@ import time
 print("math.PI = " + str(math.PI))
 print("Current time: " + time.format(time.now(), "YYYY-MM-DD HH:mm:ss"))
 
-let obj = {"language": "Pyro", "libraries": 20}
+let obj = {"language": "Pyro", "modules": 76}
 print(json.stringify(obj))
-print("All 20 built-in libraries ready!")
+print("All 76 built-in modules ready!")
 ```
 
 ```bash

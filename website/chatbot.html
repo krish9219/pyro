@@ -280,18 +280,29 @@ File extension: .ro
 fn let mut if else for in while return import struct match pub async await true false nil try catch enum throw finally
 
 ## 76 Built-in Modules (grouped):
-Core: math, io, json, time, os, sys, re, path, env, fs, subprocess
-Data: data (DataFrames), csv, xml, yaml, toml, ini, config, encoding, mime, template, markdown, url
-Web: web (HTTP server), http, websocket, cors, session, cookie, rate
-Security: crypto (real OpenSSL AES-256-GCM, SHA-256, PBKDF2), validate, auth, jwt
-Algorithms: sort, search, graph, matrix, collections, itertools, functools
-Data Structures: set, stack, deque, heap, trie, bitset, decimal
-ML/AI: ml, img (PPM image processing)
-Cloud: cloud, cache, queue, db (in-memory SQL)
-Tools: test, log, color, table, progress, cli, pprint, diff, copy, text, random, uuid, base64
-Networking: net, smtp, dns, ping, signal, process, compress
-Visualization: viz (SVG chart generation)
-UI: ui
+Core (12): std, io, os, fs, path, fmt, math, time, log, errors, types, reflect
+Data (12): json, csv, xml, yaml, toml, base64, hex, sqlite, collections, iter, serialize, compress
+Web (10): http, url, websocket, html, template, mime, cookie, router, cors, sse
+Security (8): crypto, hash, hmac, aes, rsa, tls, jwt, pbkdf2
+Algorithms (8): sort, search, graph, matrix, stats, random, bigint, bitops
+Networking (10): net, tcp, udp, dns, smtp, ftp, ssh, grpc, mqtt, redis
+System (8): process, thread, async, signal, env, sys, mem, ffi
+Text (8): string, regex, unicode, glob, diff, color, table, plot
+
+## Highlighted Modules:
+- \`import ai\` — Built-in LLM access (NVIDIA, OpenAI, Gemini, Grok, Ollama, etc.)
+- \`import nn\` — Neural network framework with backpropagation
+- \`import ml\` — Classical ML (linear regression, logistic, KNN, k-means)
+- \`import tensor\` — NumPy-equivalent matrix operations
+- \`import nlp\` — NLP (tokenize, sentiment, NER, keywords, similarity)
+- \`import cv\` — Computer vision (image load/save, resize, blur, edges)
+- \`import plot\` — SVG chart generation (line, bar, scatter, histogram)
+- \`import db\` — Real SQLite database
+- \`import http\` — HTTPS client with libcurl
+- \`import test\` — Testing framework with colored output
+
+## Pyro Playground:
+Try Pyro in the browser: https://aravindlabs.tech/pyro-lang/playground.html
 
 ## Pyro vs Python Side-by-Side:
 \`\`\`
@@ -317,7 +328,25 @@ for i in range(10):    for i in 0..10         # cleaner
 - Real OpenSSL crypto: crypto.sha256(), crypto.encrypt(), crypto.hash_password()
 
 ## CLI Commands:
-pyro run file.ro, pyro build file.ro, pyro emit file.ro, pyro fmt file.ro, pyro check file.ro, pyro bench file.ro, pyro doc file.ro, pyro debug file.ro, pyro profile file.ro, pyro tokens file.ro, pyro init, pyro install, pyro version, pyro help, plus REPL (just type pyro)
+pyro run file.ro — Run a Pyro program
+pyro build file.ro — Compile to native binary
+pyro watch file.ro — Hot reload (auto-restart on changes)
+pyro new webapp/api/cli name — Project scaffolding
+pyro install package — Install package from GitHub
+pyro deploy docker/binary file.ro — Deployment
+pyro check file.ro — Type check without running
+pyro fmt file.ro — Format source code
+pyro update — Update Pyro to latest version
+pyro emit file.ro — Show generated C++ code
+pyro bench file.ro — Run benchmarks
+pyro doc file.ro — Generate documentation
+pyro debug file.ro — Run with debugger
+pyro profile file.ro — CPU profiling
+pyro tokens file.ro — Show lexer tokens
+pyro init — Initialize a new project
+pyro version — Show version
+pyro help — Show help
+pyro (no args) — Start REPL
 
 ## Installation:
 Linux/macOS: curl -fsSL https://aravindlabs.tech/pyro-lang/install.sh | bash

@@ -4,7 +4,7 @@
 
 Created by **Aravind Pilla** | File extension: `.ro` | Transpiles to C++
 
-Pyro is a modern, blazing-fast programming language that compiles to native C++ code. It has **fully dynamic typing** (no type annotations anywhere), a **pipe operator**, **immutable-by-default** variables, **20 built-in libraries**, and **hack-proof security** — all with only **23 keywords**.
+Pyro is a modern, blazing-fast programming language that compiles to native C++ code. It has **fully dynamic typing** (no type annotations anywhere), a **pipe operator**, **immutable-by-default** variables, **76 built-in modules**, and **hack-proof security** — all with only **23 keywords**.
 
 ## Why Pyro Destroys Python
 
@@ -15,7 +15,7 @@ Pyro is a modern, blazing-fast programming language that compiles to native C++ 
 | Type annotations | **None needed** | Optional but everywhere |
 | Pipe operator `\|>` | **Built-in** | Doesn't exist |
 | Immutable by default | **Yes (bare assignment is immutable)** | No (everything mutable) |
-| Built-in libraries | **20 power modules** | Needs pip install |
+| Built-in libraries | **76 built-in modules** | Needs pip install |
 | Security | **Built-in crypto/auth/validate** | pip install 5+ packages |
 | Concurrency | **True parallelism** | GIL-limited |
 | Data Science | **Built-in** | pip install pandas numpy |
@@ -110,29 +110,41 @@ counter = counter + 1
 # x = 10            # ERROR: x is immutable
 ```
 
-### 4. 20 Built-in Libraries — Zero pip install
+### 4. 76 Built-in Modules — Zero pip install
 
 ```pyro
-import data      # DataFrames, CSV, stats (replaces pandas + numpy)
-import web       # HTTP server, REST API (replaces flask + requests)
-import ml        # Machine learning (replaces scikit-learn)
-import viz       # Charts & plots (replaces matplotlib)
-import crypto    # AES, RSA, SHA, bcrypt (replaces cryptography)
-import auth      # JWT, OAuth2, 2FA, RBAC (replaces pyjwt + authlib)
-import validate  # Email, URL, sanitize (replaces validators + bleach)
-import db        # SQL, NoSQL, ORM (replaces sqlalchemy)
-import cache     # Redis, LRU, TTL (replaces redis-py)
-import cloud     # AWS, GCP, Azure (replaces boto3)
-import ml        # Neural nets, NLP (replaces tensorflow/pytorch basics)
-import img       # Image processing (replaces pillow)
-import test      # Testing framework (replaces pytest)
-import ui        # Desktop GUI (replaces tkinter)
-import queue     # Message queues (replaces celery)
-import net       # TCP, UDP, SSH (replaces paramiko)
-import io        # File I/O, streams
-import json      # Parse, validate, schema
-import time      # Date, timezone, cron
-import log       # Structured logging
+# Core
+import math, io, json, time, os, sys, re, path, env, fs, subprocess
+
+# Data
+import data, csv, xml, yaml, toml, ini, config, encoding, mime, template, markdown, url
+
+# Web
+import web, http, websocket, cors, session, cookie, rate
+
+# Security
+import crypto, validate, auth, jwt
+
+# AI/ML
+import ai, nn, ml, tensor, nlp, cv, plot
+
+# Algorithms
+import sort, search, graph, matrix, collections, itertools, functools
+
+# Structures
+import set, stack, deque, heap, trie, bitset, decimal
+
+# Cloud
+import cloud, cache, queue, db
+
+# Tools
+import test, log, color, table, progress, cli, pprint, diff, copy, text, random, uuid, base64
+
+# Network
+import net, smtp, dns, ping, signal, process, compress
+
+# Viz
+import viz, img, ui
 ```
 
 ### 5. Hack-Proof Security — Built In
@@ -235,18 +247,25 @@ CSV processing:    Pyro: 0.1s     Python: 2.5s     (25x faster)
 Startup time:      Pyro: 0.001s   Python: 0.03s    (30x faster)
 Binary size:       Pyro: 2MB      Python: 30MB+    (15x smaller)
 Keywords to learn:  Pyro: 23       Python: 35+      (34% fewer)
-Built-in libs:     Pyro: 20       Python: needs pip
+Built-in libs:     Pyro: 76       Python: needs pip
 Security:          Pyro: built-in  Python: needs pip
 ```
 
 ## Commands
 
 ```bash
-pyro run <file.ro>      # Compile and run
-pyro build <file.ro>    # Compile to native executable
-pyro emit <file.ro>     # Show generated C++ code
-pyro tokens <file.ro>   # Show lexer tokens
-pyro version            # Show version
+pyro run <file.ro>        # Compile and run
+pyro build <file.ro>      # Compile to executable
+pyro watch <file.ro>      # Hot reload on changes
+pyro new <type> <name>    # Create project (webapp, api, cli)
+pyro install <package>    # Install from GitHub
+pyro deploy <platform>    # Deploy (docker, binary)
+pyro check <file.ro>      # Check for errors
+pyro fmt <file.ro>        # Format code
+pyro emit <file.ro>       # Show generated C++
+pyro update               # Self-update to latest
+pyro version              # Show version
+pyro help                 # Show help
 ```
 
 ## Building from Source
@@ -262,7 +281,7 @@ sudo cp build/pyro /usr/local/bin/
 ## Documentation
 
 - [Language Guide](docs/LANGUAGE_GUIDE.md) — Full syntax reference
-- [Standard Library](docs/STDLIB.md) — All 20 built-in modules
+- [Standard Library](docs/STDLIB.md) — All 76 built-in modules
 - [Data Science](docs/DATA_SCIENCE.md) — DataFrames, ML, stats
 - [Web Development](docs/WEB_DEV.md) — Servers, APIs, WebSocket
 - [Visualization](docs/VISUALIZATION.md) — Charts, dashboards, 3D
