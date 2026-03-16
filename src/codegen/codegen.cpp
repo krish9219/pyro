@@ -738,6 +738,14 @@ std::string CodeGenerator::generate(const Program& program, const std::string& s
             emit_line("#include <iomanip>");
         }
     }
+    if (imports_.count("ai")) {
+        if (!imports_.count("http")) {
+            emit_line("#include <curl/curl.h>");
+        }
+        if (!imports_.count("http") && !imports_.count("io") && !imports_.count("data") && !imports_.count("img") && !imports_.count("viz") && !imports_.count("web") && !imports_.count("db")) {
+            emit_line("#include <fstream>");
+        }
+    }
 
     emit_headers();
 
@@ -3934,6 +3942,237 @@ void CodeGenerator::emit_import(const ImportStmt& stmt) {
         dedent();
         emit_line("} // namespace pyro_compress");
         emit_line("");
+    } else if (stmt.module == "ai") {
+        emit_line("namespace pyro_ai {");
+        indent();
+
+        // Curl write callback
+        emit_line("static size_t _ai_write_cb(void* data, size_t size, size_t nmemb, std::string* out) {");
+        indent();
+        emit_line("out->append((char*)data, size * nmemb);");
+        emit_line("return size * nmemb;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Core config
+        emit_line("static std::string _api_key = \"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\";");
+        emit_line("static std::string _default_model = \"meta/llama-3.3-70b-instruct\";");
+        emit_line("static std::string _api_url = \"https://integrate.api.nvidia.com/v1/chat/completions\";");
+        emit_line("");
+
+        emit_line("void set_key(const std::string& key) { _api_key = key; }");
+        emit_line("void set_model(const std::string& model) { _default_model = model; }");
+        emit_line("");
+
+        // JSON escape helper
+        emit_line("static std::string _escape_json(const std::string& s) {");
+        indent();
+        emit_line("std::string out;");
+        emit_line("for (char c : s) {");
+        indent();
+        emit_line("switch(c) {");
+        emit_line("case '\"': out += \"\\\\\\\"\"; break;");
+        emit_line("case '\\\\': out += \"\\\\\\\\\"; break;");
+        emit_line("case '\\n': out += \"\\\\n\"; break;");
+        emit_line("case '\\r': out += \"\\\\r\"; break;");
+        emit_line("case '\\t': out += \"\\\\t\"; break;");
+        emit_line("default: out += c;");
+        emit_line("}");
+        dedent();
+        emit_line("}");
+        emit_line("return out;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Extract content from API response
+        emit_line("static std::string _extract_content(const std::string& json) {");
+        indent();
+        emit_line("auto pos = json.find(\"\\\"content\\\"\");");
+        emit_line("if (pos == std::string::npos) {");
+        indent();
+        emit_line("auto err = json.find(\"\\\"message\\\"\");");
+        emit_line("if (err != std::string::npos) {");
+        indent();
+        emit_line("auto start = json.find(':', err) + 2;");
+        emit_line("auto end = json.find('\"', start);");
+        emit_line("if (end != std::string::npos) return \"Error: \" + json.substr(start, end - start);");
+        dedent();
+        emit_line("}");
+        emit_line("return \"Error: No response from AI\";");
+        dedent();
+        emit_line("}");
+        emit_line("auto colon = json.find(':', pos);");
+        emit_line("auto quote_start = json.find('\"', colon + 1);");
+        emit_line("if (quote_start == std::string::npos) return \"\";");
+        emit_line("quote_start++;");
+        emit_line("std::string result;");
+        emit_line("for (size_t i = quote_start; i < json.size(); i++) {");
+        indent();
+        emit_line("if (json[i] == '\\\\' && i + 1 < json.size()) {");
+        indent();
+        emit_line("char next = json[i+1];");
+        emit_line("if (next == 'n') result += '\\n';");
+        emit_line("else if (next == 't') result += '\\t';");
+        emit_line("else if (next == '\"') result += '\"';");
+        emit_line("else if (next == '\\\\') result += '\\\\';");
+        emit_line("else { result += json[i]; result += next; }");
+        emit_line("i++;");
+        dedent();
+        emit_line("} else if (json[i] == '\"') { break; }");
+        emit_line("else { result += json[i]; }");
+        dedent();
+        emit_line("}");
+        emit_line("return result;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Raw API call
+        emit_line("static std::string _call_api(const std::string& messages_json, const std::string& model = \"\") {");
+        indent();
+        emit_line("std::string mdl = model.empty() ? _default_model : model;");
+        emit_line("std::string body = \"{\\\"model\\\":\\\"\" + mdl + \"\\\",\\\"messages\\\":\" + messages_json + \",\\\"max_tokens\\\":2048,\\\"temperature\\\":0.7}\";");
+        emit_line("");
+        emit_line("CURL* curl = curl_easy_init();");
+        emit_line("if (!curl) throw std::runtime_error(\"Failed to init HTTP client\");");
+        emit_line("");
+        emit_line("std::string response_body;");
+        emit_line("curl_easy_setopt(curl, CURLOPT_URL, _api_url.c_str());");
+        emit_line("curl_easy_setopt(curl, CURLOPT_POST, 1L);");
+        emit_line("curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str());");
+        emit_line("curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, _ai_write_cb);");
+        emit_line("curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response_body);");
+        emit_line("curl_easy_setopt(curl, CURLOPT_TIMEOUT, 60L);");
+        emit_line("curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1L);");
+        emit_line("");
+        emit_line("struct curl_slist* headers = NULL;");
+        emit_line("headers = curl_slist_append(headers, (\"Authorization: Bearer \" + _api_key).c_str());");
+        emit_line("headers = curl_slist_append(headers, \"Content-Type: application/json\");");
+        emit_line("curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);");
+        emit_line("");
+        emit_line("CURLcode res = curl_easy_perform(curl);");
+        emit_line("curl_slist_free_all(headers);");
+        emit_line("curl_easy_cleanup(curl);");
+        emit_line("");
+        emit_line("if (res != CURLE_OK) throw std::runtime_error(std::string(\"AI request failed: \") + curl_easy_strerror(res));");
+        emit_line("return response_body;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // === PUBLIC API ===
+
+        // ai.chat(prompt) and ai.chat(prompt, model)
+        emit_line("std::string chat(const std::string& prompt, const std::string& model = \"\") {");
+        indent();
+        emit_line("std::string messages = \"[{\\\"role\\\":\\\"user\\\",\\\"content\\\":\\\"\" + _escape_json(prompt) + \"\\\"}]\";");
+        emit_line("std::string resp = _call_api(messages, model);");
+        emit_line("return _extract_content(resp);");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // ai.chat with system prompt
+        emit_line("std::string chat(const std::string& prompt, const std::string& system, const std::string& model) {");
+        indent();
+        emit_line("std::string messages = \"[{\\\"role\\\":\\\"system\\\",\\\"content\\\":\\\"\" + _escape_json(system) + \"\\\"},{\\\"role\\\":\\\"user\\\",\\\"content\\\":\\\"\" + _escape_json(prompt) + \"\\\"}]\";");
+        emit_line("std::string resp = _call_api(messages, model);");
+        emit_line("return _extract_content(resp);");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // ai.summarize
+        emit_line("std::string summarize(const std::string& text, int64_t max_words = 100) {");
+        indent();
+        emit_line("return chat(\"Summarize the following in \" + std::to_string(max_words) + \" words or less:\\n\\n\" + text);");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // ai.translate
+        emit_line("std::string translate(const std::string& text, const std::string& to) {");
+        indent();
+        emit_line("return chat(\"Translate the following to \" + to + \". Only output the translation, nothing else:\\n\\n\" + text);");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // ai.classify
+        emit_line("std::string classify(const std::string& text, const std::vector<std::string>& labels) {");
+        indent();
+        emit_line("std::string label_str;");
+        emit_line("for (size_t i = 0; i < labels.size(); i++) { if (i > 0) label_str += \", \"; label_str += labels[i]; }");
+        emit_line("return chat(\"Classify the following text into exactly one of these categories: \" + label_str + \".\\nOnly output the category name, nothing else.\\n\\nText: \" + text);");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // ai.extract
+        emit_line("std::string extract(const std::string& text, const std::vector<std::string>& fields) {");
+        indent();
+        emit_line("std::string field_str;");
+        emit_line("for (size_t i = 0; i < fields.size(); i++) { if (i > 0) field_str += \", \"; field_str += fields[i]; }");
+        emit_line("return chat(\"Extract these fields from the text: \" + field_str + \".\\nOutput as JSON object. Only output the JSON, nothing else.\\n\\nText: \" + text);");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // ai.generate_code
+        emit_line("std::string generate_code(const std::string& description) {");
+        indent();
+        emit_line("return chat(\"Write code in Pyro programming language for: \" + description + \".\\nOnly output the code, no explanations.\", \"You are a Pyro programming language expert. Pyro uses # for comments, fn for functions, indentation-based blocks (no end keyword), import for modules, and {var} for string interpolation.\", \"\");");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // ai.ask (simple alias)
+        emit_line("std::string ask(const std::string& question) { return chat(question); }");
+        emit_line("");
+
+        // Conversation struct
+        emit_line("struct Conversation {");
+        indent();
+        emit_line("std::string _messages_json = \"[\";");
+        emit_line("std::string _system;");
+        emit_line("bool _first = true;");
+        emit_line("");
+        emit_line("Conversation() {}");
+        emit_line("Conversation(const std::string& system) : _system(system) {");
+        indent();
+        emit_line("_messages_json += \"{\\\"role\\\":\\\"system\\\",\\\"content\\\":\\\"\" + _escape_json(system) + \"\\\"}\";");
+        emit_line("_first = false;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+        emit_line("std::string ask(const std::string& prompt) {");
+        indent();
+        emit_line("if (!_first) _messages_json += \",\";");
+        emit_line("_messages_json += \"{\\\"role\\\":\\\"user\\\",\\\"content\\\":\\\"\" + _escape_json(prompt) + \"\\\"}\";");
+        emit_line("_first = false;");
+        emit_line("std::string resp = _call_api(_messages_json + \"]\");");
+        emit_line("std::string content = _extract_content(resp);");
+        emit_line("_messages_json += \",{\\\"role\\\":\\\"assistant\\\",\\\"content\\\":\\\"\" + _escape_json(content) + \"\\\"}\";");
+        emit_line("return content;");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("};");
+        emit_line("");
+
+        // ai.conversation()
+        emit_line("Conversation conversation(const std::string& system = \"\") {");
+        indent();
+        emit_line("if (system.empty()) return Conversation();");
+        emit_line("return Conversation(system);");
+        dedent();
+        emit_line("}");
+
+        dedent();
+        emit_line("} // namespace pyro_ai");
+        emit_line("");
     }
 }
 
@@ -4376,6 +4615,7 @@ std::string CodeGenerator::emit_member(const MemberExpr& expr) {
         if (id->name == "process") return "pyro_process::" + expr.member;
         if (id->name == "signal") return "pyro_signal::" + expr.member;
         if (id->name == "compress") return "pyro_compress::" + expr.member;
+        if (id->name == "ai") return "pyro_ai::" + expr.member;
         if (enum_names_.count(id->name)) return id->name + "::" + expr.member;
         // db Row field access: row.name -> row.get("name")
         if (imports_.count("db") && db_row_vars_.count(id->name)) {
