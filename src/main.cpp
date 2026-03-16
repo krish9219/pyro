@@ -55,7 +55,8 @@ static const std::set<std::string> BUILTIN_MODULES = {
     "http", "cookie", "session", "cors", "rate", "jwt",
     "websocket", "smtp", "dns", "ping",
     "ai",
-    "tensor"
+    "tensor",
+    "nn"
 };
 
 std::vector<pyro::StmtPtr> resolve_imports(

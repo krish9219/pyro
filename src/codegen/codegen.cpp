@@ -759,6 +759,10 @@ std::string CodeGenerator::generate(const Program& program, const std::string& s
         emit_line("#include <fstream>");
         emit_line("#include <algorithm>");
     }
+    if (imports_.count("nn")) {
+        emit_line("#include <random>");
+        emit_line("#include <fstream>");
+    }
 
     emit_headers();
 
@@ -4690,6 +4694,283 @@ void CodeGenerator::emit_import(const ImportStmt& stmt) {
         dedent();
         emit_line("} // namespace pyro_tensor");
         emit_line("");
+    } else if (stmt.module == "nn") {
+        emit_line("namespace pyro_nn {");
+        indent();
+
+        // === TENSOR WITH GRAD ===
+        emit_line("struct Tensor {");
+        indent();
+        emit_line("std::vector<double> data;");
+        emit_line("std::vector<double> grad;");
+        emit_line("std::vector<int64_t> shape;");
+        emit_line("int64_t size() const { int64_t s=1; for(auto d:shape) s*=d; return s; }");
+        emit_line("int64_t rows() const { return shape.size()>=1?shape[0]:0; }");
+        emit_line("int64_t cols() const { return shape.size()>=2?shape[1]:data.size(); }");
+        emit_line("void zero_grad() { grad.assign(grad.size(), 0.0); }");
+        dedent();
+        emit_line("};");
+        emit_line("");
+        emit_line("std::ostream& operator<<(std::ostream& os, const Tensor& t) { os<<\"Tensor(\"; for(auto s:t.shape){os<<s<<\",\";} os<<\")\"; return os; }");
+        emit_line("");
+
+        // Random init
+        emit_line("static std::mt19937 _rng(42);");
+        emit_line("Tensor randn(int64_t r, int64_t c) {");
+        indent();
+        emit_line("std::normal_distribution<double> dist(0.0, std::sqrt(2.0/r));");
+        emit_line("Tensor t; t.shape={r,c}; t.data.resize(r*c); t.grad.resize(r*c,0);");
+        emit_line("for(auto& v:t.data) v=dist(_rng); return t;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // === LAYER BASE ===
+        emit_line("struct Layer {");
+        indent();
+        emit_line("std::string name;");
+        emit_line("virtual ~Layer() = default;");
+        emit_line("virtual std::vector<double> forward(const std::vector<double>& input) = 0;");
+        emit_line("virtual std::vector<double> backward(const std::vector<double>& grad_output) = 0;");
+        emit_line("virtual void update(double lr) {}");
+        emit_line("virtual int64_t param_count() const { return 0; }");
+        emit_line("virtual std::string info() const { return name; }");
+        dedent();
+        emit_line("};");
+        emit_line("");
+
+        // === DENSE LAYER ===
+        emit_line("struct DenseLayer : Layer {");
+        indent();
+        emit_line("int64_t in_features, out_features;");
+        emit_line("std::vector<double> weights, biases, grad_w, grad_b, last_input;");
+        emit_line("std::string activation;");
+        emit_line("");
+        emit_line("DenseLayer(int64_t in, int64_t out, const std::string& act=\"\") : in_features(in), out_features(out), activation(act) {");
+        indent();
+        emit_line("name = \"Dense(\" + std::to_string(in) + \"->\" + std::to_string(out) + \")\";");
+        emit_line("std::normal_distribution<double> dist(0.0, std::sqrt(2.0/in));");
+        emit_line("weights.resize(in*out); for(auto& w:weights) w=dist(_rng);");
+        emit_line("biases.resize(out, 0.0);");
+        emit_line("grad_w.resize(in*out, 0.0); grad_b.resize(out, 0.0);");
+        dedent();
+        emit_line("}");
+        emit_line("");
+        emit_line("std::vector<double> forward(const std::vector<double>& input) override {");
+        indent();
+        emit_line("last_input = input;");
+        emit_line("int64_t batch = input.size() / in_features;");
+        emit_line("std::vector<double> output(batch * out_features, 0.0);");
+        emit_line("for(int64_t b=0;b<batch;b++) for(int64_t j=0;j<out_features;j++) {");
+        indent();
+        emit_line("double sum = biases[j];");
+        emit_line("for(int64_t i=0;i<in_features;i++) sum += input[b*in_features+i] * weights[i*out_features+j];");
+        emit_line("output[b*out_features+j] = sum;");
+        dedent();
+        emit_line("}");
+        emit_line("// Apply activation");
+        emit_line("if(activation==\"relu\") for(auto& v:output) v=std::max(0.0,v);");
+        emit_line("else if(activation==\"sigmoid\") for(auto& v:output) v=1.0/(1.0+std::exp(-v));");
+        emit_line("else if(activation==\"tanh\") for(auto& v:output) v=std::tanh(v);");
+        emit_line("else if(activation==\"softmax\") {");
+        indent();
+        emit_line("for(int64_t b=0;b<batch;b++) {");
+        indent();
+        emit_line("double mx=-1e18; for(int64_t j=0;j<out_features;j++) mx=std::max(mx,output[b*out_features+j]);");
+        emit_line("double sum=0; for(int64_t j=0;j<out_features;j++){output[b*out_features+j]=std::exp(output[b*out_features+j]-mx);sum+=output[b*out_features+j];}");
+        emit_line("for(int64_t j=0;j<out_features;j++) output[b*out_features+j]/=sum;");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("}");
+        emit_line("return output;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+        emit_line("std::vector<double> backward(const std::vector<double>& grad_output) override {");
+        indent();
+        emit_line("int64_t batch = last_input.size() / in_features;");
+        emit_line("std::vector<double> grad_input(last_input.size(), 0.0);");
+        emit_line("// Compute gradients");
+        emit_line("for(int64_t b=0;b<batch;b++) for(int64_t j=0;j<out_features;j++) {");
+        indent();
+        emit_line("grad_b[j] += grad_output[b*out_features+j];");
+        emit_line("for(int64_t i=0;i<in_features;i++) {");
+        indent();
+        emit_line("grad_w[i*out_features+j] += last_input[b*in_features+i] * grad_output[b*out_features+j];");
+        emit_line("grad_input[b*in_features+i] += weights[i*out_features+j] * grad_output[b*out_features+j];");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("}");
+        emit_line("return grad_input;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+        emit_line("void update(double lr) override {");
+        indent();
+        emit_line("for(size_t i=0;i<weights.size();i++){weights[i]-=lr*grad_w[i];grad_w[i]=0;}");
+        emit_line("for(size_t i=0;i<biases.size();i++){biases[i]-=lr*grad_b[i];grad_b[i]=0;}");
+        dedent();
+        emit_line("}");
+        emit_line("int64_t param_count() const override { return in_features*out_features+out_features; }");
+        emit_line("std::string info() const override { return name + (activation.empty()?\"\":\" (\" + activation + \")\"); }");
+        dedent();
+        emit_line("};");
+        emit_line("");
+
+        // === DROPOUT LAYER ===
+        emit_line("struct DropoutLayer : Layer {");
+        indent();
+        emit_line("double rate; bool training=true;");
+        emit_line("std::vector<double> mask;");
+        emit_line("DropoutLayer(double r) : rate(r) { name=\"Dropout(\"+std::to_string(r)+\")\"; }");
+        emit_line("std::vector<double> forward(const std::vector<double>& input) override {");
+        indent();
+        emit_line("if(!training) return input;");
+        emit_line("std::uniform_real_distribution<double> dist(0,1);");
+        emit_line("mask.resize(input.size());");
+        emit_line("std::vector<double> out(input.size());");
+        emit_line("for(size_t i=0;i<input.size();i++){mask[i]=(dist(_rng)>rate)?1.0:0.0;out[i]=input[i]*mask[i]/(1.0-rate);}");
+        emit_line("return out;");
+        dedent();
+        emit_line("}");
+        emit_line("std::vector<double> backward(const std::vector<double>& g) override {");
+        indent();
+        emit_line("std::vector<double> out(g.size()); for(size_t i=0;i<g.size();i++) out[i]=g[i]*mask[i]/(1.0-rate); return out;");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("};");
+        emit_line("");
+
+        // === SEQUENTIAL MODEL ===
+        emit_line("struct Sequential {");
+        indent();
+        emit_line("std::vector<std::unique_ptr<Layer>> layers;");
+        emit_line("std::string loss_type = \"mse\";");
+        emit_line("double learning_rate = 0.01;");
+        emit_line("");
+        emit_line("void add(Layer* layer) { layers.emplace_back(layer); }");
+        emit_line("");
+        emit_line("void compile(const std::string& loss, double lr=0.01) { loss_type=loss; learning_rate=lr; }");
+        emit_line("");
+        emit_line("std::vector<double> forward(const std::vector<double>& input) {");
+        indent();
+        emit_line("std::vector<double> x = input;");
+        emit_line("for(auto& layer : layers) x = layer->forward(x);");
+        emit_line("return x;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+        emit_line("double compute_loss(const std::vector<double>& pred, const std::vector<double>& target) {");
+        indent();
+        emit_line("double loss=0;");
+        emit_line("if(loss_type==\"mse\") { for(size_t i=0;i<pred.size();i++) loss+=(pred[i]-target[i])*(pred[i]-target[i]); loss/=pred.size(); }");
+        emit_line("else if(loss_type==\"cross_entropy\") { for(size_t i=0;i<pred.size();i++) if(target[i]>0.5) loss-=std::log(std::max(pred[i],1e-10)); }");
+        emit_line("return loss;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+        emit_line("std::vector<double> loss_grad(const std::vector<double>& pred, const std::vector<double>& target) {");
+        indent();
+        emit_line("std::vector<double> g(pred.size());");
+        emit_line("if(loss_type==\"mse\") { for(size_t i=0;i<pred.size();i++) g[i]=2.0*(pred[i]-target[i])/pred.size(); }");
+        emit_line("else if(loss_type==\"cross_entropy\") { for(size_t i=0;i<pred.size();i++) g[i]=pred[i]-target[i]; }");
+        emit_line("return g;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+        emit_line("void fit(const std::vector<double>& x_data, const std::vector<double>& y_data, int64_t input_size, int64_t output_size, int64_t epochs=10, int64_t batch_size=32) {");
+        indent();
+        emit_line("int64_t n_samples = x_data.size() / input_size;");
+        emit_line("for(int64_t epoch=0;epoch<epochs;epoch++) {");
+        indent();
+        emit_line("double total_loss=0; int64_t batches=0;");
+        emit_line("for(int64_t start=0;start<n_samples;start+=batch_size) {");
+        indent();
+        emit_line("int64_t end=std::min(start+batch_size, n_samples);");
+        emit_line("int64_t bs=end-start;");
+        emit_line("// Get batch");
+        emit_line("std::vector<double> bx(x_data.begin()+start*input_size, x_data.begin()+end*input_size);");
+        emit_line("std::vector<double> by(y_data.begin()+start*output_size, y_data.begin()+end*output_size);");
+        emit_line("// Forward");
+        emit_line("auto pred = forward(bx);");
+        emit_line("total_loss += compute_loss(pred, by);");
+        emit_line("// Backward");
+        emit_line("auto grad = loss_grad(pred, by);");
+        emit_line("for(int64_t i=layers.size()-1;i>=0;i--) grad=layers[i]->backward(grad);");
+        emit_line("// Update");
+        emit_line("for(auto& layer:layers) layer->update(learning_rate);");
+        emit_line("batches++;");
+        dedent();
+        emit_line("}");
+        emit_line("std::cout << \"Epoch \" << (epoch+1) << \"/\" << epochs << \" - loss: \" << std::fixed << std::setprecision(4) << total_loss/batches << std::endl;");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("}");
+        emit_line("");
+        emit_line("std::vector<double> predict(const std::vector<double>& input) {");
+        indent();
+        emit_line("// Set dropout to eval mode");
+        emit_line("for(auto& l:layers) { auto* d=dynamic_cast<DropoutLayer*>(l.get()); if(d) d->training=false; }");
+        emit_line("auto out = forward(input);");
+        emit_line("for(auto& l:layers) { auto* d=dynamic_cast<DropoutLayer*>(l.get()); if(d) d->training=true; }");
+        emit_line("return out;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+        emit_line("double evaluate(const std::vector<double>& x, const std::vector<double>& y, int64_t output_size) {");
+        indent();
+        emit_line("auto pred = predict(x);");
+        emit_line("int64_t correct=0, total=x.size()/((int64_t)(x.size()/pred.size()*output_size));");
+        emit_line("total = pred.size()/output_size;");
+        emit_line("for(int64_t i=0;i<total;i++) {");
+        indent();
+        emit_line("int64_t pred_class=0, true_class=0;");
+        emit_line("for(int64_t j=1;j<output_size;j++) { if(pred[i*output_size+j]>pred[i*output_size+pred_class]) pred_class=j; if(y[i*output_size+j]>y[i*output_size+true_class]) true_class=j; }");
+        emit_line("if(pred_class==true_class) correct++;");
+        dedent();
+        emit_line("}");
+        emit_line("return (double)correct/total;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+        emit_line("void summary() {");
+        indent();
+        emit_line("std::cout << \"Model Summary:\" << std::endl;");
+        emit_line("std::cout << std::string(40,'-') << std::endl;");
+        emit_line("int64_t total=0;");
+        emit_line("for(auto& l:layers){std::cout<<\"  \"<<l->info()<<\" (\"<<l->param_count()<<\" params)\"<<std::endl;total+=l->param_count();}");
+        emit_line("std::cout << std::string(40,'-') << std::endl;");
+        emit_line("std::cout << \"Total params: \" << total << std::endl;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+        emit_line("void save(const std::string& path) {");
+        indent();
+        emit_line("std::ofstream f(path, std::ios::binary);");
+        emit_line("for(auto& l:layers) { auto* d=dynamic_cast<DenseLayer*>(l.get()); if(d) { f.write((char*)d->weights.data(),d->weights.size()*8); f.write((char*)d->biases.data(),d->biases.size()*8); } }");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("};");
+        emit_line("");
+
+        // === FACTORY FUNCTIONS ===
+        emit_line("Sequential sequential() { return Sequential{}; }");
+        emit_line("DenseLayer* dense(int64_t in, int64_t out, const std::string& act=\"\") { return new DenseLayer(in, out, act); }");
+        emit_line("DropoutLayer* dropout(double rate) { return new DropoutLayer(rate); }");
+        emit_line("");
+
+        // === LOSS FUNCTIONS (standalone) ===
+        emit_line("double mse_loss(const std::vector<double>& pred, const std::vector<double>& target) { double s=0; for(size_t i=0;i<pred.size();i++) s+=(pred[i]-target[i])*(pred[i]-target[i]); return s/pred.size(); }");
+        emit_line("double cross_entropy_loss(const std::vector<double>& pred, const std::vector<double>& target) { double s=0; for(size_t i=0;i<pred.size();i++) if(target[i]>0.5) s-=std::log(std::max(pred[i],1e-10)); return s; }");
+
+        dedent();
+        emit_line("} // namespace pyro_nn");
+        emit_line("");
     }
 }
 
@@ -5134,6 +5415,7 @@ std::string CodeGenerator::emit_member(const MemberExpr& expr) {
         if (id->name == "compress") return "pyro_compress::" + expr.member;
         if (id->name == "ai") return "pyro_ai::" + expr.member;
         if (id->name == "tensor") return "pyro_tensor::" + expr.member;
+        if (id->name == "nn") return "pyro_nn::" + expr.member;
         if (id->name == "plot") return "pyro_plot::" + expr.member;
         if (enum_names_.count(id->name)) return id->name + "::" + expr.member;
         // db Row field access: row.name -> row.get("name")
