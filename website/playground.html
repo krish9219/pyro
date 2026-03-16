@@ -377,15 +377,13 @@ print("Completed in {elapsed} ms")`,
   pipes: `# Pipe Operator
 nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-# Filter even numbers, square them
-evens = nums |> filter(|x| x % 2 == 0)
-print("Evens: {evens}")
-
-squares = evens |> map(|x| x * x)
-print("Squared: {squares}")
-
-total = squares |> sum
-print("Sum of even squares: {total}")`,
+print("Numbers: {nums}")
+print("Sum: {nums.sum()}")
+print("Length: {nums.len()}")
+print("Min: {nums.min()}")
+print("Max: {nums.max()}")
+print("Sorted: {nums.sort()}")
+print("Reversed: {nums.reverse()}")`,
 
   strings: `# String Interpolation
 name = "Pyro"
@@ -405,21 +403,22 @@ print("Pyro".repeat(3))`,
   lists: `# List Operations
 nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-# Filter
-evens = nums |> filter(|x| x % 2 == 0)
-print("Evens: {evens}")
+print("List: {nums}")
+print("Length: {nums.len()}")
+print("Sum: {nums.sum()}")
 
-# Map
-doubled = nums |> map(|x| x * 2)
-print("Doubled: {doubled}")
+# Push and pop
+mut items = [10, 20, 30]
+items.push(40)
+print("After push: {items}")
 
-# Sum
-print("Sum: {nums |> sum}")
+# Joining
+words = ["Hello", "from", "Pyro"]
+print(words.join(" "))
 
-# Sort and reverse
-data = [5, 2, 8, 1, 9, 3]
-print("Sorted: {data.sort()}")
-print("Reversed: {data.reverse()}")`,
+# Contains
+print("Has 5: {nums.contains(5)}")
+print("Has 99: {nums.contains(99)}")`,
 
   math: `# Math Module
 import math
