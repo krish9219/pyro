@@ -14,7 +14,7 @@ CORS(app)
 
 PYRO_BIN = "/projects/pyro/build/pyro"
 MAX_CODE_LENGTH = 10000
-TIMEOUT_SECONDS = 10
+TIMEOUT_SECONDS = 30
 
 # Blocked imports that could be dangerous on a shared server
 BLOCKED_IMPORTS = ["os", "sys", "subprocess", "fs", "process", "signal", "net", "http", "smtp", "dns", "ping", "websocket"]

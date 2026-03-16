@@ -162,7 +162,11 @@
     .toolbar-right {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 6px;
+      overflow-x: auto;
+      max-width: 100%;
+      padding-bottom: 2px;
+      flex-wrap: wrap;
     }
 
     .run-btn {
@@ -319,6 +323,12 @@
         <button class="example-btn" onclick="loadExample('strings')">Strings</button>
         <button class="example-btn" onclick="loadExample('lists')">Lists</button>
         <button class="example-btn" onclick="loadExample('math')">Math</button>
+        <button class="example-btn" onclick="loadExample('nlp')">NLP</button>
+        <button class="example-btn" onclick="loadExample('ml')">ML</button>
+        <button class="example-btn" onclick="loadExample('nn')">Neural Net</button>
+        <button class="example-btn" onclick="loadExample('tensor')">Tensor</button>
+        <button class="example-btn" onclick="loadExample('test')">Testing</button>
+        <button class="example-btn" onclick="loadExample('ai')">AI Chat</button>
       </div>
     </div>
 
@@ -471,7 +481,167 @@ fn compute()
 start = time.now()
 result = compute()
 elapsed = time.now() - start
-print("Sum 0..1M = {result} in {elapsed} ms")`
+print("Sum 0..1M = {result} in {elapsed} ms")`,
+
+  nlp: `# NLP — Natural Language Processing
+# No pip install spacy/nltk. Just import nlp.
+import nlp
+
+text = "Pyro is an amazing programming language created by Aravind Pilla. It compiles to native C++ and is incredibly fast."
+
+# Tokenize
+tokens = nlp.tokenize(text)
+print("Tokens: {tokens}")
+
+# Sentiment analysis
+result = nlp.sentiment("Pyro is amazing and blazing fast!")
+print("Sentiment: {result}")
+
+sad = nlp.sentiment("This is terrible and broken")
+print("Sentiment: {sad}")
+
+# Keywords (TF-IDF)
+kw = nlp.keywords(text, 5)
+print("Keywords: {kw}")
+
+# Similarity
+score = nlp.similarity("Pyro is fast", "Pyro has great speed")
+print("Similarity: {score}")
+
+# Stats
+print("Words: {nlp.count_words(text)}")
+print("Sentences: {nlp.count_sentences(text)}")`,
+
+  ml: `# Machine Learning — zero scikit-learn
+# Train a model in pure Pyro, compiled to C++
+import ml
+
+# Create a dataset manually
+# Features: [hours_studied, hours_slept]
+# Target: exam_score
+mut ds = ml.Dataset()
+ds.X = [[1.0, 8.0], [2.0, 7.0], [3.0, 6.0], [4.0, 7.0], [5.0, 6.0], [6.0, 5.0], [7.0, 4.0], [8.0, 3.0]]
+ds.y = [30.0, 40.0, 50.0, 55.0, 65.0, 70.0, 80.0, 85.0]
+
+# Train linear regression
+model = ml.linear_regression(ds, 0.01, 2000)
+print(model)
+
+# Predict
+mut test = ml.Dataset()
+test.X = [[5.0, 6.0], [9.0, 2.0]]
+preds = model.predict(test)
+print("Predictions: {preds}")
+
+# Metrics
+print("MSE: {ml.mse(preds, [65.0, 90.0])}")`,
+
+  nn: `# Neural Networks — zero TensorFlow/PyTorch
+# XOR problem solved with backpropagation
+import nn
+
+# Build the network
+model = nn.sequential()
+model.add(nn.dense(2, 8, "relu"))
+model.add(nn.dense(8, 4, "relu"))
+model.add(nn.dense(4, 1, "sigmoid"))
+model.compile("mse", 0.1)
+
+model.summary()
+
+# XOR training data
+# [0,0]=0  [0,1]=1  [1,0]=1  [1,1]=0
+x = [0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0]
+y = [0.0, 1.0, 1.0, 0.0]
+
+# Train
+model.fit(x, y, 2, 1, 200, 4)
+
+# Predict
+print("0 XOR 0 = {model.predict([0.0, 0.0])}")
+print("0 XOR 1 = {model.predict([0.0, 1.0])}")
+print("1 XOR 0 = {model.predict([1.0, 0.0])}")
+print("1 XOR 1 = {model.predict([1.0, 1.0])}")`,
+
+  tensor: `# Tensor Math — zero NumPy
+# Compiled to native C++ matrix operations
+import tensor
+
+# Create tensors
+a = tensor.eye(3)
+print("Identity 3x3:")
+print(a)
+
+b = tensor.random(3, 3)
+print("Random 3x3:")
+print(b)
+
+# Matrix multiply
+c = tensor.matmul(a, b)
+print("I * B = B:")
+print(c)
+
+# Operations
+print("Sum: {tensor.sum(b)}")
+print("Mean: {tensor.mean(b)}")
+
+# 2x2 determinant and inverse
+m = tensor.create([1.0, 2.0, 3.0, 4.0]).reshape(2, 2)
+print("Matrix:")
+print(m)
+print("Det: {tensor.det(m)}")
+print("Inverse:")
+print(tensor.inverse(m))`,
+
+  test: `# Testing Framework — zero pytest
+# Built-in test runner with colored output
+import test
+
+test.run("arithmetic", fn()
+    test.eq(2 + 2, 4)
+    test.eq(10 * 3, 30)
+    test.neq(1, 2)
+)
+
+test.run("comparisons", fn()
+    test.gt(10, 5)
+    test.lt(3, 8)
+    test.gte(5, 5)
+    test.lte(3, 5)
+    test.ok(true)
+)
+
+test.run("strings", fn()
+    test.eq("hello", "hello")
+    test.neq("pyro", "python")
+)
+
+test.run("this should fail", fn()
+    test.eq(1, 2)
+)
+
+test.summary()`,
+
+  ai: `# AI — first language with built-in LLM
+# No pip install openai. No API keys. Just import ai.
+import ai
+
+# One line — chat with an LLM
+response = ai.chat("What is 2+2? Answer in one word.")
+print("AI says: {response}")
+
+# Translate
+french = ai.translate("Hello, how are you?", "French")
+print("French: {french}")
+
+# Classify
+label = ai.classify("I love this product!", ["positive", "negative", "neutral"])
+print("Sentiment: {label}")
+
+# Generate Pyro code
+code = ai.generate_code("function that checks if a number is prime")
+print("Generated code:")
+print(code)`
 };
 
 const editor = document.getElementById('code-editor');
