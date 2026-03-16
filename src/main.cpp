@@ -780,20 +780,34 @@ int main(int argc, char* argv[]) {
     if (command == "update") {
         std::cout << "Updating Pyro..." << std::endl;
 #ifdef _WIN32
-        // Get the path of this executable
         char exe_path[MAX_PATH];
         GetModuleFileNameA(NULL, exe_path, MAX_PATH);
         std::string dest(exe_path);
-        // Download to temp, then replace
-        std::string cmd = "powershell -ExecutionPolicy Bypass -Command \""
+        std::string tmp_exe = get_temp_dir() + "pyro_update.exe";
+        std::string bat = get_temp_dir() + "pyro_update.bat";
+        // Download new binary
+        std::string dl = "powershell -ExecutionPolicy Bypass -Command \""
             "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; "
             "$ProgressPreference = 'SilentlyContinue'; "
-            "$tmp = \\\"$env:TEMP\\\\pyro_update.exe\\\"; "
-            "Invoke-WebRequest -Uri 'https://aravindlabs.tech/pyro-lang/bin/pyro-windows-x86_64.exe' -OutFile $tmp -UseBasicParsing; "
-            "Copy-Item $tmp \\\"" + dest + "\\\" -Force; "
-            "Remove-Item $tmp -Force; "
-            "Write-Host 'Updated successfully!'\"";
-        std::system(cmd.c_str());
+            "Invoke-WebRequest -Uri 'https://aravindlabs.tech/pyro-lang/bin/pyro-windows-x86_64.exe' "
+            "-OutFile '" + tmp_exe + "' -UseBasicParsing\"";
+        int ret = std::system(dl.c_str());
+        if (ret != 0) {
+            std::cerr << "Download failed. Check your internet connection." << std::endl;
+            return 1;
+        }
+        // Write a batch script that waits for us to exit, then replaces the exe
+        std::ofstream bf(bat);
+        bf << "@echo off\r\n";
+        bf << "timeout /t 1 /nobreak >nul\r\n";
+        bf << "copy /y \"" << tmp_exe << "\" \"" << dest << "\" >nul\r\n";
+        bf << "del \"" << tmp_exe << "\" >nul 2>&1\r\n";
+        bf << "echo Updated successfully!\r\n";
+        bf << "del \"%~f0\" >nul 2>&1\r\n";
+        bf.close();
+        // Launch the batch script detached and exit
+        std::system(("start /b cmd /c \"" + bat + "\"").c_str());
+        std::cout << "Replacing binary... done in 2 seconds." << std::endl;
 #else
         std::system("curl -fsSL https://aravindlabs.tech/pyro-lang/install.sh | bash");
 #endif
