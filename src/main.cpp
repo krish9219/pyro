@@ -108,9 +108,9 @@ std::vector<pyro::StmtPtr> resolve_imports(
 }
 
 void print_version() {
-    std::cout << "Pyro Programming Language v" << pyro::runtime::VERSION << "\n";
-    std::cout << "Created by " << pyro::runtime::AUTHOR << "\n";
-    std::cout << "Transpiles to C++ for native performance.\n";
+    std::cout << "Pyro Programming Language v" << pyro::runtime::VERSION << std::endl;
+    std::cout << "Created by " << pyro::runtime::AUTHOR << std::endl;
+    std::cout << "Transpiles to C++ for native performance." << std::endl;
 }
 
 void print_usage() {
@@ -187,11 +187,32 @@ std::string detect_link_flags(const std::string& cpp_code) {
     return flags;
 }
 
+std::string get_temp_dir() {
+#ifdef _WIN32
+    const char* tmp = std::getenv("TEMP");
+    if (!tmp) tmp = std::getenv("TMP");
+    if (!tmp) tmp = ".";
+    std::string dir(tmp);
+    if (!dir.empty() && dir.back() != '\\' && dir.back() != '/') dir += '\\';
+    return dir;
+#else
+    return "/tmp/";
+#endif
+}
+
 std::string detect_compiler() {
+#ifdef _WIN32
+    if (std::system("g++ --version > NUL 2>&1") == 0) return "g++";
+    if (std::system("clang++ --version > NUL 2>&1") == 0) return "clang++";
+    // Try to find cl.exe via Developer Command Prompt
+    if (std::system("cl > NUL 2>&1") == 0) return "cl";
+    return "g++"; // fallback
+#else
     if (std::system("g++ --version > /dev/null 2>&1") == 0) return "g++";
     if (std::system("clang++ --version > /dev/null 2>&1") == 0) return "clang++";
     if (std::system("c++ --version > /dev/null 2>&1") == 0) return "c++";
     return "g++"; // fallback
+#endif
 }
 
 void cmd_build(const std::string& source_path, const std::string& source) {
@@ -200,8 +221,12 @@ void cmd_build(const std::string& source_path, const std::string& source) {
     // Write temporary C++ file
     fs::path src(source_path);
     std::string base_name = src.stem().string();
-    std::string tmp_cpp = "/tmp/pyro_" + base_name + ".cpp";
+    std::string tmp_cpp = get_temp_dir() + "pyro_" + base_name + ".cpp";
+#ifdef _WIN32
+    std::string output_bin = base_name + ".exe";
+#else
     std::string output_bin = base_name;
+#endif
 
     // Check pyro.toml for project name
     if (fs::exists("pyro.toml")) {
@@ -243,8 +268,12 @@ void cmd_run(const std::string& source_path, const std::string& source) {
     // Write temporary C++ file
     fs::path src(source_path);
     std::string base_name = src.stem().string();
-    std::string tmp_cpp = "/tmp/pyro_" + base_name + ".cpp";
-    std::string tmp_bin = "/tmp/pyro_" + base_name;
+    std::string tmp_cpp = get_temp_dir() + "pyro_" + base_name + ".cpp";
+#ifdef _WIN32
+    std::string tmp_bin = get_temp_dir() + "pyro_" + base_name + ".exe";
+#else
+    std::string tmp_bin = get_temp_dir() + "pyro_" + base_name;
+#endif
 
     std::ofstream tmp(tmp_cpp);
     tmp << cpp_code;
@@ -667,21 +696,31 @@ void cmd_repl() {
             std::string cpp = compile_to_cpp(test_source);
 
             // Write temp file
-            std::ofstream tmp("/tmp/pyro_repl.cpp");
+            std::string repl_cpp = get_temp_dir() + "pyro_repl.cpp";
+#ifdef _WIN32
+            std::string repl_bin = get_temp_dir() + "pyro_repl.exe";
+            std::string repl_err = get_temp_dir() + "pyro_repl_err.txt";
+            std::string null_redir = " 2>" + repl_err;
+#else
+            std::string repl_bin = get_temp_dir() + "pyro_repl";
+            std::string repl_err = get_temp_dir() + "pyro_repl_err.txt";
+            std::string null_redir = " 2>" + repl_err;
+#endif
+            std::ofstream tmp(repl_cpp);
             tmp << cpp;
             tmp.close();
 
             // Compile
             std::string repl_flags = detect_link_flags(cpp);
             std::string compiler = detect_compiler();
-            int ret = std::system((compiler + " -std=c++20 -O0 -o /tmp/pyro_repl /tmp/pyro_repl.cpp" + repl_flags + " 2>/tmp/pyro_repl_err.txt").c_str());
+            int ret = std::system((compiler + " -std=c++20 -O0 -o " + repl_bin + " " + repl_cpp + repl_flags + null_redir).c_str());
             if (ret != 0) {
-                std::cerr << "Error: compilation failed\n";
-                std::ifstream err("/tmp/pyro_repl_err.txt");
+                std::cerr << "Error: compilation failed" << std::endl;
+                std::ifstream err(repl_err);
                 std::string err_line;
                 while (std::getline(err, err_line)) {
                     if (err_line.find("error:") != std::string::npos) {
-                        std::cerr << "  " << err_line << "\n";
+                        std::cerr << "  " << err_line << std::endl;
                         break;
                     }
                 }
@@ -689,18 +728,25 @@ void cmd_repl() {
             }
 
             // Run
-            std::system("/tmp/pyro_repl 2>&1");
+            std::system((repl_bin + " 2>&1").c_str());
             accumulated = test_source; // Success - keep the code
 
         } catch (const std::exception& e) {
-            std::cerr << "Error: " << e.what() << "\n";
+            std::cerr << "Error: " << e.what() << std::endl;
         }
     }
 
     // Cleanup
-    std::remove("/tmp/pyro_repl.cpp");
-    std::remove("/tmp/pyro_repl");
-    std::remove("/tmp/pyro_repl_err.txt");
+    std::string repl_cpp = get_temp_dir() + "pyro_repl.cpp";
+#ifdef _WIN32
+    std::string repl_bin = get_temp_dir() + "pyro_repl.exe";
+#else
+    std::string repl_bin = get_temp_dir() + "pyro_repl";
+#endif
+    std::string repl_err = get_temp_dir() + "pyro_repl_err.txt";
+    std::remove(repl_cpp.c_str());
+    std::remove(repl_bin.c_str());
+    std::remove(repl_err.c_str());
 
     std::cout << "\nGoodbye!\n";
 }
