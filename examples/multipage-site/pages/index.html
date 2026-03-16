@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Home - PyroSite</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <nav>
+        <a href="/" class="brand">PyroSite</a>
+        <a href="/about">About</a>
+        <a href="/projects">Projects</a>
+        <a href="/contact">Contact</a>
+    </nav>
+
+    <main>
+        <h1>Welcome to PyroSite</h1>
+        <p>A multi-page web app powered by Pyro. Each page is a real .html file served by a Pyro web server.</p>
+
+        <div class="grid">
+            <div class="card">
+                <h3>Fast</h3>
+                <p>Compiles to native C++. This server starts in milliseconds.</p>
+            </div>
+            <div class="card">
+                <h3>Simple</h3>
+                <p>The server is 20 lines of Pyro. Each page is a plain HTML file.</p>
+            </div>
+            <div class="card">
+                <h3>76 Modules</h3>
+                <p>Web, JSON, crypto, data science — all built in. No pip install.</p>
+            </div>
+            <div class="card">
+                <h3>Cross-Platform</h3>
+                <p>Same code runs on Windows, Linux, and macOS.</p>
+            </div>
+        </div>
+
+        <div id="stats"></div>
+    </main>
+
+    <footer>Built with P.Y.R.O — Performance You Really Own</footer>
+    <script src="/static/app.js"></script>
+</body>
+</html>

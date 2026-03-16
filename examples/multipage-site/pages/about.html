@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>About - PyroSite</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <nav>
+        <a href="/" class="brand">PyroSite</a>
+        <a href="/about">About</a>
+        <a href="/projects">Projects</a>
+        <a href="/contact">Contact</a>
+    </nav>
+
+    <main>
+        <h1>About Pyro</h1>
+        <p><strong>P.Y.R.O</strong> — Performance You Really Own</p>
+        <p>Pyro is a compiled programming language created by Aravind Pilla. It transpiles to C++20, giving you Python-like simplicity with native performance.</p>
+
+        <h2>Why Pyro?</h2>
+        <ul>
+            <li>23 keywords (Python has 35+)</li>
+            <li>76 built-in modules — no package manager needed</li>
+            <li>10-100x faster than Python</li>
+            <li>Built-in web server, JSON, crypto, data science</li>
+            <li>One-line install on any OS</li>
+        </ul>
+
+        <h2>Benchmarks</h2>
+        <table>
+            <tr><th>Test</th><th>Pyro</th><th>Python</th><th>Speedup</th></tr>
+            <tr><td>Fibonacci(35)</td><td>22 ms</td><td>1,740 ms</td><td>79x</td></tr>
+            <tr><td>Sum 0..10M</td><td>0 ms</td><td>930 ms</td><td>instant</td></tr>
+            <tr><td>Nested 200^3 loop</td><td>0 ms</td><td>549 ms</td><td>instant</td></tr>
+            <tr><td>100K string ops</td><td>17 ms</td><td>20 ms</td><td>~same</td></tr>
+        </table>
+    </main>
+
+    <footer>Built with P.Y.R.O — Performance You Really Own</footer>
+    <script src="/static/app.js"></script>
+</body>
+</html>
