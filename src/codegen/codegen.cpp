@@ -589,14 +589,15 @@ std::string CodeGenerator::generate(const Program& program, const std::string& s
     if (imports_.count("web")) {
         emit_line("#include <fstream>");
         emit_line("#include <filesystem>");
-#ifdef _WIN32
+        emit_line("#ifdef _WIN32");
         emit_line("#include <winsock2.h>");
         emit_line("#include <ws2tcpip.h>");
-#else
+        emit_line("#pragma comment(lib, \"ws2_32.lib\")");
+        emit_line("#else");
         emit_line("#include <sys/socket.h>");
         emit_line("#include <netinet/in.h>");
         emit_line("#include <unistd.h>");
-#endif
+        emit_line("#endif");
     }
     if (imports_.count("crypto")) {
         emit_line("#include <random>");
@@ -1724,9 +1725,16 @@ void CodeGenerator::emit_import(const ImportStmt& stmt) {
         emit_line("");
         emit_line("void listen(int port) {");
         indent();
+        emit_line("#ifdef _WIN32");
+        emit_line("WSADATA wsa; WSAStartup(MAKEWORD(2,2), &wsa);");
+        emit_line("#endif");
         emit_line("int server_fd = socket(AF_INET, SOCK_STREAM, 0);");
         emit_line("int opt = 1;");
+        emit_line("#ifdef _WIN32");
+        emit_line("setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, (const char*)&opt, sizeof(opt));");
+        emit_line("#else");
         emit_line("setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));");
+        emit_line("#endif");
         emit_line("struct sockaddr_in addr;");
         emit_line("addr.sin_family = AF_INET;");
         emit_line("addr.sin_addr.s_addr = INADDR_ANY;");
@@ -1737,11 +1745,19 @@ void CodeGenerator::emit_import(const ImportStmt& stmt) {
         emit_line("while (true) {");
         indent();
         emit_line("struct sockaddr_in client_addr;");
+        emit_line("#ifdef _WIN32");
+        emit_line("int client_len = sizeof(client_addr);");
+        emit_line("#else");
         emit_line("socklen_t client_len = sizeof(client_addr);");
+        emit_line("#endif");
         emit_line("int client_fd = accept(server_fd, (struct sockaddr*)&client_addr, &client_len);");
         emit_line("if (client_fd < 0) continue;");
         emit_line("char buf[8192] = {0};");
+        emit_line("#ifdef _WIN32");
+        emit_line("recv(client_fd, buf, sizeof(buf)-1, 0);");
+        emit_line("#else");
         emit_line("::read(client_fd, buf, sizeof(buf)-1);");
+        emit_line("#endif");
         emit_line("std::string raw(buf);");
         emit_line("Request req = parse_request(raw);");
         emit_line("// Run middlewares");
@@ -1770,8 +1786,13 @@ void CodeGenerator::emit_import(const ImportStmt& stmt) {
         emit_line("else if (file_path.find(\".svg\") != std::string::npos) ct = \"image/svg+xml\";");
         emit_line("else if (file_path.find(\".txt\") != std::string::npos) ct = \"text/plain\";");
         emit_line("std::string http_resp = \"HTTP/1.1 200 OK\\r\\nContent-Type: \" + ct + \"\\r\\nContent-Length: \" + std::to_string(content.size()) + \"\\r\\nConnection: close\\r\\n\\r\\n\" + content;");
+        emit_line("#ifdef _WIN32");
+        emit_line("send(client_fd, http_resp.c_str(), http_resp.size(), 0);");
+        emit_line("closesocket(client_fd);");
+        emit_line("#else");
         emit_line("::write(client_fd, http_resp.c_str(), http_resp.size());");
         emit_line("::close(client_fd);");
+        emit_line("#endif");
         emit_line("static_handled = true;");
         emit_line("break;");
         dedent();
@@ -1809,8 +1830,13 @@ void CodeGenerator::emit_import(const ImportStmt& stmt) {
         emit_line("    \"Content-Type: \" + res.content_type + \"\\r\\n\"");
         emit_line("    \"Content-Length: \" + std::to_string(res.body.size()) + \"\\r\\n\"");
         emit_line("    \"Connection: close\\r\\n\\r\\n\" + res.body;");
+        emit_line("#ifdef _WIN32");
+        emit_line("send(client_fd, http.c_str(), http.size(), 0);");
+        emit_line("closesocket(client_fd);");
+        emit_line("#else");
         emit_line("::write(client_fd, http.c_str(), http.size());");
         emit_line("close(client_fd);");
+        emit_line("#endif");
         dedent();
         emit_line("}");
         dedent();

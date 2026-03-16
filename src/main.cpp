@@ -192,6 +192,9 @@ std::string detect_link_flags(const std::string& cpp_code) {
     if (cpp_code.find("openssl/") != std::string::npos) flags += " -lssl -lcrypto";
     if (cpp_code.find("<thread>") != std::string::npos) flags += " -lpthread";
     if (cpp_code.find("<filesystem>") != std::string::npos) flags += " -lstdc++fs";
+#ifdef _WIN32
+    if (cpp_code.find("winsock2.h") != std::string::npos) flags += " -lws2_32";
+#endif
     return flags;
 }
 
