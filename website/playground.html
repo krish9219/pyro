@@ -353,98 +353,125 @@
 <script>
 // Example code samples
 const EXAMPLES = {
-  hello: `# Hello World in Pyro
-print("Hello from Pyro!")
-print("Welcome to the Playground!")
+  hello: `# Pyro — no main(), no imports, no types, no semicolons
+# Python needs: def, colon, f-string prefix
+# Pyro just works:
 
 name = "World"
-print("Hello, {name}!")`,
+age = 25
+print("Hello, {name}! You are {age} years old.")
 
-  fibonacci: `# Fibonacci with timing
+# Ranges: 0..5 (not range(5))
+for i in 0..5
+    print("Count: {i}")
+
+# Functions: fn (not def), no colon
+fn greet(who)
+    return "Welcome, {who}!"
+
+print(greet("Aravind"))`,
+
+  fibonacci: `# 79x faster than Python — compiled to native C++
 import time
 
+# fn, not def. No colon. No type hints.
 fn fib(n)
     if n <= 1
         return n
     return fib(n - 1) + fib(n - 2)
 
+# {expr} interpolation — no f-prefix needed
 start = time.now()
 for i in 0..15
     print("fib({i}) = {fib(i)}")
-elapsed = time.now() - start
-print("Completed in {elapsed} ms")`,
 
-  pipes: `# Pipe Operator with Lambdas
+elapsed = time.now() - start
+print("Done in {elapsed} ms — try this in Python!")`,
+
+  pipes: `# Pipe operator |> — data flows left to right
+# Python doesn't have this. Period.
+
 nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-# Filter even numbers
+# |x| lambda — shorter than Python's lambda x:
 evens = nums |> filter(|x| x % 2 == 0)
 print("Evens: {evens}")
 
-# Square all numbers
 squared = nums |> map(|x| x * x)
 print("Squared: {squared}")
 
-# Chain: filter then map
+# Chain pipes — reads like English
 result = nums |> filter(|x| x > 5) |> map(|x| x * 2)
-print("Filtered & doubled: {result}")
+print("Filter >5, double: {result}")
 
 # Lambda as variable
-add_one = |x| x + 1
-print("5 + 1 = {add_one(5)}")`,
+triple = |x| x * 3
+print("7 tripled = {triple(7)}")`,
 
-  strings: `# String Interpolation
-name = "Pyro"
-version = "1.0.0"
-author = "Aravind Pilla"
+  strings: `# String interpolation — no f"" prefix needed
+# Python: f"Hello {name}"
+# Pyro:   "Hello {name}"
 
-print("Language: {name}")
-print("Version: {version}")
-print("Creator: {author}")
+lang = "Pyro"
+speed = 79
+creator = "Aravind Pilla"
 
-# String operations
-msg = "hello pyro"
-print(msg.upper())
-print(msg.split(" "))
-print("Pyro".repeat(3))`,
+print("{lang} is {speed}x faster than Python")
+print("Created by {creator}")
 
-  lists: `# List Operations with Lambdas
+# Expression interpolation
+print("2 + 2 = {2 + 2}")
+print("10 > 5 is {10 > 5}")
+
+# mut = mutable, bare = immutable
+mut counter = 0
+for i in 0..5
+    counter = counter + 1
+print("Counter: {counter}")`,
+
+  lists: `# Lists + lambdas + pipes — Python can't do this
 nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-# Map: transform each element
+# |> pipe + |x| lambda — Pyro exclusive
 doubled = nums |> map(|x| x * 2)
 print("Doubled: {doubled}")
 
-# Filter: keep matching elements
 big = nums |> filter(|x| x > 7)
 print("Greater than 7: {big}")
 
-# Chain operations
-result = nums |> filter(|x| x % 2 == 0) |> map(|x| x * x)
-print("Even squares: {result}")
+# Chain: filter even, then square
+even_squares = nums |> filter(|x| x % 2 == 0) |> map(|x| x * x)
+print("Even squares: {even_squares}")
 
-# Basic list operations
+# Built-in methods — no import needed
 print("Sum: {nums.sum()}")
-print("Length: {nums.len()}")
-print("Min: {nums.min()}")
-print("Max: {nums.max()}")`,
+print("Min: {nums.min()}, Max: {nums.max()}")
+print("Length: {nums.len()}")`,
 
-  math: `# Math Module
+  math: `# 76 built-in modules — zero pip install
 import math
+import time
 
-print("Pi: {math.PI}")
-print("E:  {math.E}")
+# Dot notation: math.PI (not math::PI)
+print("Pi:  {math.PI}")
+print("E:   {math.E}")
 print("Tau: {math.TAU}")
 
-# Functions
 print("sqrt(144) = {math.sqrt(144)}")
-print("abs(-42) = {math.abs(-42)}")
 print("pow(2, 10) = {math.pow(2, 10)}")
+print("abs(-42) = {math.abs(-42)}")
 
-# Trigonometry
-angle = math.PI / 4.0
-print("sin(pi/4) = {math.sin(angle)}")
-print("cos(pi/4) = {math.cos(angle)}")`
+# Benchmark — native C++ speed
+fn compute()
+    mut sum = 0
+    for i in 0..1000000
+        sum = sum + i
+    return sum
+
+start = time.now()
+result = compute()
+elapsed = time.now() - start
+print("Sum 0..1M = {result} in {elapsed} ms")`
 };
 
 const editor = document.getElementById('code-editor');
