@@ -55,14 +55,14 @@
           </div>
           <div class="tab-content" data-tab-content="qi-macos">
             <div class="install-cmd">
-              <code>git clone https://github.com/krish9219/pyro.git && cd pyro && ./build.sh</code>
+              <code>curl -fsSL https://aravindlabs.tech/pyro-lang/install.sh | bash</code>
               <button class="copy-inline">Copy</button>
             </div>
           </div>
           <div class="tab-content" data-tab-content="qi-windows">
             <div class="install-cmd">
-              <code>git clone https://github.com/krish9219/pyro.git; cd pyro; mkdir build; cd build; cmake ..; cmake --build . --config Release</code>
-              <p style="font-size:0.8rem;color:var(--text-secondary);margin-top:6px;">Requires: Git, CMake, Visual Studio Build Tools. See <a href="#windows" style="color:var(--accent)">full guide below</a>.</p>
+              <code>irm https://aravindlabs.tech/pyro-lang/install.ps1 | iex</code>
+              <p style="font-size:0.8rem;color:var(--text-secondary);margin-top:6px;">Automatic: installs Git, CMake, Build Tools if needed. Run as Administrator.</p>
               <button class="copy-inline">Copy</button>
             </div>
           </div>
