@@ -374,16 +374,24 @@ for i in 0..15
 elapsed = time.now() - start
 print("Completed in {elapsed} ms")`,
 
-  pipes: `# Pipe Operator
+  pipes: `# Pipe Operator with Lambdas
 nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-print("Numbers: {nums}")
-print("Sum: {nums.sum()}")
-print("Length: {nums.len()}")
-print("Min: {nums.min()}")
-print("Max: {nums.max()}")
-print("Sorted: {nums.sort()}")
-print("Reversed: {nums.reverse()}")`,
+# Filter even numbers
+evens = nums |> filter(|x| x % 2 == 0)
+print("Evens: {evens}")
+
+# Square all numbers
+squared = nums |> map(|x| x * x)
+print("Squared: {squared}")
+
+# Chain: filter then map
+result = nums |> filter(|x| x > 5) |> map(|x| x * 2)
+print("Filtered & doubled: {result}")
+
+# Lambda as variable
+add_one = |x| x + 1
+print("5 + 1 = {add_one(5)}")`,
 
   strings: `# String Interpolation
 name = "Pyro"
@@ -400,25 +408,26 @@ print(msg.upper())
 print(msg.split(" "))
 print("Pyro".repeat(3))`,
 
-  lists: `# List Operations
+  lists: `# List Operations with Lambdas
 nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-print("List: {nums}")
-print("Length: {nums.len()}")
+# Map: transform each element
+doubled = nums |> map(|x| x * 2)
+print("Doubled: {doubled}")
+
+# Filter: keep matching elements
+big = nums |> filter(|x| x > 7)
+print("Greater than 7: {big}")
+
+# Chain operations
+result = nums |> filter(|x| x % 2 == 0) |> map(|x| x * x)
+print("Even squares: {result}")
+
+# Basic list operations
 print("Sum: {nums.sum()}")
-
-# Push and pop
-mut items = [10, 20, 30]
-items.push(40)
-print("After push: {items}")
-
-# Joining
-words = ["Hello", "from", "Pyro"]
-print(words.join(" "))
-
-# Contains
-print("Has 5: {nums.contains(5)}")
-print("Has 99: {nums.contains(99)}")`,
+print("Length: {nums.len()}")
+print("Min: {nums.min()}")
+print("Max: {nums.max()}")`,
 
   math: `# Math Module
 import math

@@ -711,6 +711,25 @@ ExprPtr Parser::parse_primary() {
     if (check(TokenType::FN)) {
         return parse_lambda();
     }
+    // |x| expr  or  |x, y| expr  — short lambda syntax
+    if (check(TokenType::PIPE)) {
+        advance(); // skip opening |
+        std::vector<std::pair<std::string, std::string>> params;
+        if (!check(TokenType::PIPE)) {
+            std::string pname = expect(TokenType::IDENTIFIER, "Expected parameter name").value;
+            params.push_back({pname, ""});
+            while (match(TokenType::COMMA)) {
+                pname = expect(TokenType::IDENTIFIER, "Expected parameter name").value;
+                params.push_back({pname, ""});
+            }
+        }
+        expect(TokenType::PIPE, "Expected closing '|' in lambda");
+        ExprPtr body = parse_expression();
+        LambdaExpr lambda;
+        lambda.params = params;
+        lambda.body = body;
+        return std::make_shared<Expression>(std::move(lambda));
+    }
 
     error("Unexpected token: " + current().value);
 }
