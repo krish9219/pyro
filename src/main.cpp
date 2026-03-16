@@ -10,6 +10,16 @@
 #include <unordered_map>
 #include <chrono>
 #include <algorithm>
+#ifdef _WIN32
+  #include <process.h>
+  #define popen _popen
+  #define pclose _pclose
+  #ifndef WEXITSTATUS
+    #define WEXITSTATUS(x) (x)
+  #endif
+#else
+  #include <sys/wait.h>
+#endif
 #include "lexer/lexer.h"
 #include "parser/parser.h"
 #include "codegen/codegen.h"
