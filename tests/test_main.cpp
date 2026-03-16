@@ -639,9 +639,14 @@ TEST(codegen_web_includes) {
     auto program = parser.parse();
     CodeGenerator codegen;
     std::string cpp = codegen.generate(program);
-    ASSERT(cpp.find("#include <sys/socket.h>") != std::string::npos);
-    ASSERT(cpp.find("#include <netinet/in.h>") != std::string::npos);
-    ASSERT(cpp.find("#include <unistd.h>") != std::string::npos);
+    // Platform-agnostic: both Windows and POSIX includes should be present via #ifdef
+    ASSERT(cpp.find("winsock2.h") != std::string::npos);
+    ASSERT(cpp.find("sys/socket.h") != std::string::npos);
+    // Socket abstraction layer
+    ASSERT(cpp.find("namespace pyro_sock") != std::string::npos);
+    ASSERT(cpp.find("sock_read") != std::string::npos);
+    ASSERT(cpp.find("sock_write") != std::string::npos);
+    ASSERT(cpp.find("sock_close") != std::string::npos);
 }
 
 TEST(codegen_data_includes) {
@@ -876,7 +881,8 @@ TEST(codegen_map_get) {
     auto program = parser.parse();
     CodeGenerator codegen;
     std::string cpp = codegen.generate(program);
-    ASSERT(cpp.find("pyro::get(") != std::string::npos);
+    // get() is now a direct method call (not intercepted) to avoid conflict with web app.get()
+    ASSERT(cpp.find(".get(") != std::string::npos);
 }
 
 // Result type
