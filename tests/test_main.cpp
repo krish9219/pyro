@@ -1121,9 +1121,10 @@ TEST(codegen_db_import) {
     std::string cpp = codegen.generate(program);
     ASSERT(cpp.find("namespace pyro_db") != std::string::npos);
     ASSERT(cpp.find("struct Row") != std::string::npos);
-    ASSERT(cpp.find("struct Table") != std::string::npos);
-    ASSERT(cpp.find("struct Database") != std::string::npos);
-    ASSERT(cpp.find("Database connect(") != std::string::npos);
+    ASSERT(cpp.find("struct Connection") != std::string::npos);
+    ASSERT(cpp.find("sqlite3*") != std::string::npos);
+    ASSERT(cpp.find("Connection connect(") != std::string::npos);
+    ASSERT(cpp.find("#include \"sqlite3.h\"") != std::string::npos);
 }
 
 TEST(codegen_db_member) {

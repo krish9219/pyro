@@ -18,6 +18,7 @@ private:
     std::unordered_set<std::string> enum_names_;
     std::unordered_set<std::string> async_functions_;
     std::unordered_set<std::string> declared_vars_;
+    std::unordered_set<std::string> db_row_vars_;
     bool has_main_;
     std::string source_file_;
 

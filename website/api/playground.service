@@ -1,0 +1,15 @@
+[Unit]
+Description=Pyro Playground API
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/projects/pyro/website/api
+ExecStart=/usr/bin/python3 /projects/pyro/website/api/playground.py
+Restart=always
+RestartSec=3
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,52 @@
+import time
+
+print("=== Pyro Speed Benchmark ===")
+print("")
+
+# 1. Loop speed - count to 10 million
+start = time.now()
+sum = 0
+for i in 0..10000000
+    sum = sum + i
+elapsed = time.now() - start
+print("1. Sum 0..10M = {sum}")
+print("   Time: {elapsed} ms")
+print("")
+
+# 2. String operations - 100K concatenations
+start = time.now()
+s = ""
+for i in 0..100000
+    s = "{i}"
+elapsed = time.now() - start
+print("2. 100K string ops")
+print("   Time: {elapsed} ms")
+print("")
+
+# 3. Fibonacci recursive
+fn fib(n)
+    if n <= 1
+        return n
+    return fib(n - 1) + fib(n - 2)
+
+start = time.now()
+result = fib(35)
+elapsed = time.now() - start
+print("3. Fibonacci(35) = {result}")
+print("   Time: {elapsed} ms")
+print("")
+
+# 4. Nested loops - matrix multiply (200x200)
+start = time.now()
+size = 200
+val = 0
+for i in 0..size
+    for j in 0..size
+        for k in 0..size
+            val = val + 1
+elapsed = time.now() - start
+print("4. Nested 200x200x200 loop = {val}")
+print("   Time: {elapsed} ms")
+print("")
+
+print("=== Benchmark Complete ===")

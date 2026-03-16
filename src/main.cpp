@@ -224,8 +224,52 @@ void cmd_emit(const std::string& source, const std::string& source_path = "") {
 std::string detect_link_flags(const std::string& cpp_code) {
     std::string flags;
     if (cpp_code.find("openssl/") != std::string::npos) flags += " -lssl -lcrypto";
+    if (cpp_code.find("curl/curl.h") != std::string::npos) flags += " -lcurl";
     if (cpp_code.find("<thread>") != std::string::npos) flags += " -lpthread";
     if (cpp_code.find("<filesystem>") != std::string::npos) flags += " -lstdc++fs";
+    if (cpp_code.find("sqlite3.h") != std::string::npos) {
+        // Find sqlite3.c source
+        std::vector<std::string> sqlite_paths;
+#ifdef _WIN32
+        const char* appdata = std::getenv("LOCALAPPDATA");
+        if (appdata) sqlite_paths.push_back(std::string(appdata) + "\\Pyro\\vendor\\sqlite3.c");
+#endif
+        const char* home = std::getenv("HOME");
+        if (home) sqlite_paths.push_back(std::string(home) + "/.pyro/vendor/sqlite3.c");
+        sqlite_paths.push_back("/usr/local/lib/pyro/vendor/sqlite3.c");
+        {
+            auto exe_dir = fs::path("/usr/local/bin").parent_path();
+            sqlite_paths.push_back((exe_dir / ".." / "lib" / "pyro" / "vendor" / "sqlite3.c").string());
+        }
+        sqlite_paths.push_back("/projects/pyro/vendor/sqlite3.c");
+
+        std::string sqlite_c, sqlite_inc;
+        for (const auto& p : sqlite_paths) {
+            if (fs::exists(p)) {
+                sqlite_c = p;
+                sqlite_inc = fs::path(p).parent_path().string();
+                break;
+            }
+        }
+        if (!sqlite_c.empty()) {
+            // Pre-compile sqlite3.c as C to a cached .o file (sqlite3.c is C, not C++)
+            std::string sqlite_o = sqlite_inc + "/sqlite3.o";
+            if (!fs::exists(sqlite_o)) {
+                std::string cc = "cc";
+                if (std::system("cc --version > /dev/null 2>&1") != 0) cc = "gcc";
+                std::string compile_sqlite = cc + " -c -O2 -o " + sqlite_o + " " + sqlite_c + " -lpthread -ldl 2>/dev/null";
+                std::system(compile_sqlite.c_str());
+            }
+            flags += " -I" + sqlite_inc;
+            if (fs::exists(sqlite_o)) {
+                flags += " " + sqlite_o;
+            } else {
+                // Fallback: try compiling as C via -x c flag
+                flags += " -x c " + sqlite_c + " -x c++";
+            }
+            flags += " -lpthread -ldl";
+        }
+    }
 #ifdef _WIN32
     if (cpp_code.find("winsock2.h") != std::string::npos) flags += " -lws2_32";
 #endif

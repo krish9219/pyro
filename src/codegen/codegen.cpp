@@ -580,6 +580,7 @@ std::string CodeGenerator::generate(const Program& program, const std::string& s
         if (!imports_.count("io") && !imports_.count("data") && !imports_.count("img") && !imports_.count("fs") && !imports_.count("path") && !imports_.count("config") && !imports_.count("csv")) {
             emit_line("#include <fstream>");
         }
+        emit_line("#include \"sqlite3.h\"");
     }
     if (imports_.count("cache")) {
         if (!imports_.count("time")) {
@@ -696,7 +697,13 @@ std::string CodeGenerator::generate(const Program& program, const std::string& s
         emit_line("  #include <arpa/inet.h>");
         emit_line("#endif");
     }
-    if (imports_.count("http") || imports_.count("smtp") || imports_.count("websocket")) {
+    if (imports_.count("http")) {
+        emit_line("#include <curl/curl.h>");
+        if (!imports_.count("io") && !imports_.count("data") && !imports_.count("img") && !imports_.count("viz") && !imports_.count("web") && !imports_.count("db")) {
+            emit_line("#include <fstream>");
+        }
+    }
+    if (imports_.count("smtp") || imports_.count("websocket")) {
         if (!imports_.count("net") && !imports_.count("web")) {
             emit_line("#ifdef _WIN32");
             emit_line("  #include <winsock2.h>");
@@ -850,6 +857,17 @@ void CodeGenerator::emit_let(const LetStmt& stmt) {
         }
     }
 
+    // Track db row variables: if initializer is a .query() call, the result is vector<Row>
+    if (imports_.count("db") && stmt.initializer) {
+        if (auto* call = std::get_if<CallExpr>(&stmt.initializer->node)) {
+            if (auto* mem = std::get_if<MemberExpr>(&call->callee->node)) {
+                if (mem->member == "query") {
+                    db_row_vars_.insert(stmt.name);
+                }
+            }
+        }
+    }
+
     if (stmt.is_mutable || is_future) {
         emit_line("auto " + stmt.name + " = " + emit_expr(stmt.initializer) + ";");
     } else {
@@ -858,6 +876,19 @@ void CodeGenerator::emit_let(const LetStmt& stmt) {
 }
 
 void CodeGenerator::emit_assign(const AssignStmt& stmt) {
+    // Track db row variables: if value is a .query() call, the result is vector<Row>
+    if (imports_.count("db")) {
+        if (auto* id = std::get_if<Identifier>(&stmt.target->node)) {
+            if (auto* call = std::get_if<CallExpr>(&stmt.value->node)) {
+                if (auto* mem = std::get_if<MemberExpr>(&call->callee->node)) {
+                    if (mem->member == "query") {
+                        db_row_vars_.insert(id->name);
+                    }
+                }
+            }
+        }
+    }
+
     // If target is a simple identifier not yet declared, auto-declare it (bare assignment)
     if (auto* id = std::get_if<Identifier>(&stmt.target->node)) {
         if (declared_vars_.find(id->name) == declared_vars_.end()) {
@@ -1064,6 +1095,14 @@ void CodeGenerator::emit_if(const IfStmt& stmt) {
 void CodeGenerator::emit_for(const ForStmt& stmt) {
     // Register loop variable as declared so bare assignments inside don't re-declare it
     declared_vars_.insert(stmt.var_name);
+    // Track db row variables: if iterating over a query result, loop var is a Row
+    if (imports_.count("db")) {
+        if (auto* id = std::get_if<Identifier>(&stmt.iterable->node)) {
+            if (db_row_vars_.count(id->name)) {
+                db_row_vars_.insert(stmt.var_name);
+            }
+        }
+    }
     emit_line("for (auto " + stmt.var_name + " : " + emit_expr(stmt.iterable) + ") {");
     indent();
     for (const auto& s : stmt.body) emit_statement(s);
@@ -2206,10 +2245,16 @@ void CodeGenerator::emit_import(const ImportStmt& stmt) {
     } else if (stmt.module == "db") {
         emit_line("namespace pyro_db {");
         indent();
+        // Row struct with dynamic field access via get()
         emit_line("struct Row {");
         indent();
-        emit_line("std::vector<std::pair<std::string, std::string>> cols;");
-        emit_line("std::string get(const std::string& k) const { for (const auto& [name,val] : cols) if (name == k) return val; return \"\"; }");
+        emit_line("std::unordered_map<std::string, std::string> cols;");
+        emit_line("std::string get(const std::string& key) const {");
+        indent();
+        emit_line("auto it = cols.find(key);");
+        emit_line("return it != cols.end() ? it->second : \"\";");
+        dedent();
+        emit_line("}");
         emit_line("friend std::ostream& operator<<(std::ostream& os, const Row& r) {");
         indent();
         emit_line("os << \"{\"; bool f=true; for (const auto& [k,v] : r.cols) { if (!f) os << \", \"; os << k << \": \" << v; f=false; } return os << \"}\";");
@@ -2218,141 +2263,71 @@ void CodeGenerator::emit_import(const ImportStmt& stmt) {
         dedent();
         emit_line("};");
         emit_line("");
-        emit_line("struct Table {");
+        // Connection struct with real SQLite
+        emit_line("struct Connection {");
         indent();
-        emit_line("std::string name;");
-        emit_line("std::vector<std::string> columns;");
-        emit_line("std::vector<std::vector<std::string>> rows;");
-        emit_line("void insert(const std::vector<std::string>& row) { rows.push_back(row); }");
-        emit_line("std::vector<Row> select_all() const {");
-        indent();
-        emit_line("std::vector<Row> result;");
-        emit_line("for (const auto& r : rows) { Row row; for (size_t i = 0; i < columns.size() && i < r.size(); i++) row.cols.push_back({columns[i], r[i]}); result.push_back(row); }");
-        emit_line("return result;");
-        dedent();
-        emit_line("}");
-        emit_line("int64_t count() const { return rows.size(); }");
+        emit_line("sqlite3* _db = nullptr;");
         emit_line("");
-        // where
-        emit_line("std::vector<Row> where(const std::string& col, const std::string& op, const std::string& value) const {");
+        emit_line("void exec(const std::string& sql) {");
         indent();
-        emit_line("int ci=-1;");
-        emit_line("for(size_t i=0;i<columns.size();i++) if(columns[i]==col) ci=i;");
-        emit_line("std::vector<Row> result;");
-        emit_line("for(auto& r:rows) {");
-        indent();
-        emit_line("bool match=false;");
-        emit_line("if(op==\"==\") match = r[ci]==value;");
-        emit_line("else if(op==\"!=\") match = r[ci]!=value;");
-        emit_line("else if(op==\">\") { try{match=std::stod(r[ci])>std::stod(value);}catch(...){match=r[ci]>value;} }");
-        emit_line("else if(op==\"<\") { try{match=std::stod(r[ci])<std::stod(value);}catch(...){match=r[ci]<value;} }");
-        emit_line("else if(op==\">=\") { try{match=std::stod(r[ci])>=std::stod(value);}catch(...){match=r[ci]>=value;} }");
-        emit_line("else if(op==\"<=\") { try{match=std::stod(r[ci])<=std::stod(value);}catch(...){match=r[ci]<=value;} }");
-        emit_line("if(match) {");
-        indent();
-        emit_line("Row row; for(size_t i=0;i<columns.size()&&i<r.size();i++) row.cols.push_back({columns[i],r[i]});");
-        emit_line("result.push_back(row);");
-        dedent();
-        emit_line("}");
-        dedent();
-        emit_line("}");
-        emit_line("return result;");
+        emit_line("char* err = nullptr;");
+        emit_line("sqlite3_exec(_db, sql.c_str(), nullptr, nullptr, &err);");
+        emit_line("if (err) { std::string msg(err); sqlite3_free(err); throw std::runtime_error(\"SQL error: \" + msg); }");
         dedent();
         emit_line("}");
         emit_line("");
-        // update
-        emit_line("void update(const std::string& col, const std::string& val, const std::string& where_col, const std::string& where_val) {");
+        emit_line("std::vector<Row> query(const std::string& sql) {");
         indent();
-        emit_line("int ci=-1, wi=-1;");
-        emit_line("for(size_t i=0;i<columns.size();i++){if(columns[i]==col)ci=i;if(columns[i]==where_col)wi=i;}");
-        emit_line("for(auto& r:rows) if(r[wi]==where_val) r[ci]=val;");
+        emit_line("std::vector<Row> rows;");
+        emit_line("sqlite3_stmt* stmt;");
+        emit_line("if (sqlite3_prepare_v2(_db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {");
+        indent();
+        emit_line("throw std::runtime_error(std::string(\"SQL error: \") + sqlite3_errmsg(_db));");
+        dedent();
+        emit_line("}");
+        emit_line("int ncols = sqlite3_column_count(stmt);");
+        emit_line("while (sqlite3_step(stmt) == SQLITE_ROW) {");
+        indent();
+        emit_line("Row row;");
+        emit_line("for (int i = 0; i < ncols; i++) {");
+        indent();
+        emit_line("std::string name = sqlite3_column_name(stmt, i);");
+        emit_line("const char* val = (const char*)sqlite3_column_text(stmt, i);");
+        emit_line("row.cols[name] = val ? val : \"\";");
+        dedent();
+        emit_line("}");
+        emit_line("rows.push_back(row);");
+        dedent();
+        emit_line("}");
+        emit_line("sqlite3_finalize(stmt);");
+        emit_line("return rows;");
         dedent();
         emit_line("}");
         emit_line("");
-        // delete_where
-        emit_line("void delete_where(const std::string& col, const std::string& val) {");
-        indent();
-        emit_line("int ci=-1;");
-        emit_line("for(size_t i=0;i<columns.size();i++) if(columns[i]==col) ci=i;");
-        emit_line("rows.erase(std::remove_if(rows.begin(), rows.end(), [&](auto& r){return r[ci]==val;}), rows.end());");
-        dedent();
-        emit_line("}");
-        emit_line("");
-        // order_by
-        emit_line("std::vector<Row> order_by(const std::string& col, bool asc=true) const {");
-        indent();
-        emit_line("auto result = select_all();");
-        emit_line("std::sort(result.begin(), result.end(), [&](auto& a, auto& b){");
-        indent();
-        emit_line("return asc ? a.get(col)<b.get(col) : a.get(col)>b.get(col);");
-        dedent();
-        emit_line("});");
-        emit_line("return result;");
-        dedent();
-        emit_line("}");
+        emit_line("void close() { if (_db) { sqlite3_close(_db); _db = nullptr; } }");
+        emit_line("~Connection() { close(); }");
+        emit_line("Connection() = default;");
+        emit_line("Connection(Connection&& o) noexcept : _db(o._db) { o._db = nullptr; }");
+        emit_line("Connection& operator=(Connection&& o) noexcept { if (this != &o) { close(); _db = o._db; o._db = nullptr; } return *this; }");
+        emit_line("Connection(const Connection&) = delete;");
+        emit_line("Connection& operator=(const Connection&) = delete;");
         dedent();
         emit_line("};");
         emit_line("");
-        emit_line("struct Database {");
+        // connect function
+        emit_line("Connection connect(const std::string& path) {");
         indent();
-        emit_line("std::unordered_map<std::string, Table> tables;");
-        emit_line("Table& create_table(const std::string& name, const std::vector<std::string>& cols) {");
+        emit_line("Connection conn;");
+        emit_line("std::string db_path = path;");
+        emit_line("if (db_path.find(\"sqlite://\") == 0) db_path = db_path.substr(9);");
+        emit_line("if (sqlite3_open(db_path.c_str(), &conn._db) != SQLITE_OK) {");
         indent();
-        emit_line("tables[name] = Table{name, cols, {}}; return tables[name];");
+        emit_line("throw std::runtime_error(std::string(\"Cannot open database: \") + sqlite3_errmsg(conn._db));");
         dedent();
         emit_line("}");
-        emit_line("Table& table(const std::string& name) { return tables.at(name); }");
-        emit_line("bool has_table(const std::string& name) const { return tables.count(name) > 0; }");
-        emit_line("std::vector<std::string> table_names() const { std::vector<std::string> r; for (const auto& [k,v] : tables) r.push_back(k); return r; }");
-        emit_line("");
-        // save
-        emit_line("void save(const std::string& path) const {");
-        indent();
-        emit_line("std::ofstream f(path);");
-        emit_line("for(auto& [name,table]:tables) {");
-        indent();
-        emit_line("f<<\"TABLE \"<<name<<\"\\n\";");
-        emit_line("for(size_t i=0;i<table.columns.size();i++){if(i)f<<\",\";f<<table.columns[i];}");
-        emit_line("f<<\"\\n\";");
-        emit_line("for(auto& row:table.rows){for(size_t i=0;i<row.size();i++){if(i)f<<\",\";f<<row[i];}f<<\"\\n\";}");
-        emit_line("f<<\"---\\n\";");
+        emit_line("return conn;");
         dedent();
         emit_line("}");
-        dedent();
-        emit_line("}");
-        emit_line("");
-        // load (static)
-        emit_line("static Database load(const std::string& path) {");
-        indent();
-        emit_line("Database db; std::ifstream f(path); std::string line;");
-        emit_line("while(std::getline(f,line)) {");
-        indent();
-        emit_line("if(line.substr(0,6)==\"TABLE \") {");
-        indent();
-        emit_line("std::string name=line.substr(6);");
-        emit_line("std::getline(f,line);");
-        emit_line("std::vector<std::string> cols;");
-        emit_line("std::istringstream cs(line); std::string c;");
-        emit_line("while(std::getline(cs,c,',')) cols.push_back(c);");
-        emit_line("auto& t = db.create_table(name, cols);");
-        emit_line("while(std::getline(f,line) && line!=\"---\") {");
-        indent();
-        emit_line("std::vector<std::string> row;");
-        emit_line("std::istringstream rs(line); std::string v;");
-        emit_line("while(std::getline(rs,v,',')) row.push_back(v);");
-        emit_line("t.insert(row);");
-        dedent();
-        emit_line("}");
-        dedent();
-        emit_line("}");
-        dedent();
-        emit_line("}");
-        emit_line("return db;");
-        dedent();
-        emit_line("}");
-        dedent();
-        emit_line("};");
-        emit_line("Database connect(const std::string& name = \":memory:\") { return Database{}; }");
         dedent();
         emit_line("} // namespace pyro_db");
         emit_line("");
@@ -3723,38 +3698,104 @@ void CodeGenerator::emit_import(const ImportStmt& stmt) {
     } else if (stmt.module == "http") {
         emit_line("namespace pyro_http {");
         indent();
-        emit_line("struct Response { int status; std::string body; friend std::ostream& operator<<(std::ostream& os, const Response& r) { return os << \"HTTP \" << r.status; } };");
-        emit_line("Response get(const std::string& host, int port, const std::string& path) {");
+
+        // Response struct
+        emit_line("struct Response {");
         indent();
-        emit_line("int fd = socket(AF_INET, SOCK_STREAM, 0);");
-        emit_line("struct hostent* he = gethostbyname(host.c_str());");
-        emit_line("#ifdef _WIN32");
-        emit_line("if (!he) { closesocket(fd); return {-1,\"DNS failed\"}; }");
-        emit_line("#else");
-        emit_line("if (!he) { ::close(fd); return {-1,\"DNS failed\"}; }");
-        emit_line("#endif");
-        emit_line("struct sockaddr_in addr; addr.sin_family=AF_INET; addr.sin_port=htons(port);");
-        emit_line("std::memcpy(&addr.sin_addr, he->h_addr_list[0], he->h_length);");
-        emit_line("#ifdef _WIN32");
-        emit_line("if (::connect(fd,(struct sockaddr*)&addr,sizeof(addr))<0) { closesocket(fd); return {-1,\"Connect failed\"}; }");
-        emit_line("#else");
-        emit_line("if (::connect(fd,(struct sockaddr*)&addr,sizeof(addr))<0) { ::close(fd); return {-1,\"Connect failed\"}; }");
-        emit_line("#endif");
-        emit_line("std::string req = \"GET \"+path+\" HTTP/1.1\\r\\nHost: \"+host+\"\\r\\nConnection: close\\r\\n\\r\\n\";");
-        emit_line("::send(fd, req.c_str(), req.size(), 0);");
-        emit_line("std::string response; char buf[4096]; int n;");
-        emit_line("while ((n=::recv(fd,buf,sizeof(buf),0))>0) response.append(buf,n);");
-        emit_line("#ifdef _WIN32");
-        emit_line("closesocket(fd);");
-        emit_line("#else");
-        emit_line("::close(fd);");
-        emit_line("#endif");
-        emit_line("Response r; r.status=0;");
-        emit_line("auto sp = response.find(' '); if(sp!=std::string::npos) try{r.status=std::stoi(response.substr(sp+1,3));}catch(...){}");
-        emit_line("auto bs = response.find(\"\\r\\n\\r\\n\"); if(bs!=std::string::npos) r.body=response.substr(bs+4);");
-        emit_line("return r;");
+        emit_line("int status = 0;");
+        emit_line("std::string body;");
+        emit_line("std::unordered_map<std::string, std::string> headers;");
+        emit_line("std::string json_str() { return body; }");
+        emit_line("friend std::ostream& operator<<(std::ostream& os, const Response& r) { return os << \"HTTP \" << r.status; }");
+        dedent();
+        emit_line("};");
+        emit_line("");
+
+        // Write callback for curl
+        emit_line("static size_t _write_cb(void* data, size_t size, size_t nmemb, std::string* out) {");
+        indent();
+        emit_line("out->append((char*)data, size * nmemb);");
+        emit_line("return size * nmemb;");
         dedent();
         emit_line("}");
+        emit_line("");
+
+        // Header callback
+        emit_line("static size_t _header_cb(char* data, size_t size, size_t nmemb, std::unordered_map<std::string, std::string>* headers) {");
+        indent();
+        emit_line("std::string line(data, size * nmemb);");
+        emit_line("auto colon = line.find(':');");
+        emit_line("if (colon != std::string::npos) {");
+        indent();
+        emit_line("std::string key = line.substr(0, colon);");
+        emit_line("std::string val = line.substr(colon + 2);");
+        emit_line("while (!val.empty() && (val.back() == '\\r' || val.back() == '\\n')) val.pop_back();");
+        emit_line("(*headers)[key] = val;");
+        dedent();
+        emit_line("}");
+        emit_line("return size * nmemb;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Core request function
+        emit_line("Response request(const std::string& method, const std::string& url, const std::string& body = \"\", const std::unordered_map<std::string, std::string>& req_headers = {}) {");
+        indent();
+        emit_line("Response resp;");
+        emit_line("CURL* curl = curl_easy_init();");
+        emit_line("if (!curl) throw std::runtime_error(\"Failed to init HTTP client\");");
+        emit_line("");
+        emit_line("curl_easy_setopt(curl, CURLOPT_URL, url.c_str());");
+        emit_line("curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, _write_cb);");
+        emit_line("curl_easy_setopt(curl, CURLOPT_WRITEDATA, &resp.body);");
+        emit_line("curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, _header_cb);");
+        emit_line("curl_easy_setopt(curl, CURLOPT_HEADERDATA, &resp.headers);");
+        emit_line("curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);");
+        emit_line("curl_easy_setopt(curl, CURLOPT_TIMEOUT, 30L);");
+        emit_line("curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1L);");
+        emit_line("");
+        emit_line("if (method == \"POST\") curl_easy_setopt(curl, CURLOPT_POST, 1L);");
+        emit_line("else if (method == \"PUT\") curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, \"PUT\");");
+        emit_line("else if (method == \"DELETE\") curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, \"DELETE\");");
+        emit_line("else if (method == \"PATCH\") curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, \"PATCH\");");
+        emit_line("");
+        emit_line("if (!body.empty()) { curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str()); }");
+        emit_line("");
+        emit_line("struct curl_slist* headers = NULL;");
+        emit_line("for (const auto& [k, v] : req_headers) { headers = curl_slist_append(headers, (k + \": \" + v).c_str()); }");
+        emit_line("if (headers) curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);");
+        emit_line("");
+        emit_line("CURLcode res = curl_easy_perform(curl);");
+        emit_line("if (res != CURLE_OK) { curl_easy_cleanup(curl); if (headers) curl_slist_free_all(headers); throw std::runtime_error(std::string(\"HTTP error: \") + curl_easy_strerror(res)); }");
+        emit_line("");
+        emit_line("long http_code;");
+        emit_line("curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);");
+        emit_line("resp.status = (int)http_code;");
+        emit_line("");
+        emit_line("if (headers) curl_slist_free_all(headers);");
+        emit_line("curl_easy_cleanup(curl);");
+        emit_line("return resp;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Convenience functions
+        emit_line("Response get(const std::string& url) { return request(\"GET\", url); }");
+        emit_line("Response post(const std::string& url, const std::string& body = \"\") { return request(\"POST\", url, body); }");
+        emit_line("Response put(const std::string& url, const std::string& body = \"\") { return request(\"PUT\", url, body); }");
+        emit_line("Response del(const std::string& url) { return request(\"DELETE\", url); }");
+        emit_line("Response patch(const std::string& url, const std::string& body = \"\") { return request(\"PATCH\", url, body); }");
+        emit_line("");
+
+        // Download function
+        emit_line("void download(const std::string& url, const std::string& path) {");
+        indent();
+        emit_line("Response r = get(url);");
+        emit_line("std::ofstream f(path, std::ios::binary);");
+        emit_line("f << r.body;");
+        dedent();
+        emit_line("}");
+
         dedent();
         emit_line("} // namespace pyro_http");
         emit_line("");
@@ -4336,6 +4377,26 @@ std::string CodeGenerator::emit_member(const MemberExpr& expr) {
         if (id->name == "signal") return "pyro_signal::" + expr.member;
         if (id->name == "compress") return "pyro_compress::" + expr.member;
         if (enum_names_.count(id->name)) return id->name + "::" + expr.member;
+        // db Row field access: row.name -> row.get("name")
+        if (imports_.count("db") && db_row_vars_.count(id->name)) {
+            static const std::unordered_set<std::string> row_methods = {"get", "cols"};
+            if (!row_methods.count(expr.member)) {
+                return id->name + ".get(\"" + expr.member + "\")";
+            }
+        }
+    }
+    // db Row field access via index: rows[0].name -> rows[0].get("name")
+    if (imports_.count("db")) {
+        if (auto* idx = std::get_if<IndexExpr>(&expr.object->node)) {
+            if (auto* id = std::get_if<Identifier>(&idx->object->node)) {
+                if (db_row_vars_.count(id->name)) {
+                    static const std::unordered_set<std::string> row_methods = {"get", "cols"};
+                    if (!row_methods.count(expr.member)) {
+                        return emit_expr(expr.object) + ".get(\"" + expr.member + "\")";
+                    }
+                }
+            }
+        }
     }
     return emit_expr(expr.object) + "." + expr.member;
 }
