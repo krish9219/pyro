@@ -1783,7 +1783,11 @@ void CodeGenerator::emit_import(const ImportStmt& stmt) {
         emit_line("while (true) {");
         indent();
         emit_line("struct sockaddr_in client_addr;");
-        emit_line("pyro_sock::socklen_t client_len = sizeof(client_addr);");
+        emit_line("#ifdef _WIN32");
+        emit_line("int client_len = sizeof(client_addr);");
+        emit_line("#else");
+        emit_line("socklen_t client_len = sizeof(client_addr);");
+        emit_line("#endif");
         emit_line("int client_fd = accept(server_fd, (struct sockaddr*)&client_addr, &client_len);");
         emit_line("if (client_fd < 0) continue;");
         emit_line("char buf[8192] = {0};");

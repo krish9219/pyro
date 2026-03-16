@@ -1,0 +1,44 @@
+import web
+
+mut app = web.app()
+
+# Page routes
+app.get("/", fn(req) = web.html(home_page()))
+app.get("/about", fn(req) = web.html(about_page()))
+app.get("/contact", fn(req) = web.html(contact_page()))
+app.get("/projects", fn(req) = web.html(projects_page()))
+
+# API routes
+app.get("/api/stats", fn(req) = web.json("{\"visitors\": 1024, \"projects\": 5, \"languages\": [\"Pyro\", \"C++\", \"Python\"]}"))
+app.get("/api/health", fn(req) = web.json("{\"status\": \"ok\", \"uptime\": \"running\"}"))
+
+# Static files (CSS, JS, images)
+app.serve_static("/static", "static")
+
+print("Multi-page site running!")
+print("http://localhost:3000")
+app.listen(3000)
+
+fn nav()
+    return "<nav style='background:#1a1a2e;padding:12px 24px;display:flex;gap:24px;align-items:center'><a href='/' style='color:#ff6b35;font-weight:700;font-size:1.2rem;text-decoration:none'>PyroSite</a><a href='/about' style='color:#ccc;text-decoration:none'>About</a><a href='/projects' style='color:#ccc;text-decoration:none'>Projects</a><a href='/contact' style='color:#ccc;text-decoration:none'>Contact</a><a href='/api/stats' style='color:#666;text-decoration:none;margin-left:auto;font-size:0.85rem'>API</a></nav>"
+
+fn footer()
+    return "<footer style='margin-top:60px;padding:24px;border-top:1px solid #222;color:#666;text-align:center;font-size:0.85rem'>Built with P.Y.R.O - Performance You Really Own</footer>"
+
+fn head(title)
+    return "<head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>{title} - PyroSite</title><link rel='stylesheet' href='/static/style.css'></head>"
+
+fn layout(title, content)
+    return "<!DOCTYPE html><html>" + head(title) + "<body>" + nav() + "<main style='max-width:800px;margin:0 auto;padding:40px 20px'>" + content + "</main>" + footer() + "<script src='/static/app.js'></script></body></html>"
+
+fn home_page()
+    return layout("Home", "<h1>Welcome to PyroSite</h1><p>A multi-page web app built entirely in Pyro.</p><div style='display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:30px'><div class='card'><h3>Fast</h3><p>Pyro compiles to native C++. This server starts in milliseconds.</p></div><div class='card'><h3>Simple</h3><p>This entire site is one .ro file with clean, readable code.</p></div><div class='card'><h3>76 Modules</h3><p>Web server, JSON, crypto, data science - all built in.</p></div><div class='card'><h3>Cross-Platform</h3><p>Runs on Windows, Linux, and macOS without changes.</p></div></div><div id='stats' style='margin-top:30px'></div>")
+
+fn about_page()
+    return layout("About", "<h1>About Pyro</h1><p><strong>P.Y.R.O</strong> - Performance You Really Own</p><p>Pyro is a compiled programming language created by <strong>Aravind Pilla</strong>. It transpiles to C++20, giving you Python-like simplicity with native performance.</p><h2>Key Features</h2><ul><li>23 keywords (Python has 35+)</li><li>76 built-in modules</li><li>10-100x faster than Python</li><li>Built-in web server, JSON, crypto</li><li>No package manager needed</li></ul><h2>Benchmarks</h2><table><tr><th>Test</th><th>Pyro</th><th>Python</th></tr><tr><td>Fibonacci(35)</td><td>22 ms</td><td>1,740 ms</td></tr><tr><td>Sum 0..10M</td><td>0 ms</td><td>930 ms</td></tr><tr><td>Nested 200^3</td><td>0 ms</td><td>549 ms</td></tr></table>")
+
+fn projects_page()
+    return layout("Projects", "<h1>Projects</h1><div class='card'><h3>Pyro Compiler</h3><p>7,045 lines of C++. 199 tests. 76 modules.</p><a href='https://github.com/krish9219/pyro' style='color:#ff8c42'>View on GitHub</a></div><div class='card'><h3>PyroBot</h3><p>AI chatbot trained on Pyro documentation, powered by NVIDIA LLM.</p><a href='https://aravindlabs.tech/pyro-lang/chatbot.html' style='color:#ff8c42'>Try it</a></div><div class='card'><h3>VS Code Extension</h3><p>Syntax highlighting, bracket matching, and auto-indentation for .ro files.</p></div>")
+
+fn contact_page()
+    return layout("Contact", "<h1>Contact</h1><div class='card'><h3>Aravind Pilla</h3><p>Creator of Pyro Programming Language</p><p>GitHub: <a href='https://github.com/krish9219' style='color:#ff8c42'>krish9219</a></p><p>Website: <a href='https://aravindlabs.tech' style='color:#ff8c42'>aravindlabs.tech</a></p></div>")
