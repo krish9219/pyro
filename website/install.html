@@ -62,6 +62,7 @@
           <div class="tab-content" data-tab-content="qi-windows">
             <div class="install-cmd">
               <code>git clone https://github.com/krish9219/pyro.git; cd pyro; mkdir build; cd build; cmake ..; cmake --build . --config Release</code>
+              <p style="font-size:0.8rem;color:var(--text-secondary);margin-top:6px;">Requires: Git, CMake, Visual Studio Build Tools. See <a href="#windows" style="color:var(--accent)">full guide below</a>.</p>
               <button class="copy-inline">Copy</button>
             </div>
           </div>
@@ -148,19 +149,32 @@ pyro run -e 'print("Hello from Pyro!")'</code></pre>
     <section style="padding: 0 0 48px;">
       <h2 id="windows" style="font-size: 1.5rem; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border);">Windows</h2>
 
-      <h3 style="font-size: 1.1rem; margin: 24px 0 12px;">Prerequisites</h3>
-      <ul style="list-style: disc; padding-left: 24px; margin-bottom: 16px;">
-        <li style="margin-bottom: 6px; color: var(--text-secondary);">Windows 10 version 1809 or later</li>
-        <li style="margin-bottom: 6px; color: var(--text-secondary);">Visual Studio 2022 with C++ workload (for building from source)</li>
-      </ul>
+      <h3 style="font-size: 1.1rem; margin: 24px 0 12px;">Step 1: Install prerequisites (run as Administrator)</h3>
+      <pre><button class="copy-btn">Copy</button><code><span class="cm"># Install Git (if not already installed)</span>
+winget install Git.Git
 
-      <h3 style="font-size: 1.1rem; margin: 24px 0 12px;">Build from source (PowerShell)</h3>
+<span class="cm"># Install CMake</span>
+winget install Kitware.CMake
+
+<span class="cm"># Install Visual Studio Build Tools with C++ workload</span>
+winget install Microsoft.VisualStudio.2022.BuildTools --override "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
+
+<span class="cm"># Install OpenSSL (for crypto module)</span>
+winget install ShiningLight.OpenSSL</code></pre>
+      <p style="color: var(--accent); font-weight: 600; margin: 12px 0;">After installing, close and reopen PowerShell for PATH changes to take effect.</p>
+
+      <h3 style="font-size: 1.1rem; margin: 24px 0 12px;">Step 2: Clone and build</h3>
       <pre><button class="copy-btn">Copy</button><code>git clone https://github.com/krish9219/pyro.git
 cd pyro
-mkdir build; cd build
-cmake .. -G "Visual Studio 17 2022" -DCMAKE_BUILD_TYPE=Release
-cmake --build . --config Release
-cmake --install . --config Release</code></pre>
+mkdir build
+cd build
+cmake ..
+cmake --build . --config Release</code></pre>
+
+      <h3 style="font-size: 1.1rem; margin: 24px 0 12px;">Step 3: Add to PATH</h3>
+      <pre><button class="copy-btn">Copy</button><code><span class="cm"># Add the build directory to your PATH (run once)</span>
+$env:PATH += ";$PWD\Release"
+[Environment]::SetEnvironmentVariable("Path", $env:PATH + ";$((Get-Location).Path)\Release", "User")</code></pre>
 
       <h3 style="font-size: 1.1rem; margin: 24px 0 12px;">Verify installation</h3>
       <pre><button class="copy-btn">Copy</button><code>pyro --version
