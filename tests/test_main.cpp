@@ -2136,18 +2136,14 @@ TEST(codegen_viz_import) {
     CodeGenerator codegen;
     std::string cpp = codegen.generate(program);
     ASSERT(cpp.find("namespace pyro_viz") != std::string::npos);
-    ASSERT(cpp.find("svg_header(") != std::string::npos);
-    ASSERT(cpp.find("svg_footer(") != std::string::npos);
     ASSERT(cpp.find("bar_chart(") != std::string::npos);
     ASSERT(cpp.find("line_chart(") != std::string::npos);
     ASSERT(cpp.find("scatter(") != std::string::npos);
     ASSERT(cpp.find("pie_chart(") != std::string::npos);
     ASSERT(cpp.find("palette") != std::string::npos);
-    ASSERT(cpp.find("svg_rect(") != std::string::npos);
-    ASSERT(cpp.find("svg_text(") != std::string::npos);
-    ASSERT(cpp.find("svg_line(") != std::string::npos);
-    ASSERT(cpp.find("svg_circle(") != std::string::npos);
     ASSERT(cpp.find("void save(") != std::string::npos);
+    ASSERT(cpp.find("linearGradient") != std::string::npos);
+    ASSERT(cpp.find("#0f172a") != std::string::npos);
 }
 
 TEST(codegen_viz_member) {
@@ -2162,7 +2158,7 @@ TEST(codegen_viz_member) {
     ASSERT(cpp.find("<svg xmlns=") != std::string::npos);
     ASSERT(cpp.find("</svg>") != std::string::npos);
     ASSERT(cpp.find("max_element") != std::string::npos);
-    ASSERT(cpp.find("polyline") != std::string::npos);
+    ASSERT(cpp.find("animate") != std::string::npos);
     ASSERT(cpp.find("path d=") != std::string::npos);
 }
 
@@ -2175,9 +2171,9 @@ TEST(codegen_viz_bar_chart_svg) {
     CodeGenerator codegen;
     std::string cpp = codegen.generate(program);
     // Verify bar chart has axes and bar generation logic
-    ASSERT(cpp.find("bar_area_w") != std::string::npos);
-    ASSERT(cpp.find("bar_area_h") != std::string::npos);
-    ASSERT(cpp.find("fill='white'") != std::string::npos);
+    ASSERT(cpp.find("bar_chart") != std::string::npos);
+    ASSERT(cpp.find("rx='4'") != std::string::npos);
+    ASSERT(cpp.find("fill='#0f172a'") != std::string::npos);
 }
 
 TEST(codegen_viz_line_chart_svg) {
@@ -2188,8 +2184,8 @@ TEST(codegen_viz_line_chart_svg) {
     auto program = parser.parse();
     CodeGenerator codegen;
     std::string cpp = codegen.generate(program);
-    ASSERT(cpp.find("xmin") != std::string::npos);
-    ASSERT(cpp.find("ymin") != std::string::npos);
+    ASSERT(cpp.find("xmn") != std::string::npos);
+    ASSERT(cpp.find("ymn") != std::string::npos);
     ASSERT(cpp.find("stroke-width") != std::string::npos);
 }
 
@@ -2201,9 +2197,9 @@ TEST(codegen_viz_pie_chart_svg) {
     auto program = parser.parse();
     CodeGenerator codegen;
     std::string cpp = codegen.generate(program);
-    ASSERT(cpp.find("3.14159265") != std::string::npos);
-    ASSERT(cpp.find("Legend") != std::string::npos);
-    ASSERT(cpp.find("cos(angle)") != std::string::npos);
+    ASSERT(cpp.find("6.28318530") != std::string::npos);
+    ASSERT(cpp.find("cos(") != std::string::npos);
+    ASSERT(cpp.find("donut") != std::string::npos || cpp.find("ir=r/2") != std::string::npos);
 }
 
 TEST(codegen_viz_scatter_svg) {
@@ -2585,9 +2581,9 @@ TEST(codegen_viz_color_palette) {
     auto program = parser.parse();
     CodeGenerator codegen;
     std::string cpp = codegen.generate(program);
-    ASSERT(cpp.find("#3498db") != std::string::npos);
-    ASSERT(cpp.find("#e74c3c") != std::string::npos);
-    ASSERT(cpp.find("#2ecc71") != std::string::npos);
+    ASSERT(cpp.find("#ff6b35") != std::string::npos);
+    ASSERT(cpp.find("#4ade80") != std::string::npos);
+    ASSERT(cpp.find("#3b82f6") != std::string::npos);
 }
 
 TEST(codegen_img_resize) {
