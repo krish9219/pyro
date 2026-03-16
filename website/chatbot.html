@@ -322,16 +322,44 @@ pyro run file.ro, pyro build file.ro, pyro emit file.ro, pyro fmt file.ro, pyro 
 ## Installation:
 git clone https://github.com/krish9219/pyro.git && cd pyro && ./build.sh
 
-## Response Guidelines:
-- Always show code examples in Pyro syntax (using the rules above)
-- NEVER use \`let\` in basic examples — use bare assignment like Python
-- Use \`mut\` only when showing mutable variables
-- Keep responses concise but helpful
-- Use markdown formatting with code blocks
-- Compare to Python when relevant to show Pyro's simplicity
-- Be enthusiastic about Pyro!`;
+## CRITICAL Response Rules (ALWAYS follow these):
+1. ALWAYS include a code example in EVERY response. No exceptions.
+2. ALWAYS use proper markdown formatting:
+   - Use \`\`\`pyro for code blocks
+   - Use **bold** for emphasis
+   - Use bullet points for lists
+   - Use ## headers for sections
+3. NEVER use \`let\` in basic examples — use bare assignment: name = "value"
+4. Only use \`mut\` when showing mutable variables that change
+5. The file extension is .ro (NOT .pyro)
+6. P.Y.R.O = Performance You Really Own
+7. Compare to Python when relevant to show Pyro is simpler
+8. Keep answers well-structured: explanation first, then code example, then key takeaway
+9. Be enthusiastic and helpful!
+
+## Example of a GOOD response format:
+The pipe operator \`|>\` passes the result of the left side as the first argument to the right side.
+
+\`\`\`pyro
+fn double(x) = x * 2
+fn add_ten(x) = x + 10
+
+result = 5 |> double |> add_ten
+print("Result: {result}")  # prints 20
+\`\`\`
+
+This reads left-to-right, unlike Python where you nest calls inside-out: \`add_ten(double(5))\`.`;
 
 let conversationHistory = [];
+
+function scrollToBottom() {
+  const messages = document.getElementById('messages');
+  requestAnimationFrame(() => {
+    messages.scrollTop = messages.scrollHeight + 1000;
+    setTimeout(() => { messages.scrollTop = messages.scrollHeight + 1000; }, 50);
+    setTimeout(() => { messages.scrollTop = messages.scrollHeight + 1000; }, 200);
+  });
+}
 
 function addMessage(text, isUser) {
   const messages = document.getElementById('messages');
@@ -343,7 +371,7 @@ function addMessage(text, isUser) {
     div.textContent = text;
   }
   messages.appendChild(div);
-  messages.scrollTop = messages.scrollHeight;
+  scrollToBottom();
 }
 
 function formatMarkdown(text) {
@@ -378,9 +406,10 @@ async function sendMessage() {
   input.disabled = true;
   document.getElementById('sendBtn').disabled = true;
 
-  // Show typing indicator
+  // Show typing indicator and scroll to it
   const typing = document.getElementById('typing');
   typing.classList.add('active');
+  scrollToBottom();
 
   conversationHistory.push({ role: "user", content: text });
 

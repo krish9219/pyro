@@ -99,13 +99,13 @@ sudo make install</code></pre>
 <span class="cm"># Pyro 1.0.0 (built from 7,045 lines of C++)</span></code></pre>
 
     <h2 id="hello-world">Hello World</h2>
-    <p>Create a file called <code>hello.pyro</code>:</p>
+    <p>Create a file called <code>hello.ro</code>:</p>
     <pre><button class="copy-btn">Copy</button><code><span class="cm">// No main() needed — just write code</span>
 <span class="bi">print</span>(<span class="str">"Hello, World!"</span>)</code></pre>
     <p>Run it:</p>
-    <pre><button class="copy-btn">Copy</button><code>pyro run hello.pyro</code></pre>
+    <pre><button class="copy-btn">Copy</button><code>pyro run hello.ro</code></pre>
     <p>Or compile and run the binary:</p>
-    <pre><button class="copy-btn">Copy</button><code>pyro build hello.pyro -o hello
+    <pre><button class="copy-btn">Copy</button><code>pyro build hello.ro -o hello
 ./hello</code></pre>
 
     <h2 id="first-program">Your First Program</h2>
@@ -404,7 +404,7 @@ add5 = <span class="fn">make_adder</span>(<span class="num">5</span>)
 <span class="kw">use</span> ../shared/config
 
 <span class="cm">// Create a public module</span>
-<span class="cm">// file: mylib.pyro</span>
+<span class="cm">// file: mylib.ro</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="fn">hello</span>() -&gt; <span class="type">str</span> {
     <span class="str">"hello from mylib"</span>
 }

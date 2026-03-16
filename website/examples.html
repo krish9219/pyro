@@ -407,7 +407,7 @@ path |&gt; <span class="fn">join</span>(<span class="str">" -> "</span>) |&gt; <
 content = <span class="type">fs</span>::<span class="fn">read</span>(<span class="str">"output.txt"</span>)
 <span class="bi">print</span>(content)
 
-<span class="cm">// List all .pyro files</span>
+<span class="cm">// List all .ro files</span>
 <span class="type">fs</span>::<span class="fn">walk</span>(<span class="str">"."</span>)
     |&gt; <span class="fn">filter</span>(|p| <span class="type">path</span>::<span class="fn">ext</span>(p) == <span class="str">"pyro"</span>)
     |&gt; <span class="fn">each</span>(|p| <span class="bi">print</span>(<span class="str">"Found: "</span> + p))
