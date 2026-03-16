@@ -10,6 +10,8 @@
 #include <unordered_map>
 #include <chrono>
 #include <algorithm>
+#include <thread>    // for sleep_for
+#include <csignal>   // for SIGTERM on Unix
 #ifdef _WIN32
   #include <process.h>
   #define WIN32_LEAN_AND_MEAN
@@ -26,6 +28,8 @@
   #endif
 #else
   #include <sys/wait.h>
+  #include <signal.h>
+  #include <unistd.h>
 #endif
 #include "lexer/lexer.h"
 #include "parser/parser.h"
@@ -137,8 +141,10 @@ void print_usage() {
     std::cout << "  pyro doc <file.ro>           Generate documentation\n";
     std::cout << "  pyro debug <file.ro>         Debug with gdb/lldb\n";
     std::cout << "  pyro tokens <file.ro>        Show lexer tokens\n";
+    std::cout << "  pyro new <type> <name>       Create new project (webapp, api, cli)\n";
     std::cout << "  pyro init                    Create pyro.toml\n";
     std::cout << "  pyro install <package>       Install a package\n";
+    std::cout << "  pyro watch <file.ro>         Watch and auto-restart on changes\n";
     std::cout << "  pyro update                  Update Pyro to latest version\n";
     std::cout << "  pyro version                 Show version info\n";
     std::cout << "  pyro help                    Show this help\n";
@@ -230,6 +236,88 @@ std::string detect_compiler() {
 #endif
 }
 
+void show_friendly_errors(const std::string& err_file, const std::string& source_path, const std::string& source) {
+    std::ifstream errf(err_file);
+    if (!errf.is_open()) return;
+
+    std::vector<std::string> source_lines;
+    std::istringstream src_stream(source);
+    std::string src_line;
+    while (std::getline(src_stream, src_line)) {
+        source_lines.push_back(src_line);
+    }
+
+    std::string line;
+    bool showed_error = false;
+    while (std::getline(errf, line)) {
+        // Look for errors referencing the .ro file (via #line directives)
+        auto ro_pos = line.find(source_path);
+        if (ro_pos == std::string::npos) {
+            std::string fname = fs::path(source_path).filename().string();
+            ro_pos = line.find(fname);
+        }
+
+        if (ro_pos != std::string::npos && line.find("error:") != std::string::npos) {
+            // Extract line number
+            size_t colon1 = line.find(':', ro_pos + 1);
+            if (colon1 == std::string::npos) continue;
+            size_t colon2 = line.find(':', colon1 + 1);
+            if (colon2 == std::string::npos) continue;
+
+            std::string line_num_str = line.substr(colon1 + 1, colon2 - colon1 - 1);
+            int line_num = 0;
+            try { line_num = std::stoi(line_num_str); } catch (...) { continue; }
+
+            // Extract error message
+            size_t err_pos = line.find("error:");
+            std::string error_msg = line.substr(err_pos + 7);
+            // Clean up C++ jargon
+            while (error_msg.find("std::__cxx11::basic_string<char>") != std::string::npos)
+                error_msg.replace(error_msg.find("std::__cxx11::basic_string<char>"), 31, "str");
+            while (error_msg.find("std::string") != std::string::npos)
+                error_msg.replace(error_msg.find("std::string"), 11, "str");
+            while (error_msg.find("int64_t") != std::string::npos)
+                error_msg.replace(error_msg.find("int64_t"), 7, "int");
+            while (error_msg.find("auto:") != std::string::npos) {
+                auto ap = error_msg.find("auto:");
+                auto ae = error_msg.find(')', ap);
+                if (ae != std::string::npos) error_msg.replace(ap, ae - ap + 1, "auto");
+                else break;
+            }
+
+            // Show friendly error
+            std::cerr << std::endl;
+            std::cerr << "\033[31mError in " << source_path << ", line " << line_num << ":\033[0m" << std::endl;
+
+            // Show the source line with context
+            if (line_num > 0 && line_num <= (int)source_lines.size()) {
+                if (line_num > 1)
+                    std::cerr << "  \033[90m" << (line_num - 1) << " | " << source_lines[line_num - 2] << "\033[0m" << std::endl;
+                std::cerr << "  \033[37m" << line_num << " | " << source_lines[line_num - 1] << "\033[0m" << std::endl;
+                if (line_num < (int)source_lines.size())
+                    std::cerr << "  \033[90m" << (line_num + 1) << " | " << source_lines[line_num] << "\033[0m" << std::endl;
+            }
+
+            std::cerr << std::endl;
+            std::cerr << "  \033[31m" << error_msg << "\033[0m" << std::endl;
+            showed_error = true;
+            break; // Show only the first error
+        }
+    }
+
+    if (!showed_error) {
+        // Fallback: show first error line from compiler output
+        errf.clear();
+        errf.seekg(0);
+        while (std::getline(errf, line)) {
+            if (line.find("error:") != std::string::npos) {
+                std::cerr << "  " << line << std::endl;
+                break;
+            }
+        }
+    }
+}
+
 void cmd_build(const std::string& source_path, const std::string& source) {
     std::string cpp_code = compile_to_cpp(source, source_path);
 
@@ -265,13 +353,17 @@ void cmd_build(const std::string& source_path, const std::string& source) {
 
     // Compile with detected compiler
     std::string compiler = detect_compiler();
-    std::string cmd = compiler + " -std=c++20 -O2 -o " + output_bin + " " + tmp_cpp + detect_link_flags(cpp_code) + " 2>&1";
+    std::string err_file = get_temp_dir() + "pyro_err_" + base_name + ".txt";
+    std::string cmd = compiler + " -std=c++20 -O2 -o " + output_bin + " " + tmp_cpp + detect_link_flags(cpp_code) + " 2>" + err_file;
     int ret = std::system(cmd.c_str());
     if (ret != 0) {
-        std::cerr << "Error: C++ compilation failed.\n";
-        std::cerr << "Generated C++ saved at: " << tmp_cpp << "\n";
+        std::cerr << "Error: Compilation failed." << std::endl;
+        show_friendly_errors(err_file, source_path, source);
+        std::cerr << "\nGenerated C++ saved at: " << tmp_cpp << std::endl;
+        std::remove(err_file.c_str());
         exit(1);
     }
+    std::remove(err_file.c_str());
 
     std::cout << "Built: ./" << output_bin << "\n";
     fs::remove(tmp_cpp);
@@ -296,13 +388,17 @@ void cmd_run(const std::string& source_path, const std::string& source) {
 
     // Compile and run
     std::string compiler = detect_compiler();
-    std::string compile_cmd = compiler + " -std=c++20 -O2 -o " + tmp_bin + " " + tmp_cpp + detect_link_flags(cpp_code) + " 2>&1";
+    std::string err_file = get_temp_dir() + "pyro_err_" + base_name + ".txt";
+    std::string compile_cmd = compiler + " -std=c++20 -O2 -o " + tmp_bin + " " + tmp_cpp + detect_link_flags(cpp_code) + " 2>" + err_file;
     int ret = std::system(compile_cmd.c_str());
     if (ret != 0) {
-        std::cerr << "Error: Compilation failed.\n";
-        std::cerr << "Generated C++ saved at: " << tmp_cpp << "\n";
+        std::cerr << "Error: Compilation failed." << std::endl;
+        show_friendly_errors(err_file, source_path, source);
+        std::cerr << "\nGenerated C++ saved at: " << tmp_cpp << std::endl;
+        std::remove(err_file.c_str());
         exit(1);
     }
+    std::remove(err_file.c_str());
 
     // Run
     ret = std::system(tmp_bin.c_str());
@@ -811,6 +907,215 @@ void cmd_repl() {
     std::cout << "\nGoodbye!\n";
 }
 
+void cmd_watch(const std::string& source_path) {
+    std::cout << "Watching " << source_path << " for changes..." << std::endl;
+    std::cout << "Press Ctrl+C to stop." << std::endl;
+    std::cout << std::endl;
+
+    std::string base = fs::path(source_path).stem().string();
+    std::string watch_dir = fs::path(source_path).parent_path().string();
+    if (watch_dir.empty()) watch_dir = ".";
+
+    // Track modification times for all relevant files
+    auto get_latest_mtime = [&]() -> fs::file_time_type {
+        fs::file_time_type latest = fs::file_time_type::min();
+        try {
+            for (const auto& entry : fs::recursive_directory_iterator(watch_dir)) {
+                if (!entry.is_regular_file()) continue;
+                std::string ext = entry.path().extension().string();
+                if (ext == ".ro" || ext == ".html" || ext == ".css" || ext == ".js" || ext == ".json") {
+                    auto mtime = entry.last_write_time();
+                    if (mtime > latest) latest = mtime;
+                }
+            }
+        } catch (...) {}
+        return latest;
+    };
+
+    auto last_mtime = fs::file_time_type::min();
+    // Platform-specific process handle
+#ifdef _WIN32
+    HANDLE proc_handle = NULL;
+    PROCESS_INFORMATION pi = {};
+#else
+    pid_t child_pid = 0;
+#endif
+
+    auto kill_child = [&]() {
+#ifdef _WIN32
+        if (proc_handle) {
+            TerminateProcess(proc_handle, 0);
+            WaitForSingleObject(proc_handle, 1000);
+            CloseHandle(proc_handle);
+            CloseHandle(pi.hThread);
+            proc_handle = NULL;
+        }
+#else
+        if (child_pid > 0) {
+            kill(child_pid, SIGTERM);
+            waitpid(child_pid, nullptr, 0);
+            child_pid = 0;
+        }
+#endif
+    };
+
+    auto compile_and_run = [&]() -> bool {
+        // Read source
+        std::string source = read_source(source_path);
+        std::string cpp_code;
+
+        // Compile to C++
+        try {
+            cpp_code = compile_to_cpp(source, source_path);
+        } catch (const std::exception& e) {
+            std::cerr << "\033[31m[watch] Compile error: " << e.what() << "\033[0m" << std::endl;
+            return false;
+        }
+
+        // Write temp C++ file
+        std::string tmp_cpp = get_temp_dir() + "pyro_watch_" + base + ".cpp";
+#ifdef _WIN32
+        std::string tmp_bin = get_temp_dir() + "pyro_watch_" + base + ".exe";
+#else
+        std::string tmp_bin = get_temp_dir() + "pyro_watch_" + base;
+#endif
+
+        std::ofstream tmp(tmp_cpp);
+        tmp << cpp_code;
+        tmp.close();
+
+        // Compile
+        std::string compiler = detect_compiler();
+#ifdef _WIN32
+        std::string compile_cmd = compiler + " -std=c++20 -O0 -o " + tmp_bin + " " + tmp_cpp + detect_link_flags(cpp_code) + " 2>NUL";
+#else
+        std::string compile_cmd = compiler + " -std=c++20 -O0 -o " + tmp_bin + " " + tmp_cpp + detect_link_flags(cpp_code) + " 2>&1";
+#endif
+        int ret = std::system(compile_cmd.c_str());
+        if (ret != 0) {
+            std::cerr << "\033[31m[watch] C++ compilation failed\033[0m" << std::endl;
+            return false;
+        }
+
+        // Run as child process
+#ifdef _WIN32
+        STARTUPINFOA si = {};
+        si.cb = sizeof(si);
+        pi = {};
+        std::string cmd = tmp_bin;
+        if (CreateProcessA(NULL, (LPSTR)cmd.c_str(), NULL, NULL, 0, 0, NULL, NULL, &si, &pi)) {
+            proc_handle = pi.hProcess;
+        }
+#else
+        child_pid = fork();
+        if (child_pid == 0) {
+            execl(tmp_bin.c_str(), tmp_bin.c_str(), nullptr);
+            _exit(1);
+        }
+#endif
+
+        std::cout << "\033[32m[watch] Running " << source_path << "\033[0m" << std::endl;
+        return true;
+    };
+
+    // Initial compile and run
+    compile_and_run();
+    last_mtime = get_latest_mtime();
+
+    // Watch loop
+    while (true) {
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+
+        auto current_mtime = get_latest_mtime();
+        if (current_mtime > last_mtime) {
+            last_mtime = current_mtime;
+            std::cout << std::endl;
+            std::cout << "\033[33m[watch] Change detected, restarting...\033[0m" << std::endl;
+            kill_child();
+            compile_and_run();
+        }
+    }
+}
+
+void cmd_new(const std::string& type, const std::string& name) {
+    // When no type given (name is empty), type IS the project name
+    std::string project_name = name.empty() ? type : name;
+    std::string project_type = name.empty() ? "basic" : type;
+
+    if (fs::exists(project_name)) {
+        std::cerr << "Error: Directory '" << project_name << "' already exists.\n";
+        return;
+    }
+
+    fs::create_directories(project_name);
+
+    if (project_type == "webapp") {
+        fs::create_directories(project_name + "/pages");
+        fs::create_directories(project_name + "/static");
+        { std::ofstream f(project_name + "/server.ro");
+          f << "import web\nimport io\n\nmut app = web.app()\n\n"
+            << "# Page routes\napp.get(\"/\", fn(req) = web.html(io.read(\"pages/index.html\")))\n"
+            << "app.get(\"/about\", fn(req) = web.html(io.read(\"pages/about.html\")))\n\n"
+            << "# API routes\napp.get(\"/api/health\", fn(req) = web.json(\"{\\\"status\\\": \\\"ok\\\"}\"))\n\n"
+            << "# Static files\napp.serve_static(\"/static\", \"static\")\n\n"
+            << "print(\"http://localhost:3000\")\napp.listen(3000)\n"; }
+        { std::ofstream f(project_name + "/pages/index.html");
+          f << "<!DOCTYPE html>\n<html>\n<head>\n    <meta charset=\"UTF-8\">\n"
+            << "    <title>" << project_name << "</title>\n    <link rel=\"stylesheet\" href=\"/static/style.css\">\n"
+            << "</head>\n<body>\n    <h1>Welcome to " << project_name << "</h1>\n"
+            << "    <p>Built with Pyro.</p>\n    <a href=\"/about\">About</a> | <a href=\"/api/health\">API Health</a>\n"
+            << "</body>\n</html>\n"; }
+        { std::ofstream f(project_name + "/pages/about.html");
+          f << "<!DOCTYPE html>\n<html>\n<head>\n    <meta charset=\"UTF-8\">\n"
+            << "    <title>About - " << project_name << "</title>\n    <link rel=\"stylesheet\" href=\"/static/style.css\">\n"
+            << "</head>\n<body>\n    <h1>About</h1>\n    <p>This is a Pyro web app.</p>\n    <a href=\"/\">Home</a>\n"
+            << "</body>\n</html>\n"; }
+        { std::ofstream f(project_name + "/static/style.css");
+          f << "body {\n    font-family: -apple-system, sans-serif;\n    max-width: 800px;\n"
+            << "    margin: 60px auto;\n    padding: 0 20px;\n    background: #0a0a1a;\n    color: #e0e0e0;\n}\n"
+            << "h1 { color: #ff6b35; }\na { color: #ff8c42; }\n"; }
+        { std::ofstream f(project_name + "/pyro.toml");
+          f << "[project]\nname = \"" << project_name << "\"\nversion = \"0.1.0\"\ntype = \"webapp\"\n"; }
+        std::cout << "Created web app: " << project_name << "/\n\n";
+        std::cout << "  cd " << project_name << "\n  pyro run server.ro\n\n  Then open http://localhost:3000\n";
+
+    } else if (project_type == "api") {
+        { std::ofstream f(project_name + "/api.ro");
+          f << "import web\nimport json\n\nmut app = web.app()\n\n"
+            << "# Health check\napp.get(\"/health\", fn(req) = web.json(\"{\\\"status\\\": \\\"ok\\\"}\"))\n\n"
+            << "# API routes\napp.get(\"/api/users\", fn(req) = web.json(\"[{\\\"id\\\": 1, \\\"name\\\": \\\"Aravind\\\"}]\"))\n\n"
+            << "app.post(\"/api/users\", fn(req) = web.json(\"{\\\"created\\\": true}\"))\n\n"
+            << "print(\"API running at http://localhost:3000\")\napp.listen(3000)\n"; }
+        { std::ofstream f(project_name + "/pyro.toml");
+          f << "[project]\nname = \"" << project_name << "\"\nversion = \"0.1.0\"\ntype = \"api\"\n"; }
+        std::cout << "Created API project: " << project_name << "/\n\n";
+        std::cout << "  cd " << project_name << "\n  pyro run api.ro\n";
+
+    } else if (project_type == "cli") {
+        { std::ofstream f(project_name + "/main.ro");
+          f << "import os\n\n# CLI tool\nargs = os.args()\n\n"
+            << "if args.len() < 2\n    print(\"Usage: " << project_name << " <command>\")\n"
+            << "    print(\"Commands: hello, version\")\nelse\n    cmd = args[1]\n"
+            << "    if cmd == \"hello\"\n        print(\"Hello from " << project_name << "!\")\n"
+            << "    else\n        if cmd == \"version\"\n            print(\"" << project_name << " v0.1.0\")\n"
+            << "        else\n            print(\"Unknown command: {cmd}\")\n"; }
+        { std::ofstream f(project_name + "/pyro.toml");
+          f << "[project]\nname = \"" << project_name << "\"\nversion = \"0.1.0\"\ntype = \"cli\"\n"; }
+        std::cout << "Created CLI project: " << project_name << "/\n\n";
+        std::cout << "  cd " << project_name << "\n  pyro run main.ro hello\n";
+        std::cout << "  pyro build main.ro    # creates " << project_name << ".exe\n";
+
+    } else {
+        // Basic project
+        { std::ofstream f(project_name + "/main.ro");
+          f << "# " << project_name << "\n\nprint(\"Hello from " << project_name << "!\")\n"; }
+        { std::ofstream f(project_name + "/pyro.toml");
+          f << "[project]\nname = \"" << project_name << "\"\nversion = \"0.1.0\"\n"; }
+        std::cout << "Created project: " << project_name << "/\n\n";
+        std::cout << "  cd " << project_name << "\n  pyro run main.ro\n";
+    }
+}
+
 int main(int argc, char* argv[]) {
     if (argc < 2) {
         cmd_repl();
@@ -866,6 +1171,23 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
+    if (command == "new") {
+        if (argc < 3) {
+            std::cerr << "Usage: pyro new <type> <name>\n";
+            std::cerr << "Types: webapp, api, cli\n";
+            std::cerr << "Example: pyro new webapp mysite\n";
+            return 1;
+        }
+        if (argc == 3) {
+            // No type specified, just name: pyro new myproject
+            cmd_new(argv[2], "");
+        } else {
+            // Type + name: pyro new webapp mysite
+            cmd_new(argv[2], argv[3]);
+        }
+        return 0;
+    }
+
     if (command == "init") {
         cmd_init();
         return 0;
@@ -904,6 +1226,15 @@ int main(int argc, char* argv[]) {
             return 1;
         }
         cmd_doc(argv[2]);
+        return 0;
+    }
+
+    if (command == "watch") {
+        if (argc < 3) {
+            std::cerr << "Usage: pyro watch <file.ro>\n";
+            return 1;
+        }
+        cmd_watch(argv[2]);
         return 0;
     }
 
