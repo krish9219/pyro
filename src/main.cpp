@@ -41,7 +41,7 @@ namespace fs = std::filesystem;
 // Built-in module names that don't need file resolution
 static const std::set<std::string> BUILTIN_MODULES = {
     "math", "data", "web", "viz", "crypto", "db", "io", "net",
-    "json", "time", "test", "ui", "ml", "img", "cloud", "cache",
+    "json", "time", "test", "ui", "ml", "img", "cloud", "cache", "plot",
     "log", "validate", "queue", "auth",
     "os", "sys", "re", "collections", "itertools", "functools",
     "path", "subprocess", "text", "diff", "copy", "pprint",
@@ -54,7 +54,8 @@ static const std::set<std::string> BUILTIN_MODULES = {
     "heap", "trie", "bitset",
     "http", "cookie", "session", "cors", "rate", "jwt",
     "websocket", "smtp", "dns", "ping",
-    "ai"
+    "ai",
+    "tensor"
 };
 
 std::vector<pyro::StmtPtr> resolve_imports(

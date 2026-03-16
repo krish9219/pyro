@@ -1241,8 +1241,11 @@ TEST(codegen_ml_import) {
     CodeGenerator codegen;
     std::string cpp = codegen.generate(program);
     ASSERT(cpp.find("namespace pyro_ml") != std::string::npos);
-    ASSERT(cpp.find("double mean(") != std::string::npos);
-    ASSERT(cpp.find("LinearModel linear_regression(") != std::string::npos);
+    ASSERT(cpp.find("struct Dataset") != std::string::npos);
+    ASSERT(cpp.find("struct Model") != std::string::npos);
+    ASSERT(cpp.find("linear_regression") != std::string::npos);
+    ASSERT(cpp.find("kmeans") != std::string::npos);
+    ASSERT(cpp.find("r2_score") != std::string::npos);
 }
 
 TEST(codegen_img_import) {

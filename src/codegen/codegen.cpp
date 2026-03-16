@@ -570,6 +570,10 @@ std::string CodeGenerator::generate(const Program& program, const std::string& s
         emit_line("#include <fstream>");
         emit_line("#include <filesystem>");
     }
+    if (imports_.count("plot")) {
+        emit_line("#include <fstream>");
+        emit_line("#include <algorithm>");
+    }
     if (imports_.count("data")) {
         emit_line("#include <set>");
         if (!imports_.count("math") && !imports_.count("random") && !imports_.count("crypto") && !imports_.count("auth")) {
@@ -745,6 +749,15 @@ std::string CodeGenerator::generate(const Program& program, const std::string& s
         if (!imports_.count("http") && !imports_.count("io") && !imports_.count("data") && !imports_.count("img") && !imports_.count("viz") && !imports_.count("web") && !imports_.count("db")) {
             emit_line("#include <fstream>");
         }
+    }
+    if (imports_.count("tensor")) {
+        if (!imports_.count("math") && !imports_.count("random") && !imports_.count("data") && !imports_.count("crypto") && !imports_.count("auth")) {
+            emit_line("#include <random>");
+        }
+    }
+    if (imports_.count("ml")) {
+        emit_line("#include <fstream>");
+        emit_line("#include <algorithm>");
     }
 
     emit_headers();
@@ -2608,33 +2621,410 @@ void CodeGenerator::emit_import(const ImportStmt& stmt) {
     } else if (stmt.module == "ml") {
         emit_line("namespace pyro_ml {");
         indent();
-        emit_line("double mean(const std::vector<double>& v) { double s = 0; for (auto x : v) s += x; return s / v.size(); }");
-        emit_line("double std_dev(const std::vector<double>& v) {");
+
+        // Dataset type
+        emit_line("struct Dataset {");
         indent();
-        emit_line("double m = mean(v), s = 0;");
-        emit_line("for (auto x : v) s += (x - m) * (x - m);");
-        emit_line("return std::sqrt(s / v.size());");
+        emit_line("std::vector<std::vector<double>> X;");
+        emit_line("std::vector<double> y;");
+        emit_line("std::vector<std::string> columns;");
+        emit_line("int64_t rows() const { return X.size(); }");
+        emit_line("int64_t cols() const { return X.empty() ? 0 : X[0].size(); }");
+        dedent();
+        emit_line("};");
+        emit_line("");
+
+        // Load CSV
+        emit_line("Dataset load_csv(const std::string& path, const std::string& target = \"\") {");
+        indent();
+        emit_line("Dataset ds;");
+        emit_line("std::ifstream f(path);");
+        emit_line("if (!f.is_open()) throw std::runtime_error(\"Cannot open: \" + path);");
+        emit_line("std::string line;");
+        emit_line("// Read header");
+        emit_line("std::getline(f, line);");
+        emit_line("std::istringstream hss(line); std::string col;");
+        emit_line("while(std::getline(hss, col, ',')) { while(!col.empty()&&col[0]==' ')col.erase(0,1); ds.columns.push_back(col); }");
+        emit_line("int target_idx = -1;");
+        emit_line("if (!target.empty()) { for(size_t i=0;i<ds.columns.size();i++) if(ds.columns[i]==target) target_idx=i; }");
+        emit_line("// Read data");
+        emit_line("while(std::getline(f, line)) {");
+        indent();
+        emit_line("std::istringstream ss(line); std::string val; std::vector<double> row;");
+        emit_line("int idx = 0;");
+        emit_line("while(std::getline(ss, val, ',')) {");
+        indent();
+        emit_line("while(!val.empty()&&val[0]==' ')val.erase(0,1);");
+        emit_line("double v = 0; try { v = std::stod(val); } catch(...) {}");
+        emit_line("if (idx == target_idx) { ds.y.push_back(v); } else { row.push_back(v); }");
+        emit_line("idx++;");
         dedent();
         emit_line("}");
-        emit_line("std::vector<double> normalize(const std::vector<double>& v) {");
-        indent();
-        emit_line("double mn = *std::min_element(v.begin(), v.end());");
-        emit_line("double mx = *std::max_element(v.begin(), v.end());");
-        emit_line("double range = mx - mn; if (range == 0) range = 1;");
-        emit_line("std::vector<double> r; for (auto x : v) r.push_back((x - mn) / range); return r;");
+        emit_line("if (!row.empty()) ds.X.push_back(row);");
         dedent();
         emit_line("}");
-        emit_line("struct LinearModel { double slope; double intercept; double predict(double x) const { return slope * x + intercept; } };");
-        emit_line("LinearModel linear_regression(const std::vector<double>& x, const std::vector<double>& y) {");
-        indent();
-        emit_line("double mx = mean(x), my = mean(y), num = 0, den = 0;");
-        emit_line("for (size_t i = 0; i < x.size(); i++) { num += (x[i] - mx) * (y[i] - my); den += (x[i] - mx) * (x[i] - mx); }");
-        emit_line("double slope = den != 0 ? num / den : 0;");
-        emit_line("return LinearModel{slope, my - slope * mx};");
+        emit_line("return ds;");
         dedent();
         emit_line("}");
+        emit_line("");
+
+        // Split
+        emit_line("std::pair<Dataset, Dataset> split(const Dataset& ds, double ratio = 0.8) {");
+        indent();
+        emit_line("int64_t n = ds.rows();");
+        emit_line("int64_t split_at = (int64_t)(n * ratio);");
+        emit_line("Dataset train, test;");
+        emit_line("train.columns = ds.columns; test.columns = ds.columns;");
+        emit_line("for(int64_t i=0;i<split_at;i++) { train.X.push_back(ds.X[i]); if(i<(int64_t)ds.y.size()) train.y.push_back(ds.y[i]); }");
+        emit_line("for(int64_t i=split_at;i<n;i++) { test.X.push_back(ds.X[i]); if(i<(int64_t)ds.y.size()) test.y.push_back(ds.y[i]); }");
+        emit_line("return {train, test};");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Normalize
+        emit_line("Dataset normalize(const Dataset& ds) {");
+        indent();
+        emit_line("Dataset out = ds;");
+        emit_line("if(out.X.empty()) return out;");
+        emit_line("int64_t c = out.cols();");
+        emit_line("for(int64_t j=0;j<c;j++) {");
+        indent();
+        emit_line("double mn=1e18, mx=-1e18;");
+        emit_line("for(auto& row:out.X) { mn=std::min(mn,row[j]); mx=std::max(mx,row[j]); }");
+        emit_line("double range=mx-mn; if(range<1e-10) range=1;");
+        emit_line("for(auto& row:out.X) row[j]=(row[j]-mn)/range;");
+        dedent();
+        emit_line("}");
+        emit_line("return out;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Model base
+        emit_line("struct Model {");
+        indent();
+        emit_line("std::vector<double> weights;");
+        emit_line("double bias = 0;");
+        emit_line("std::string type;");
+        emit_line("");
+        emit_line("std::vector<double> predict(const Dataset& ds) const {");
+        indent();
+        emit_line("std::vector<double> preds;");
+        emit_line("for(auto& row : ds.X) {");
+        indent();
+        emit_line("double val = bias;");
+        emit_line("for(size_t j=0;j<row.size()&&j<weights.size();j++) val+=row[j]*weights[j];");
+        emit_line("if(type==\"logistic\") val = 1.0/(1.0+std::exp(-val));");
+        emit_line("preds.push_back(val);");
+        dedent();
+        emit_line("}");
+        emit_line("return preds;");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("};");
+        emit_line("");
+
+        // Print model
+        emit_line("std::ostream& operator<<(std::ostream& os, const Model& m) { os<<\"Model(\"<<m.type<<\", \"<<m.weights.size()<<\" features)\"; return os; }");
+        emit_line("");
+
+        // Linear Regression (gradient descent)
+        emit_line("Model linear_regression(const Dataset& ds, double lr=0.01, int64_t epochs=1000) {");
+        indent();
+        emit_line("Model m; m.type=\"linear\"; int64_t n=ds.rows(), c=ds.cols();");
+        emit_line("m.weights.resize(c, 0.0); m.bias=0;");
+        emit_line("for(int64_t e=0;e<epochs;e++) {");
+        indent();
+        emit_line("std::vector<double> dw(c,0); double db=0;");
+        emit_line("for(int64_t i=0;i<n;i++) {");
+        indent();
+        emit_line("double pred=m.bias; for(int64_t j=0;j<c;j++) pred+=ds.X[i][j]*m.weights[j];");
+        emit_line("double err=pred-ds.y[i]; db+=err;");
+        emit_line("for(int64_t j=0;j<c;j++) dw[j]+=err*ds.X[i][j];");
+        dedent();
+        emit_line("}");
+        emit_line("m.bias-=lr*db/n; for(int64_t j=0;j<c;j++) m.weights[j]-=lr*dw[j]/n;");
+        dedent();
+        emit_line("}");
+        emit_line("return m;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Logistic Regression
+        emit_line("Model logistic(const Dataset& ds, double lr=0.01, int64_t epochs=1000) {");
+        indent();
+        emit_line("Model m; m.type=\"logistic\"; int64_t n=ds.rows(), c=ds.cols();");
+        emit_line("m.weights.resize(c, 0.0); m.bias=0;");
+        emit_line("for(int64_t e=0;e<epochs;e++) {");
+        indent();
+        emit_line("std::vector<double> dw(c,0); double db=0;");
+        emit_line("for(int64_t i=0;i<n;i++) {");
+        indent();
+        emit_line("double z=m.bias; for(int64_t j=0;j<c;j++) z+=ds.X[i][j]*m.weights[j];");
+        emit_line("double pred=1.0/(1.0+std::exp(-z));");
+        emit_line("double err=pred-ds.y[i]; db+=err;");
+        emit_line("for(int64_t j=0;j<c;j++) dw[j]+=err*ds.X[i][j];");
+        dedent();
+        emit_line("}");
+        emit_line("m.bias-=lr*db/n; for(int64_t j=0;j<c;j++) m.weights[j]-=lr*dw[j]/n;");
+        dedent();
+        emit_line("}");
+        emit_line("return m;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // KNN
+        emit_line("std::vector<double> knn_predict(const Dataset& train, const Dataset& test, int64_t k=5) {");
+        indent();
+        emit_line("std::vector<double> preds;");
+        emit_line("for(auto& trow : test.X) {");
+        indent();
+        emit_line("std::vector<std::pair<double,double>> dists;");
+        emit_line("for(size_t i=0;i<train.X.size();i++) {");
+        indent();
+        emit_line("double d=0; for(size_t j=0;j<trow.size();j++) d+=(trow[j]-train.X[i][j])*(trow[j]-train.X[i][j]);");
+        emit_line("dists.push_back({std::sqrt(d), train.y[i]});");
+        dedent();
+        emit_line("}");
+        emit_line("std::sort(dists.begin(),dists.end());");
+        emit_line("double sum=0; for(int64_t i=0;i<k&&i<(int64_t)dists.size();i++) sum+=dists[i].second;");
+        emit_line("preds.push_back(sum/std::min(k,(int64_t)dists.size()));");
+        dedent();
+        emit_line("}");
+        emit_line("return preds;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // K-Means clustering
+        emit_line("std::vector<int64_t> kmeans(const Dataset& ds, int64_t k=3, int64_t max_iter=100) {");
+        indent();
+        emit_line("int64_t n=ds.rows(), c=ds.cols();");
+        emit_line("// Init centroids to first k points");
+        emit_line("std::vector<std::vector<double>> centroids(k);");
+        emit_line("for(int64_t i=0;i<k;i++) centroids[i]=ds.X[i%n];");
+        emit_line("std::vector<int64_t> labels(n,0);");
+        emit_line("for(int64_t iter=0;iter<max_iter;iter++) {");
+        indent();
+        emit_line("// Assign");
+        emit_line("for(int64_t i=0;i<n;i++) {");
+        indent();
+        emit_line("double best=1e18; for(int64_t j=0;j<k;j++) {");
+        indent();
+        emit_line("double d=0; for(int64_t f=0;f<c;f++) d+=(ds.X[i][f]-centroids[j][f])*(ds.X[i][f]-centroids[j][f]);");
+        emit_line("if(d<best){best=d;labels[i]=j;}");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("}");
+        emit_line("// Update centroids");
+        emit_line("for(int64_t j=0;j<k;j++) {");
+        indent();
+        emit_line("std::vector<double> sum(c,0); int64_t cnt=0;");
+        emit_line("for(int64_t i=0;i<n;i++) if(labels[i]==j){cnt++;for(int64_t f=0;f<c;f++)sum[f]+=ds.X[i][f];}");
+        emit_line("if(cnt>0) for(int64_t f=0;f<c;f++) centroids[j][f]=sum[f]/cnt;");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("}");
+        emit_line("return labels;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Metrics
+        emit_line("double mse(const std::vector<double>& pred, const std::vector<double>& actual) { double s=0; for(size_t i=0;i<pred.size();i++) s+=(pred[i]-actual[i])*(pred[i]-actual[i]); return s/pred.size(); }");
+        emit_line("double mae(const std::vector<double>& pred, const std::vector<double>& actual) { double s=0; for(size_t i=0;i<pred.size();i++) s+=std::abs(pred[i]-actual[i]); return s/pred.size(); }");
+        emit_line("double r2_score(const std::vector<double>& pred, const std::vector<double>& actual) {");
+        indent();
+        emit_line("double mean_y=0; for(auto v:actual) mean_y+=v; mean_y/=actual.size();");
+        emit_line("double ss_res=0, ss_tot=0;");
+        emit_line("for(size_t i=0;i<pred.size();i++) { ss_res+=(actual[i]-pred[i])*(actual[i]-pred[i]); ss_tot+=(actual[i]-mean_y)*(actual[i]-mean_y); }");
+        emit_line("return 1.0 - ss_res/(ss_tot+1e-10);");
+        dedent();
+        emit_line("}");
+        emit_line("double accuracy(const std::vector<double>& pred, const std::vector<double>& actual) {");
+        indent();
+        emit_line("int64_t correct=0; for(size_t i=0;i<pred.size();i++) if(std::round(pred[i])==std::round(actual[i])) correct++;");
+        emit_line("return (double)correct/pred.size();");
+        dedent();
+        emit_line("}");
+
         dedent();
         emit_line("} // namespace pyro_ml");
+        emit_line("");
+    } else if (stmt.module == "plot") {
+        emit_line("namespace pyro_plot {");
+        indent();
+
+        emit_line("static int _width = 800;");
+        emit_line("static int _height = 400;");
+        emit_line("static std::string _last_svg;");
+        emit_line("");
+        emit_line("void set_size(int w, int h) { _width = w; _height = h; }");
+        emit_line("");
+
+        // SVG helper
+        emit_line("static std::string _svg_header(const std::string& title, int w, int h) {");
+        indent();
+        emit_line("return \"<svg xmlns='http://www.w3.org/2000/svg' width='\" + std::to_string(w) + \"' height='\" + std::to_string(h) + \"' style='background:#0a0a1a;font-family:monospace'>\"");
+        emit_line("+ \"<text x='\" + std::to_string(w/2) + \"' y='30' fill='#ff6b35' text-anchor='middle' font-size='16'>\" + title + \"</text>\";");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Line chart
+        emit_line("void line(const std::vector<double>& y, const std::string& title = \"Line Chart\", const std::string& file = \"chart.svg\") {");
+        indent();
+        emit_line("int w=_width, h=_height, pad=60;");
+        emit_line("double mn=*std::min_element(y.begin(),y.end()), mx=*std::max_element(y.begin(),y.end());");
+        emit_line("if(std::abs(mx-mn)<1e-10) mx=mn+1;");
+        emit_line("std::string svg = _svg_header(title, w, h);");
+        emit_line("// Axes");
+        emit_line("svg += \"<line x1='\" + std::to_string(pad) + \"' y1='\" + std::to_string(h-pad) + \"' x2='\" + std::to_string(w-20) + \"' y2='\" + std::to_string(h-pad) + \"' stroke='#333' />\";");
+        emit_line("svg += \"<line x1='\" + std::to_string(pad) + \"' y1='50' x2='\" + std::to_string(pad) + \"' y2='\" + std::to_string(h-pad) + \"' stroke='#333' />\";");
+        emit_line("// Points and lines");
+        emit_line("std::string path = \"M\";");
+        emit_line("for(size_t i=0;i<y.size();i++) {");
+        indent();
+        emit_line("double px = pad + (double)i/(y.size()-1) * (w-pad-20);");
+        emit_line("double py = (h-pad) - (y[i]-mn)/(mx-mn) * (h-pad-50);");
+        emit_line("path += \" \" + std::to_string((int)px) + \",\" + std::to_string((int)py);");
+        dedent();
+        emit_line("}");
+        emit_line("svg += \"<path d='\" + path + \"' fill='none' stroke='#ff6b35' stroke-width='2' />\";");
+        emit_line("svg += \"</svg>\";");
+        emit_line("_last_svg = svg;");
+        emit_line("std::ofstream f(file); f << svg;");
+        emit_line("std::cout << \"Chart saved: \" << file << std::endl;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Bar chart
+        emit_line("void bar(const std::vector<std::string>& labels, const std::vector<double>& values, const std::string& title = \"Bar Chart\", const std::string& file = \"chart.svg\") {");
+        indent();
+        emit_line("int w=_width, h=_height, pad=60;");
+        emit_line("double mx=*std::max_element(values.begin(),values.end());");
+        emit_line("if(mx<1e-10) mx=1;");
+        emit_line("int n=values.size(); int bw=(w-pad-20)/n-4;");
+        emit_line("std::string svg = _svg_header(title, w, h);");
+        emit_line("for(int i=0;i<n;i++) {");
+        indent();
+        emit_line("int x = pad + i*(bw+4);");
+        emit_line("int bh = (int)((values[i]/mx) * (h-pad-60));");
+        emit_line("int y = h-pad-bh;");
+        emit_line("svg += \"<rect x='\" + std::to_string(x) + \"' y='\" + std::to_string(y) + \"' width='\" + std::to_string(bw) + \"' height='\" + std::to_string(bh) + \"' fill='#ff6b35' rx='3' />\";");
+        emit_line("svg += \"<text x='\" + std::to_string(x+bw/2) + \"' y='\" + std::to_string(h-pad+15) + \"' fill='#888' text-anchor='middle' font-size='10'>\" + labels[i] + \"</text>\";");
+        emit_line("svg += \"<text x='\" + std::to_string(x+bw/2) + \"' y='\" + std::to_string(y-5) + \"' fill='#ccc' text-anchor='middle' font-size='10'>\" + std::to_string((int)values[i]) + \"</text>\";");
+        dedent();
+        emit_line("}");
+        emit_line("svg += \"</svg>\";");
+        emit_line("_last_svg = svg;");
+        emit_line("std::ofstream f(file); f << svg;");
+        emit_line("std::cout << \"Chart saved: \" << file << std::endl;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Scatter plot
+        emit_line("void scatter(const std::vector<double>& x, const std::vector<double>& y, const std::string& title = \"Scatter Plot\", const std::string& file = \"chart.svg\") {");
+        indent();
+        emit_line("int w=_width, h=_height, pad=60;");
+        emit_line("double xmn=*std::min_element(x.begin(),x.end()), xmx=*std::max_element(x.begin(),x.end());");
+        emit_line("double ymn=*std::min_element(y.begin(),y.end()), ymx=*std::max_element(y.begin(),y.end());");
+        emit_line("if(std::abs(xmx-xmn)<1e-10)xmx=xmn+1; if(std::abs(ymx-ymn)<1e-10)ymx=ymn+1;");
+        emit_line("std::string svg = _svg_header(title, w, h);");
+        emit_line("svg += \"<line x1='\" + std::to_string(pad) + \"' y1='\" + std::to_string(h-pad) + \"' x2='\" + std::to_string(w-20) + \"' y2='\" + std::to_string(h-pad) + \"' stroke='#333' />\";");
+        emit_line("svg += \"<line x1='\" + std::to_string(pad) + \"' y1='50' x2='\" + std::to_string(pad) + \"' y2='\" + std::to_string(h-pad) + \"' stroke='#333' />\";");
+        emit_line("for(size_t i=0;i<x.size();i++) {");
+        indent();
+        emit_line("int px = pad + (int)((x[i]-xmn)/(xmx-xmn) * (w-pad-20));");
+        emit_line("int py = (h-pad) - (int)((y[i]-ymn)/(ymx-ymn) * (h-pad-50));");
+        emit_line("svg += \"<circle cx='\" + std::to_string(px) + \"' cy='\" + std::to_string(py) + \"' r='4' fill='#ff8c42' opacity='0.7' />\";");
+        dedent();
+        emit_line("}");
+        emit_line("svg += \"</svg>\";");
+        emit_line("_last_svg = svg;");
+        emit_line("std::ofstream f(file); f << svg;");
+        emit_line("std::cout << \"Chart saved: \" << file << std::endl;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Histogram
+        emit_line("void histogram(const std::vector<double>& data, int64_t bins = 20, const std::string& title = \"Histogram\", const std::string& file = \"chart.svg\") {");
+        indent();
+        emit_line("double mn=*std::min_element(data.begin(),data.end()), mx=*std::max_element(data.begin(),data.end());");
+        emit_line("if(std::abs(mx-mn)<1e-10)mx=mn+1;");
+        emit_line("double bin_width=(mx-mn)/bins;");
+        emit_line("std::vector<int64_t> counts(bins, 0);");
+        emit_line("for(auto v:data){int b=std::min((int64_t)((v-mn)/bin_width),bins-1);counts[b]++;}");
+        emit_line("std::vector<std::string> labels(bins);");
+        emit_line("std::vector<double> vals(bins);");
+        emit_line("for(int64_t i=0;i<bins;i++){labels[i]=std::to_string((int)(mn+i*bin_width));vals[i]=(double)counts[i];}");
+        emit_line("bar(labels, vals, title, file);");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Heatmap
+        emit_line("void heatmap(const std::vector<std::vector<double>>& matrix, const std::string& title = \"Heatmap\", const std::string& file = \"chart.svg\") {");
+        indent();
+        emit_line("int rows=matrix.size(), cols=matrix[0].size();");
+        emit_line("int w=_width, h=_height, pad=60;");
+        emit_line("int cw=(w-pad-20)/cols, ch=(h-pad-50)/rows;");
+        emit_line("double mn=1e18, mx=-1e18;");
+        emit_line("for(auto& row:matrix) for(auto v:row){mn=std::min(mn,v);mx=std::max(mx,v);}");
+        emit_line("if(std::abs(mx-mn)<1e-10)mx=mn+1;");
+        emit_line("std::string svg = _svg_header(title, w, h);");
+        emit_line("for(int r=0;r<rows;r++) for(int c=0;c<cols;c++){");
+        indent();
+        emit_line("double norm=(matrix[r][c]-mn)/(mx-mn);");
+        emit_line("int red=(int)(norm*255), blue=(int)((1-norm)*255);");
+        emit_line("int x=pad+c*cw, y=50+r*ch;");
+        emit_line("svg+=\"<rect x='\"+std::to_string(x)+\"' y='\"+std::to_string(y)+\"' width='\"+std::to_string(cw-1)+\"' height='\"+std::to_string(ch-1)+\"' fill='rgb(\"+std::to_string(red)+\",50,\"+std::to_string(blue)+\")' />\";");
+        emit_line("svg+=\"<text x='\"+std::to_string(x+cw/2)+\"' y='\"+std::to_string(y+ch/2+4)+\"' fill='white' text-anchor='middle' font-size='10'>\"+std::to_string((int)(matrix[r][c]*100)/100.0).substr(0,4)+\"</text>\";");
+        dedent();
+        emit_line("}");
+        emit_line("svg += \"</svg>\";");
+        emit_line("_last_svg = svg;");
+        emit_line("std::ofstream f(file); f << svg;");
+        emit_line("std::cout << \"Chart saved: \" << file << std::endl;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Training curve (takes vector of loss values)
+        emit_line("void training_curve(const std::vector<double>& loss, const std::string& title = \"Training Loss\", const std::string& file = \"training.svg\") {");
+        indent();
+        emit_line("line(loss, title, file);");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Save last chart
+        emit_line("void save(const std::string& file) { std::ofstream f(file); f << _last_svg; std::cout << \"Chart saved: \" << file << std::endl; }");
+        emit_line("");
+        // Show (open in browser)
+        emit_line("void show() {");
+        indent();
+        emit_line("#ifdef _WIN32");
+        emit_line("save(\"_pyro_chart.svg\"); std::system(\"start _pyro_chart.svg\");");
+        emit_line("#elif __APPLE__");
+        emit_line("save(\"_pyro_chart.svg\"); std::system(\"open _pyro_chart.svg\");");
+        emit_line("#else");
+        emit_line("save(\"_pyro_chart.svg\"); std::system(\"xdg-open _pyro_chart.svg 2>/dev/null &\");");
+        emit_line("#endif");
+        dedent();
+        emit_line("}");
+
+        dedent();
+        emit_line("} // namespace pyro_plot");
         emit_line("");
     } else if (stmt.module == "img") {
         emit_line("namespace pyro_img {");
@@ -4173,6 +4563,133 @@ void CodeGenerator::emit_import(const ImportStmt& stmt) {
         dedent();
         emit_line("} // namespace pyro_ai");
         emit_line("");
+    } else if (stmt.module == "tensor") {
+        emit_line("namespace pyro_tensor {");
+        indent();
+
+        emit_line("struct Tensor {");
+        indent();
+        emit_line("std::vector<double> data;");
+        emit_line("std::vector<int64_t> shape;");
+        emit_line("");
+        emit_line("int64_t size() const { int64_t s=1; for(auto d:shape) s*=d; return s; }");
+        emit_line("int64_t ndim() const { return shape.size(); }");
+        emit_line("int64_t rows() const { return shape.size()>=1 ? shape[0] : 0; }");
+        emit_line("int64_t cols() const { return shape.size()>=2 ? shape[1] : data.size(); }");
+        emit_line("");
+        // Element access
+        emit_line("double& at(int64_t i) { return data[i]; }");
+        emit_line("double& at(int64_t r, int64_t c) { return data[r * shape[1] + c]; }");
+        emit_line("const double& at(int64_t r, int64_t c) const { return data[r * shape[1] + c]; }");
+        emit_line("");
+        // Reshape
+        emit_line("Tensor reshape(int64_t r, int64_t c) const { Tensor t; t.data=data; t.shape={r,c}; return t; }");
+        emit_line("Tensor flatten() const { Tensor t; t.data=data; t.shape={(int64_t)data.size()}; return t; }");
+        // Transpose
+        emit_line("Tensor T() const {");
+        indent();
+        emit_line("if (shape.size() != 2) return *this;");
+        emit_line("Tensor t; t.shape={shape[1],shape[0]}; t.data.resize(data.size());");
+        emit_line("for(int64_t i=0;i<shape[0];i++) for(int64_t j=0;j<shape[1];j++) t.data[j*shape[0]+i]=data[i*shape[1]+j];");
+        emit_line("return t;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+        // Arithmetic operators
+        emit_line("Tensor operator+(const Tensor& o) const { Tensor t; t.shape=shape; t.data.resize(data.size()); for(size_t i=0;i<data.size();i++) t.data[i]=data[i]+o.data[i]; return t; }");
+        emit_line("Tensor operator-(const Tensor& o) const { Tensor t; t.shape=shape; t.data.resize(data.size()); for(size_t i=0;i<data.size();i++) t.data[i]=data[i]-o.data[i]; return t; }");
+        emit_line("Tensor operator*(const Tensor& o) const { Tensor t; t.shape=shape; t.data.resize(data.size()); for(size_t i=0;i<data.size();i++) t.data[i]=data[i]*o.data[i]; return t; }");
+        emit_line("Tensor operator/(const Tensor& o) const { Tensor t; t.shape=shape; t.data.resize(data.size()); for(size_t i=0;i<data.size();i++) t.data[i]=data[i]/o.data[i]; return t; }");
+        emit_line("Tensor operator*(double s) const { Tensor t; t.shape=shape; t.data.resize(data.size()); for(size_t i=0;i<data.size();i++) t.data[i]=data[i]*s; return t; }");
+        emit_line("Tensor operator+(double s) const { Tensor t; t.shape=shape; t.data.resize(data.size()); for(size_t i=0;i<data.size();i++) t.data[i]=data[i]+s; return t; }");
+        dedent();
+        emit_line("};");
+        emit_line("");
+        // Print
+        emit_line("std::ostream& operator<<(std::ostream& os, const Tensor& t) {");
+        indent();
+        emit_line("if (t.shape.size() == 1) {");
+        indent();
+        emit_line("os << \"[\"; for(size_t i=0;i<t.data.size();i++){if(i)os<<\", \";os<<t.data[i];} os<<\"]\"; return os;");
+        dedent();
+        emit_line("}");
+        emit_line("os << \"[\\n\";");
+        emit_line("for(int64_t r=0;r<t.shape[0];r++){os<<\"  [\";for(int64_t c=0;c<t.shape[1];c++){if(c)os<<\", \";os<<t.at(r,c);}os<<\"]\\n\";}");
+        emit_line("os << \"]\"; return os;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+        // Creation functions
+        emit_line("Tensor create(std::initializer_list<double> vals) { Tensor t; t.data = vals; t.shape = {(int64_t)t.data.size()}; return t; }");
+        emit_line("Tensor zeros(int64_t r, int64_t c=1) { Tensor t; t.shape=(c==1)?std::vector<int64_t>{r}:std::vector<int64_t>{r,c}; t.data.resize(r*c, 0.0); return t; }");
+        emit_line("Tensor ones(int64_t r, int64_t c=1) { Tensor t; t.shape=(c==1)?std::vector<int64_t>{r}:std::vector<int64_t>{r,c}; t.data.resize(r*c, 1.0); return t; }");
+        emit_line("Tensor eye(int64_t n) { Tensor t; t.shape={n,n}; t.data.resize(n*n,0.0); for(int64_t i=0;i<n;i++) t.data[i*n+i]=1.0; return t; }");
+        emit_line("Tensor random(int64_t r, int64_t c=1) {");
+        indent();
+        emit_line("static std::mt19937 gen(42);");
+        emit_line("static std::uniform_real_distribution<double> dist(0.0, 1.0);");
+        emit_line("Tensor t; t.shape=(c==1)?std::vector<int64_t>{r}:std::vector<int64_t>{r,c}; t.data.resize(r*c);");
+        emit_line("for(auto& v : t.data) v = dist(gen); return t;");
+        dedent();
+        emit_line("}");
+        emit_line("Tensor range(double start, double end, double step=1.0) {");
+        indent();
+        emit_line("Tensor t; for(double v=start;v<end;v+=step) t.data.push_back(v); t.shape={(int64_t)t.data.size()}; return t;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+        // Reduction operations
+        emit_line("double sum(const Tensor& t) { double s=0; for(auto v:t.data) s+=v; return s; }");
+        emit_line("double mean(const Tensor& t) { return sum(t)/t.data.size(); }");
+        emit_line("double min_val(const Tensor& t) { return *std::min_element(t.data.begin(),t.data.end()); }");
+        emit_line("double max_val(const Tensor& t) { return *std::max_element(t.data.begin(),t.data.end()); }");
+        emit_line("double std_dev(const Tensor& t) { double m=mean(t); double s=0; for(auto v:t.data) s+=(v-m)*(v-m); return std::sqrt(s/t.data.size()); }");
+        emit_line("");
+        // Element-wise math
+        emit_line("Tensor sqrt(const Tensor& t) { Tensor r; r.shape=t.shape; r.data.resize(t.data.size()); for(size_t i=0;i<t.data.size();i++) r.data[i]=std::sqrt(t.data[i]); return r; }");
+        emit_line("Tensor abs(const Tensor& t) { Tensor r; r.shape=t.shape; r.data.resize(t.data.size()); for(size_t i=0;i<t.data.size();i++) r.data[i]=std::abs(t.data[i]); return r; }");
+        emit_line("Tensor exp(const Tensor& t) { Tensor r; r.shape=t.shape; r.data.resize(t.data.size()); for(size_t i=0;i<t.data.size();i++) r.data[i]=std::exp(t.data[i]); return r; }");
+        emit_line("Tensor log(const Tensor& t) { Tensor r; r.shape=t.shape; r.data.resize(t.data.size()); for(size_t i=0;i<t.data.size();i++) r.data[i]=std::log(t.data[i]); return r; }");
+        emit_line("Tensor pow(const Tensor& t, double p) { Tensor r; r.shape=t.shape; r.data.resize(t.data.size()); for(size_t i=0;i<t.data.size();i++) r.data[i]=std::pow(t.data[i],p); return r; }");
+        emit_line("");
+        // Matrix operations
+        emit_line("double dot(const Tensor& a, const Tensor& b) { double s=0; for(size_t i=0;i<a.data.size();i++) s+=a.data[i]*b.data[i]; return s; }");
+        emit_line("Tensor matmul(const Tensor& a, const Tensor& b) {");
+        indent();
+        emit_line("int64_t m=a.shape[0], k=a.shape[1], n=b.shape[1];");
+        emit_line("Tensor r; r.shape={m,n}; r.data.resize(m*n, 0.0);");
+        emit_line("for(int64_t i=0;i<m;i++) for(int64_t j=0;j<n;j++) for(int64_t p=0;p<k;p++) r.data[i*n+j]+=a.data[i*k+p]*b.data[p*n+j];");
+        emit_line("return r;");
+        dedent();
+        emit_line("}");
+        emit_line("Tensor transpose(const Tensor& t) { return t.T(); }");
+        emit_line("");
+        // Determinant (2x2 and 3x3)
+        emit_line("double det(const Tensor& t) {");
+        indent();
+        emit_line("if(t.shape[0]==2&&t.shape[1]==2) return t.data[0]*t.data[3]-t.data[1]*t.data[2];");
+        emit_line("if(t.shape[0]==3&&t.shape[1]==3) return t.data[0]*(t.data[4]*t.data[8]-t.data[5]*t.data[7])-t.data[1]*(t.data[3]*t.data[8]-t.data[5]*t.data[6])+t.data[2]*(t.data[3]*t.data[7]-t.data[4]*t.data[6]);");
+        emit_line("throw std::runtime_error(\"det only supports 2x2 and 3x3 matrices\");");
+        dedent();
+        emit_line("}");
+        emit_line("");
+        // Inverse (2x2)
+        emit_line("Tensor inverse(const Tensor& t) {");
+        indent();
+        emit_line("if(t.shape[0]==2&&t.shape[1]==2) {");
+        indent();
+        emit_line("double d = det(t);");
+        emit_line("if(std::abs(d)<1e-10) throw std::runtime_error(\"Matrix is singular\");");
+        emit_line("Tensor r; r.shape={2,2}; r.data={t.data[3]/d,-t.data[1]/d,-t.data[2]/d,t.data[0]/d}; return r;");
+        dedent();
+        emit_line("}");
+        emit_line("throw std::runtime_error(\"inverse only supports 2x2 matrices currently\");");
+        dedent();
+        emit_line("}");
+
+        dedent();
+        emit_line("} // namespace pyro_tensor");
+        emit_line("");
     }
 }
 
@@ -4616,6 +5133,8 @@ std::string CodeGenerator::emit_member(const MemberExpr& expr) {
         if (id->name == "signal") return "pyro_signal::" + expr.member;
         if (id->name == "compress") return "pyro_compress::" + expr.member;
         if (id->name == "ai") return "pyro_ai::" + expr.member;
+        if (id->name == "tensor") return "pyro_tensor::" + expr.member;
+        if (id->name == "plot") return "pyro_plot::" + expr.member;
         if (enum_names_.count(id->name)) return id->name + "::" + expr.member;
         // db Row field access: row.name -> row.get("name")
         if (imports_.count("db") && db_row_vars_.count(id->name)) {
