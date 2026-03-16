@@ -2,7 +2,7 @@
 # P.Y.R.O — Performance You Really Own
 # Created by Aravind Pilla
 
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
 
 Write-Host ""
 Write-Host "  🔥 Pyro Installer for Windows" -ForegroundColor Yellow
@@ -68,7 +68,8 @@ if (-not $hasVS -and -not $hasGpp) {
     Write-Host "  IMPORTANT: Please restart PowerShell and run this script again." -ForegroundColor Yellow
     Write-Host "  The C++ compiler needs a fresh terminal to be detected." -ForegroundColor Yellow
     Write-Host ""
-    exit 0
+    Read-Host "  Press Enter to close"
+    return
 }
 
 Write-Host "  Cloning Pyro..." -ForegroundColor Cyan
@@ -99,7 +100,8 @@ if (Test-Path $exePath) {
 } else {
     Write-Host "  Build failed. Check that Visual Studio Build Tools are installed." -ForegroundColor Red
     Pop-Location
-    exit 1
+    Read-Host "  Press Enter to close"
+    return
 }
 
 Pop-Location
@@ -126,3 +128,4 @@ Write-Host "  pyro run hello.ro" -ForegroundColor White
 Write-Host ""
 Write-Host "  Restart PowerShell for PATH to take effect." -ForegroundColor Yellow
 Write-Host ""
+Read-Host "  Press Enter to close"
