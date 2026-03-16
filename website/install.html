@@ -60,9 +60,14 @@
             </div>
           </div>
           <div class="tab-content" data-tab-content="qi-windows">
-            <div class="install-cmd">
-              <code>irm https://aravindlabs.tech/pyro-lang/install.ps1 | iex</code>
-              <p style="font-size:0.8rem;color:var(--text-secondary);margin-top:6px;">Downloads a pre-built binary. No C++ compiler, no Visual Studio, no restarts needed.</p>
+            <div class="install-cmd" style="text-align:center;">
+              <a href="https://github.com/krish9219/pyro/releases/download/v1.0.0/pyro-1.0.0-windows-setup.exe"
+                 style="display:inline-block;padding:14px 32px;background:var(--accent);color:#fff;border-radius:8px;font-weight:700;font-size:1.1rem;text-decoration:none;margin-bottom:12px;">
+                Download Pyro Installer (.exe)
+              </a>
+              <p style="font-size:0.85rem;color:var(--text-secondary);margin-top:8px;">Standalone installer (891 KB). Includes everything — no Visual Studio, no restarts.</p>
+              <p style="font-size:0.8rem;color:var(--text-secondary);margin-top:12px;">Or via PowerShell:</p>
+              <code style="font-size:0.85rem;">irm https://aravindlabs.tech/pyro-lang/install.ps1 | iex</code>
               <button class="copy-inline">Copy</button>
             </div>
           </div>
@@ -149,15 +154,25 @@ pyro run -e 'print("Hello from Pyro!")'</code></pre>
     <section style="padding: 0 0 48px;">
       <h2 id="windows" style="font-size: 1.5rem; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border);">Windows</h2>
 
-      <h3 style="font-size: 1.1rem; margin: 24px 0 12px;">Quick install (recommended)</h3>
-      <p style="color: var(--text-secondary); margin-bottom: 12px;">Downloads a pre-built binary. <strong>No C++ compiler, no Visual Studio, no restarts needed.</strong></p>
-      <pre><button class="copy-btn">Copy</button><code>irm https://aravindlabs.tech/pyro-lang/install.ps1 | iex</code></pre>
-      <p style="color: var(--text-secondary); margin: 12px 0;">This downloads <code>pyro.exe</code> to <code>%USERPROFILE%\.pyro\bin\</code> and adds it to your PATH.</p>
+      <h3 style="font-size: 1.1rem; margin: 24px 0 12px;">Installer (recommended)</h3>
+      <p style="color: var(--text-secondary); margin-bottom: 12px;"><strong>No C++ compiler, no Visual Studio, no restarts needed.</strong></p>
+      <p style="margin-bottom: 16px;">
+        <a href="https://github.com/krish9219/pyro/releases/download/v1.0.0/pyro-1.0.0-windows-setup.exe"
+           style="color: var(--accent); font-weight: 600; font-size: 1.05rem;">
+          Download pyro-1.0.0-windows-setup.exe (891 KB)
+        </a>
+      </p>
+      <p style="color: var(--text-secondary); margin-bottom: 8px;">The installer includes:</p>
+      <ul style="list-style: disc; padding-left: 24px; margin-bottom: 16px;">
+        <li style="margin-bottom: 6px; color: var(--text-secondary);">Pyro compiler with all 76 built-in modules</li>
+        <li style="margin-bottom: 6px; color: var(--text-secondary);">MinGW C++ toolchain (auto-downloaded, so <code>pyro run</code> works immediately)</li>
+        <li style="margin-bottom: 6px; color: var(--text-secondary);">PATH setup, Start Menu shortcuts, .ro file association</li>
+        <li style="margin-bottom: 6px; color: var(--text-secondary);">Clean uninstaller via Add/Remove Programs</li>
+      </ul>
 
-      <h3 style="font-size: 1.1rem; margin: 24px 0 12px;">Manual download</h3>
-      <p style="color: var(--text-secondary); margin-bottom: 12px;">Download the latest <code>pyro-windows-x86_64.exe</code> from
-        <a href="https://github.com/krish9219/pyro/releases" style="color: var(--accent);">GitHub Releases</a>,
-        rename it to <code>pyro.exe</code>, and place it anywhere in your PATH.</p>
+      <h3 style="font-size: 1.1rem; margin: 24px 0 12px;">Alternative: PowerShell one-liner</h3>
+      <pre><button class="copy-btn">Copy</button><code>irm https://aravindlabs.tech/pyro-lang/install.ps1 | iex</code></pre>
+      <p style="color: var(--text-secondary); margin: 12px 0;">Downloads <code>pyro.exe</code> to <code>%USERPROFILE%\.pyro\bin\</code>. Note: you'll need to install a C++ compiler separately for <code>pyro run</code>.</p>
 
       <h3 style="font-size: 1.1rem; margin: 24px 0 12px;">Build from source (advanced)</h3>
       <details style="margin-bottom: 16px;">
