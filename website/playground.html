@@ -516,24 +516,22 @@ print("Sentences: {nlp.count_sentences(text)}")`,
 # Train a model in pure Pyro, compiled to C++
 import ml
 
-# Create a dataset manually
-# Features: [hours_studied, hours_slept]
-# Target: exam_score
+# Create dataset: [hours_studied, hours_slept] -> exam_score
 mut ds = ml.Dataset()
 ds.X = [[1.0, 8.0], [2.0, 7.0], [3.0, 6.0], [4.0, 7.0], [5.0, 6.0], [6.0, 5.0], [7.0, 4.0], [8.0, 3.0]]
 ds.y = [30.0, 40.0, 50.0, 55.0, 65.0, 70.0, 80.0, 85.0]
 
-# Train linear regression
+# Train linear regression — compiled to native C++
 model = ml.linear_regression(ds, 0.01, 2000)
 print(model)
 
-# Predict
-mut test = ml.Dataset()
-test.X = [[5.0, 6.0], [9.0, 2.0]]
-preds = model.predict(test)
+# Predict on new data
+mut new_data = ml.Dataset()
+new_data.X = [[5.0, 6.0], [9.0, 2.0]]
+preds = model.predict(new_data)
 print("Predictions: {preds}")
 
-# Metrics
+# Evaluate
 print("MSE: {ml.mse(preds, [65.0, 90.0])}")`,
 
   nn: `# Neural Networks — zero TensorFlow/PyTorch
@@ -581,17 +579,17 @@ c = tensor.matmul(a, b)
 print("I * B = B:")
 print(c)
 
-# Operations
-print("Sum: {tensor.sum(b)}")
-print("Mean: {tensor.mean(b)}")
+# Reductions
+s = tensor.sum(b)
+m = tensor.mean(b)
+print("Sum: {s}")
+print("Mean: {m}")
 
 # 2x2 determinant and inverse
-m = tensor.create([1.0, 2.0, 3.0, 4.0]).reshape(2, 2)
-print("Matrix:")
-print(m)
-print("Det: {tensor.det(m)}")
-print("Inverse:")
-print(tensor.inverse(m))`,
+mat = tensor.zeros(2, 2)
+print("Det of 2x2:")
+d = tensor.det(tensor.eye(2))
+print(d)`,
 
   test: `# Testing Framework — zero pytest
 # Built-in test runner with colored output
@@ -623,24 +621,31 @@ test.run("this should fail", fn()
 test.summary()`,
 
   ai: `# AI — first language with built-in LLM
-# No pip install openai. No API keys. Just import ai.
+# Works with: NVIDIA, OpenAI, Gemini, Grok, Ollama,
+# OpenRouter, Groq, Mistral, DeepSeek, Together
 import ai
 
-# One line — chat with an LLM
-response = ai.chat("What is 2+2? Answer in one word.")
+# Default: NVIDIA (works out of the box)
+response = ai.chat("What is 2+2? One word answer.")
 print("AI says: {response}")
 
-# Translate
+# Switch provider — just 1 line:
+# ai.provider("openai", "sk-your-key")
+# ai.provider("gemini", "your-key")
+# ai.provider("grok", "your-key")
+# ai.provider("ollama", "")  # local, no key needed
+# ai.provider("openrouter", "your-key", "model-name")
+
+# AI utilities — all one-liners
 french = ai.translate("Hello, how are you?", "French")
 print("French: {french}")
 
-# Classify
-label = ai.classify("I love this product!", ["positive", "negative", "neutral"])
+label = ai.classify("Pyro is amazing!", ["positive", "negative", "neutral"])
 print("Sentiment: {label}")
 
-# Generate Pyro code
-code = ai.generate_code("function that checks if a number is prime")
-print("Generated code:")
+# Generate Pyro code (NOT Python!)
+code = ai.generate_code("fibonacci function")
+print("Generated:")
 print(code)`
 };
 

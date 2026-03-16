@@ -4605,13 +4605,33 @@ void CodeGenerator::emit_import(const ImportStmt& stmt) {
         emit_line("");
 
         // Core config
+        // Multi-provider support — all use OpenAI-compatible /v1/chat/completions
         emit_line("static std::string _api_key = \"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\";");
         emit_line("static std::string _default_model = \"meta/llama-3.3-70b-instruct\";");
         emit_line("static std::string _api_url = \"https://integrate.api.nvidia.com/v1/chat/completions\";");
         emit_line("");
-
         emit_line("void set_key(const std::string& key) { _api_key = key; }");
         emit_line("void set_model(const std::string& model) { _default_model = model; }");
+        emit_line("void set_url(const std::string& url) { _api_url = url; }");
+        emit_line("");
+        emit_line("// Pre-configured providers — just call provider() with your key");
+        emit_line("void provider(const std::string& name, const std::string& key, const std::string& model = \"\") {");
+        indent();
+        emit_line("_api_key = key;");
+        emit_line("if (name == \"nvidia\") { _api_url = \"https://integrate.api.nvidia.com/v1/chat/completions\"; if(model.empty()) _default_model = \"meta/llama-3.3-70b-instruct\"; else _default_model = model; }");
+        emit_line("else if (name == \"openai\") { _api_url = \"https://api.openai.com/v1/chat/completions\"; if(model.empty()) _default_model = \"gpt-4o\"; else _default_model = model; }");
+        emit_line("else if (name == \"openrouter\") { _api_url = \"https://openrouter.ai/api/v1/chat/completions\"; if(model.empty()) _default_model = \"meta-llama/llama-3.3-70b-instruct\"; else _default_model = model; }");
+        emit_line("else if (name == \"ollama\") { _api_url = \"http://localhost:11434/v1/chat/completions\"; if(model.empty()) _default_model = \"llama3\"; else _default_model = model; }");
+        emit_line("else if (name == \"gemini\" || name == \"google\") { _api_url = \"https://generativelanguage.googleapis.com/v1beta/openai/chat/completions\"; if(model.empty()) _default_model = \"gemini-2.0-flash\"; else _default_model = model; }");
+        emit_line("else if (name == \"grok\" || name == \"xai\") { _api_url = \"https://api.x.ai/v1/chat/completions\"; if(model.empty()) _default_model = \"grok-3\"; else _default_model = model; }");
+        emit_line("else if (name == \"anthropic\" || name == \"claude\") { _api_url = \"https://api.anthropic.com/v1/chat/completions\"; if(model.empty()) _default_model = \"claude-sonnet-4-20250514\"; else _default_model = model; }");
+        emit_line("else if (name == \"groq\") { _api_url = \"https://api.groq.com/openai/v1/chat/completions\"; if(model.empty()) _default_model = \"llama-3.3-70b-versatile\"; else _default_model = model; }");
+        emit_line("else if (name == \"mistral\") { _api_url = \"https://api.mistral.ai/v1/chat/completions\"; if(model.empty()) _default_model = \"mistral-large-latest\"; else _default_model = model; }");
+        emit_line("else if (name == \"deepseek\") { _api_url = \"https://api.deepseek.com/v1/chat/completions\"; if(model.empty()) _default_model = \"deepseek-chat\"; else _default_model = model; }");
+        emit_line("else if (name == \"together\") { _api_url = \"https://api.together.xyz/v1/chat/completions\"; if(model.empty()) _default_model = \"meta-llama/Llama-3.3-70B-Instruct-Turbo\"; else _default_model = model; }");
+        emit_line("else { _api_url = name; _default_model = model.empty() ? \"default\" : model; }");
+        dedent();
+        emit_line("}");
         emit_line("");
 
         // JSON escape helper
@@ -4772,7 +4792,7 @@ void CodeGenerator::emit_import(const ImportStmt& stmt) {
         // ai.generate_code
         emit_line("std::string generate_code(const std::string& description) {");
         indent();
-        emit_line("return chat(\"Write code in Pyro programming language for: \" + description + \".\\nOnly output the code, no explanations.\", \"You are a Pyro programming language expert. Pyro uses # for comments, fn for functions, indentation-based blocks (no end keyword), import for modules, and {var} for string interpolation.\", \"\");");
+        emit_line("return chat(\"Write code in the Pyro programming language (NOT Python) for: \" + description + \".\\nOnly output the code, no explanations.\\nIMPORTANT PYRO RULES: use fn (not def), use # for comments (not //), NO colons after if/for/while/fn, indentation-based blocks (no end keyword, no curly braces), use 0..10 for ranges (not range(10)), string interpolation uses {var} (no f prefix), use |x| x*2 for lambdas (not lambda x:), use |> for pipe operator, use import (not from/import), use mut for mutable variables.\", \"You are a Pyro language expert. NEVER output Python. Pyro syntax: fn greet(name) followed by indented body. for i in 0..10 followed by indented body. if x > 5 followed by indented body. No colons, no def, no end keyword.\", \"\");");
         dedent();
         emit_line("}");
         emit_line("");
@@ -5782,7 +5802,8 @@ std::string CodeGenerator::emit_call(const CallExpr& expr) {
                 "sort", "search", "graph", "matrix", "set", "stack", "deque",
                 "heap", "trie", "bitset",
                 "http", "cookie", "session", "cors", "rate", "jwt",
-                "websocket", "smtp", "dns", "ping"
+                "websocket", "smtp", "dns", "ping",
+                "tensor", "nn", "nlp", "cv", "ai", "plot"
             };
             is_module = modules.count(id->name) > 0;
         }
