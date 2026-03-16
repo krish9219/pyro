@@ -14,7 +14,7 @@ Pyro is a modern, blazing-fast programming language that compiles to native C++ 
 | Speed | **Native C++ (10-100x faster)** | Interpreted |
 | Type annotations | **None needed** | Optional but everywhere |
 | Pipe operator `\|>` | **Built-in** | Doesn't exist |
-| Immutable by default | **Yes (`let`)** | No (everything mutable) |
+| Immutable by default | **Yes (bare assignment is immutable)** | No (everything mutable) |
 | Built-in libraries | **20 power modules** | Needs pip install |
 | Security | **Built-in crypto/auth/validate** | pip install 5+ packages |
 | Concurrency | **True parallelism** | GIL-limited |
@@ -87,16 +87,16 @@ fn cube(x) = x * x * x
 #   result = negate(add_ten(double(5)))
 
 # Pyro (clean, read left-to-right):
-let result = 5 |> double |> add_ten |> negate
+result = 5 |> double |> add_ten |> negate
 
 # Chain any functions naturally
-let output = data |> transform |> validate |> save
+output = data |> transform |> validate |> save
 ```
 
 ### 3. Immutable by Default — Safer Than Python
 
 ```pyro
-let x = 42          # immutable — compiler prevents accidental changes
+x = 42              # immutable — compiler prevents accidental changes
 mut counter = 0     # explicitly mutable — you chose this
 counter = counter + 1
 # x = 10            # ERROR: x is immutable
@@ -134,20 +134,20 @@ import crypto
 import validate
 
 # Auto XSS prevention
-let safe = validate.sanitize(user_input)
+safe = validate.sanitize(user_input)
 
 # SQL injection prevention
-let query = validate.sql_safe(user_query)
+query = validate.sql_safe(user_query)
 
 # Password hashing (bcrypt built-in)
-let hash = crypto.hash_password("secret")
-let valid = crypto.verify_password("secret", hash)
+hash = crypto.hash_password("secret")
+valid = crypto.verify_password("secret", hash)
 
 # AES-256 encryption
-let encrypted = crypto.encrypt("data", "key")
+encrypted = crypto.encrypt("data", "key")
 
 # JWT tokens
-let token = auth.jwt_sign({"user": "aravind"}, "secret")
+token = auth.jwt_sign({"user": "aravind"}, "secret")
 ```
 
 ### 6. Data Science (Built-in, not pip install)
@@ -156,9 +156,9 @@ let token = auth.jwt_sign({"user": "aravind"}, "secret")
 import data
 import viz
 
-let df = data.read("sales.csv")
-let avg = df.col("revenue").mean()
-let filtered = df.where("revenue > 1000")
+df = data.read("sales.csv")
+avg = df.col("revenue").mean()
+filtered = df.where("revenue > 1000")
 
 # Built-in visualization
 viz.bar(df, "month", "revenue")
@@ -170,7 +170,7 @@ viz.save("chart.png")
 ```pyro
 import web
 
-let app = web.app()
+app = web.app()
 
 app.get("/")
     return web.html("<h1>Hello Pyro!</h1>")
@@ -202,7 +202,7 @@ struct User
     fn greet(self)
         return "Hi, I'm " + self.name
 
-let user = User("Aravind", 25, "aravind@pyro.dev")
+user = User("Aravind", 25, "aravind@pyro.dev")
 print(user.greet())
 ```
 
@@ -210,11 +210,11 @@ print(user.greet())
 
 ```pyro
 async fn fetch(url)
-    let response = await web.get(url)
+    response = await web.get(url)
     return response.body
 
 async fn main()
-    let data = await fetch("https://api.example.com")
+    data = await fetch("https://api.example.com")
     print(data)
 ```
 

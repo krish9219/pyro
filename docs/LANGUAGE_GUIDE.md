@@ -78,7 +78,7 @@ Create a file named `hello.ro`:
 
 ```pyro
 fn main()
-    let greeting = "Hello, World!"
+    greeting = "Hello, World!"
     print(greeting)
 ```
 
@@ -111,27 +111,35 @@ You get the developer experience of a scripting language with the runtime perfor
 
 ## 3. Variables
 
-### Immutable Variables with `let`
+### Simple Assignment
 
-By default, all variables in Pyro are immutable. Use `let` to declare them:
+In Pyro, just assign values directly — no keyword needed. Variables are immutable by default:
 
 ```pyro
-let name = "Pyro"
-let version = 1
-let pi = 3.14159
-let active = true
+name = "Pyro"
+version = 1
+pi = 3.14159
+active = true
 ```
 
-Attempting to reassign an immutable variable is a compile-time error:
+Variables are immutable by default. Attempting to reassign is a compile-time error:
 
 ```pyro
-let x = 10
+x = 10
 x = 20       # Error: cannot reassign immutable variable 'x'
+```
+
+### Optional `let` for Explicit Immutability
+
+The `let` keyword is optional but still supported for when you want to be explicit:
+
+```pyro
+locked = 42     # explicitly immutable — same as bare assignment
 ```
 
 ### Mutable Variables with `mut`
 
-When you genuinely need a value to change, declare it with `mut`:
+When you need a value to change, declare it with `mut`:
 
 ```pyro
 mut counter = 0
@@ -145,12 +153,12 @@ Immutable bindings make code easier to reason about. When you see `let x = 5`, y
 
 ### Shadowing
 
-You can redeclare a variable with `let` in the same scope. This creates a new binding rather than mutating the old one:
+You can redeclare a variable in the same scope. This creates a new binding rather than mutating the old one:
 
 ```pyro
-let x = 10
-let x = x + 5     # x is now 15, but this is a new binding
-let x = "hello"   # x is now a string -- shadowing allows type change
+x = 10
+x = x + 5     # x is now 15, but this is a new binding
+x = "hello"   # x is now a string -- shadowing allows type change
 ```
 
 ---
@@ -183,9 +191,9 @@ Pyro has seven built-in data types. Types are fully dynamic -- you never annotat
 Integers in Pyro are 64-bit signed values. They support standard arithmetic and bitwise operations.
 
 ```pyro
-let a = 100
-let b = -50
-let big = 9_000_000_000    # Underscores for readability
+a = 100
+b = -50
+big = 9_000_000_000    # Underscores for readability
 ```
 
 #### float
@@ -193,9 +201,9 @@ let big = 9_000_000_000    # Underscores for readability
 Floating-point numbers follow IEEE 754 double precision.
 
 ```pyro
-let pi = 3.14159
-let tiny = 0.001
-let scientific = 2.5e10
+pi = 3.14159
+tiny = 0.001
+scientific = 2.5e10
 ```
 
 #### str
@@ -203,9 +211,9 @@ let scientific = 2.5e10
 Strings are immutable sequences of UTF-8 characters, enclosed in double quotes.
 
 ```pyro
-let greeting = "Hello, Pyro!"
-let multiline = "Line one\nLine two"
-let escaped = "She said \"hi\""
+greeting = "Hello, Pyro!"
+multiline = "Line one\nLine two"
+escaped = "She said \"hi\""
 ```
 
 #### bool
@@ -213,8 +221,8 @@ let escaped = "She said \"hi\""
 Booleans are either `true` or `false`. They are the result of comparison and logical operations.
 
 ```pyro
-let is_ready = true
-let is_empty = false
+is_ready = true
+is_empty = false
 ```
 
 #### nil
@@ -222,7 +230,7 @@ let is_empty = false
 `nil` represents the absence of a value. Functions that do not return anything implicitly return `nil`.
 
 ```pyro
-let nothing = nil
+nothing = nil
 ```
 
 ---
@@ -240,9 +248,9 @@ let nothing = nil
 | `%`      | Modulo         | `17 % 5`     | `2`    |
 
 ```pyro
-let sum = 10 + 20
-let product = sum * 3
-let remainder = product % 7
+sum = 10 + 20
+product = sum * 3
+remainder = product % 7
 ```
 
 ### Comparison Operators
@@ -257,11 +265,11 @@ let remainder = product % 7
 | `>=`     | Greater than or equal | `3 >= 5`   | `false` |
 
 ```pyro
-let x = 10
-let y = 20
-let is_less = x < y          # true
-let is_equal = x == y        # false
-let is_not_equal = x != y    # true
+x = 10
+y = 20
+is_less = x < y          # true
+is_equal = x == y        # false
+is_not_equal = x != y    # true
 ```
 
 ### Logical Operators
@@ -275,8 +283,8 @@ let is_not_equal = x != y    # true
 Pyro uses English words for logical operators instead of symbols. This improves readability:
 
 ```pyro
-let age = 25
-let has_license = true
+age = 25
+has_license = true
 
 if age >= 18 and has_license
     print("Can drive")
@@ -290,9 +298,9 @@ if not has_license or age < 18
 The `+` operator concatenates strings:
 
 ```pyro
-let first = "Hello"
-let second = "World"
-let message = first + ", " + second + "!"    # "Hello, World!"
+first = "Hello"
+second = "World"
+message = first + ", " + second + "!"    # "Hello, World!"
 ```
 
 ---
@@ -316,10 +324,10 @@ fn to_string(x)
     return str(x)
 
 # Without pipes (nested, hard to read):
-let result = to_string(add_ten(double(5)))
+result = to_string(add_ten(double(5)))
 
 # With pipes (left-to-right, easy to read):
-let result = 5 |> double |> add_ten |> to_string
+result = 5 |> double |> add_ten |> to_string
 # 5 -> 10 -> 20 -> "20"
 ```
 
@@ -330,7 +338,7 @@ Pipes shine when processing data through multiple stages:
 ```pyro
 import data
 
-let report = data.read("sales.csv")
+report = data.read("sales.csv")
     |> data.where("revenue > 1000")
     |> data.sort("revenue", "desc")
     |> data.top(10)
@@ -340,7 +348,7 @@ let report = data.read("sales.csv")
 ### Piping with Built-in Functions
 
 ```pyro
-let message = "  hello world  "
+message = "  hello world  "
     |> trim
     |> upper
     |> replace("WORLD", "PYRO")
@@ -351,9 +359,9 @@ print(message)    # "HELLO PYRO"
 ### Piping with Closures
 
 ```pyro
-let numbers = [1, 2, 3, 4, 5]
+numbers = [1, 2, 3, 4, 5]
 
-let result = numbers
+result = numbers
     |> filter(fn(x) = x % 2 == 0)
     |> map(fn(x) = x * 10)
     |> reduce(0, fn(acc, x) = acc + x)
@@ -367,7 +375,7 @@ print(result)    # 60
 import web
 
 async fn main()
-    let user_name = await web.get("https://api.example.com/user/1")
+    user_name = await web.get("https://api.example.com/user/1")
         |> extract_body
         |> json.parse
         |> get_field("name")
@@ -400,7 +408,7 @@ Functions simply return values without declaring a return type:
 fn add(a, b)
     return a + b
 
-let result = add(3, 4)    # 7
+result = add(3, 4)    # 7
 ```
 
 ### One-Liner Functions
@@ -427,7 +435,7 @@ fn clamp(value, low, high)
         return high
     return value
 
-let clamped = clamp(150, 0, 100)    # 100
+clamped = clamp(150, 0, 100)    # 100
 ```
 
 ### Functions Without Return Values
@@ -459,7 +467,7 @@ fn apply(value, operation)
 
 fn double(x) = x * 2
 
-let result = apply(5, double)    # 10
+result = apply(5, double)    # 10
 ```
 
 ### Closures
@@ -470,7 +478,7 @@ Anonymous functions capture variables from their enclosing scope:
 fn make_adder(n)
     return fn(x) = x + n
 
-let add_five = make_adder(5)
+add_five = make_adder(5)
 print(add_five(10))    # 15
 ```
 
@@ -483,7 +491,7 @@ fn double(x) = x * 2
 fn add_ten(x) = x + 10
 fn negate(x) = -x
 
-let result = 5 |> double |> add_ten |> negate    # -20
+result = 5 |> double |> add_ten |> negate    # -20
 ```
 
 ---
@@ -495,7 +503,7 @@ let result = 5 |> double |> add_ten |> negate    # -20
 Conditional branching uses `if` and `else`. No parentheses around the condition, no braces around the body:
 
 ```pyro
-let temperature = 30
+temperature = 30
 
 if temperature > 35
     print("It's hot!")
@@ -508,7 +516,7 @@ else
 `if` can also be used as an expression:
 
 ```pyro
-let status = if score >= 50 "pass" else "fail"
+status = if score >= 50 "pass" else "fail"
 ```
 
 ### for / in with Ranges
@@ -528,7 +536,7 @@ for i in 1..=5
 ### for / in with Collections
 
 ```pyro
-let fruits = ["apple", "banana", "cherry"]
+fruits = ["apple", "banana", "cherry"]
 
 for fruit in fruits
     print(fruit)
@@ -541,7 +549,7 @@ for i, fruit in fruits
 Iterating over maps:
 
 ```pyro
-let scores = {"alice": 95, "bob": 87, "carol": 92}
+scores = {"alice": 95, "bob": 87, "carol": 92}
 
 for name, score in scores
     print(name + " scored " + str(score))
@@ -564,7 +572,7 @@ while count < 10
 `match` is Pyro's pattern matching construct. Each arm uses `->` to map a pattern to an expression or block:
 
 ```pyro
-let day = "Monday"
+day = "Monday"
 
 match day
     "Monday" -> print("Start of the work week")
@@ -577,9 +585,9 @@ match day
 `match` can also be used as an expression:
 
 ```pyro
-let code = 404
+code = 404
 
-let message = match code
+message = match code
     200 -> "OK"
     404 -> "Not Found"
     500 -> "Internal Server Error"
@@ -614,15 +622,15 @@ Use `struct` to define custom data types. Structs only need field names -- no ty
 
 ```pyro
 struct Point
-    let x
-    let y
+    x
+    y
 ```
 
 ### Creating Instances
 
 ```pyro
-let origin = Point(0.0, 0.0)
-let p = Point(3.0, 4.0)
+origin = Point(0.0, 0.0)
+p = Point(3.0, 4.0)
 
 print(p.x)    # 3.0
 print(p.y)    # 4.0
@@ -634,19 +642,19 @@ Define methods inside a struct block using `fn`. The first implicit parameter is
 
 ```pyro
 struct Point
-    let x
-    let y
+    x
+    y
 
     fn distance(self, other)
-        let dx = self.x - other.x
-        let dy = self.y - other.y
+        dx = self.x - other.x
+        dy = self.y - other.y
         return sqrt(dx * dx + dy * dy)
 
     fn to_string(self)
         return "(" + str(self.x) + ", " + str(self.y) + ")"
 
-let a = Point(0.0, 0.0)
-let b = Point(3.0, 4.0)
+a = Point(0.0, 0.0)
+b = Point(3.0, 4.0)
 
 print(a.distance(b))     # 5.0
 print(b.to_string())     # (3.0, 4.0)
@@ -683,9 +691,9 @@ By default, struct fields and methods are private. Use `pub` to expose them:
 
 ```pyro
 struct User
-    pub let name
-    pub let email
-    let password_hash    # private
+    pub name
+    pub email
+    password_hash    # private
 
     pub fn display(self)
         return self.name + " <" + self.email + ">"
@@ -698,17 +706,17 @@ struct User
 
 ```pyro
 struct Address
-    let street
-    let city
-    let zip
+    street
+    city
+    zip
 
 struct Person
-    let name
-    let age
-    let address
+    name
+    age
+    address
 
-let home = Address("123 Main St", "Springfield", "62704")
-let person = Person("Aravind", 25, home)
+home = Address("123 Main St", "Springfield", "62704")
+person = Person("Aravind", 25, home)
 
 print(person.address.city)    # "Springfield"
 ```
@@ -724,15 +732,15 @@ Lists are ordered, growable sequences of elements.
 #### Creating Lists
 
 ```pyro
-let numbers = [1, 2, 3, 4, 5]
-let names = ["Alice", "Bob", "Carol"]
-let empty = []
+numbers = [1, 2, 3, 4, 5]
+names = ["Alice", "Bob", "Carol"]
+empty = []
 ```
 
 #### Accessing Elements
 
 ```pyro
-let fruits = ["apple", "banana", "cherry"]
+fruits = ["apple", "banana", "cherry"]
 
 print(fruits[0])    # "apple"
 print(fruits[2])    # "cherry"
@@ -755,46 +763,46 @@ items.remove(1)          # [99, 2, 3]
 #### List Operations
 
 ```pyro
-let nums = [3, 1, 4, 1, 5, 9, 2, 6]
+nums = [3, 1, 4, 1, 5, 9, 2, 6]
 
 print(nums.length())     # 8
 print(nums.contains(5))  # true
 print(nums.index_of(4))  # 2
 
-let sorted = nums.sorted()          # [1, 1, 2, 3, 4, 5, 6, 9]
-let reversed = nums.reversed()      # [6, 2, 9, 5, 1, 4, 1, 3]
-let sliced = nums[1..4]             # [1, 4, 1]
+sorted = nums.sorted()          # [1, 1, 2, 3, 4, 5, 6, 9]
+reversed = nums.reversed()      # [6, 2, 9, 5, 1, 4, 1, 3]
+sliced = nums[1..4]             # [1, 4, 1]
 ```
 
 #### List Comprehensions
 
 ```pyro
-let squares = [x * x for x in 0..10]
+squares = [x * x for x in 0..10]
 # [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
 
-let evens = [x for x in 0..20 if x % 2 == 0]
+evens = [x for x in 0..20 if x % 2 == 0]
 # [0, 2, 4, 6, 8, 10, 12, 14, 16, 18]
 ```
 
 #### Functional Operations on Lists
 
 ```pyro
-let numbers = [1, 2, 3, 4, 5]
+numbers = [1, 2, 3, 4, 5]
 
-let doubled = numbers.map(fn(x) = x * 2)
+doubled = numbers.map(fn(x) = x * 2)
 # [2, 4, 6, 8, 10]
 
-let even_only = numbers.filter(fn(x) = x % 2 == 0)
+even_only = numbers.filter(fn(x) = x % 2 == 0)
 # [2, 4]
 
-let total = numbers.reduce(0, fn(acc, x) = acc + x)
+total = numbers.reduce(0, fn(acc, x) = acc + x)
 # 15
 ```
 
 #### Functional Operations with Pipes
 
 ```pyro
-let result = [1, 2, 3, 4, 5]
+result = [1, 2, 3, 4, 5]
     |> filter(fn(x) = x > 2)
     |> map(fn(x) = x * 10)
     |> reduce(0, fn(acc, x) = acc + x)
@@ -808,15 +816,15 @@ Maps are unordered collections of key-value pairs.
 #### Creating Maps
 
 ```pyro
-let ages = {"Alice": 30, "Bob": 25, "Carol": 28}
-let config = {"host": "localhost", "port": "8080"}
-let empty = {}
+ages = {"Alice": 30, "Bob": 25, "Carol": 28}
+config = {"host": "localhost", "port": "8080"}
+empty = {}
 ```
 
 #### Accessing Values
 
 ```pyro
-let ages = {"Alice": 30, "Bob": 25}
+ages = {"Alice": 30, "Bob": 25}
 
 print(ages["Alice"])         # 30
 print(ages.get("Dave", 0))  # 0 (default if key missing)
@@ -835,7 +843,7 @@ settings.remove("lang")            # remove key
 #### Map Operations
 
 ```pyro
-let data = {"a": 1, "b": 2, "c": 3}
+data = {"a": 1, "b": 2, "c": 3}
 
 print(data.length())         # 3
 print(data.contains("b"))   # true
@@ -852,9 +860,9 @@ Strings in Pyro are immutable sequences of UTF-8 characters.
 ### Creating Strings
 
 ```pyro
-let simple = "Hello, World!"
-let with_escapes = "Line 1\nLine 2\tTabbed"
-let with_quotes = "She said \"hi\""
+simple = "Hello, World!"
+with_escapes = "Line 1\nLine 2\tTabbed"
+with_quotes = "She said \"hi\""
 ```
 
 ### String Interpolation
@@ -862,19 +870,19 @@ let with_quotes = "She said \"hi\""
 Use `${}` for embedding expressions inside strings:
 
 ```pyro
-let name = "Aravind"
-let age = 25
-let message = "My name is ${name} and I am ${age} years old."
+name = "Aravind"
+age = 25
+message = "My name is ${name} and I am ${age} years old."
 print(message)    # My name is Aravind and I am 25 years old.
 
-let result = "2 + 3 = ${2 + 3}"
+result = "2 + 3 = ${2 + 3}"
 print(result)     # 2 + 3 = 5
 ```
 
 ### Common String Methods
 
 ```pyro
-let text = "  Hello, Pyro!  "
+text = "  Hello, Pyro!  "
 
 print(text.length())          # 17
 print(text.trim())            # "Hello, Pyro!"
@@ -889,17 +897,17 @@ print(text.replace("Pyro", "World"))  # "  Hello, World!  "
 ### Splitting and Joining
 
 ```pyro
-let csv = "apple,banana,cherry"
-let parts = csv.split(",")    # ["apple", "banana", "cherry"]
+csv = "apple,banana,cherry"
+parts = csv.split(",")    # ["apple", "banana", "cherry"]
 
-let words = ["Hello", "Pyro", "World"]
-let sentence = words.join(" ")    # "Hello Pyro World"
+words = ["Hello", "Pyro", "World"]
+sentence = words.join(" ")    # "Hello Pyro World"
 ```
 
 ### Substring and Indexing
 
 ```pyro
-let text = "Hello, Pyro!"
+text = "Hello, Pyro!"
 
 print(text[0])          # "H"
 print(text[7..11])      # "Pyro"
@@ -909,14 +917,14 @@ print(text[-1])         # "!"
 ### Type Conversion
 
 ```pyro
-let num_str = "42"
-let num = int(num_str)       # 42
+num_str = "42"
+num = int(num_str)       # 42
 
-let pi_str = "3.14"
-let pi = float(pi_str)      # 3.14
+pi_str = "3.14"
+pi = float(pi_str)      # 3.14
 
-let n = 100
-let s = str(n)               # "100"
+n = 100
+s = str(n)               # "100"
 ```
 
 ---
@@ -928,7 +936,7 @@ Pattern matching in Pyro goes beyond simple value comparison. The `match` keywor
 ### Value Matching
 
 ```pyro
-let status = 200
+status = 200
 
 match status
     200 -> print("OK")
@@ -941,7 +949,7 @@ match status
 ### Multiple Values per Arm
 
 ```pyro
-let char = "a"
+char = "a"
 
 match char
     "a", "e", "i", "o", "u" -> print("vowel")
@@ -953,7 +961,7 @@ match char
 Add conditions to match arms using `if`:
 
 ```pyro
-let score = 85
+score = 85
 
 match score
     s if s >= 90 -> "A"
@@ -967,10 +975,10 @@ match score
 
 ```pyro
 struct Point
-    let x
-    let y
+    x
+    y
 
-let p = Point(3.0, 4.0)
+p = Point(3.0, 4.0)
 
 match p
     Point(0.0, 0.0) -> print("Origin")
@@ -982,7 +990,7 @@ match p
 ### Destructuring Lists
 
 ```pyro
-let items = [1, 2, 3]
+items = [1, 2, 3]
 
 match items
     [] -> print("empty")
@@ -996,9 +1004,9 @@ match items
 Since `match` is an expression, it returns a value:
 
 ```pyro
-let direction = "north"
+direction = "north"
 
-let dx, dy = match direction
+dx, dy = match direction
     "north" -> 0, 1
     "south" -> 0, -1
     "east" -> 1, 0
@@ -1010,8 +1018,8 @@ let dx, dy = match direction
 
 ```pyro
 struct Response
-    let code
-    let body
+    code
+    body
 
 fn handle(resp)
     return match resp
@@ -1033,8 +1041,8 @@ Use `import` to bring other Pyro files or standard library modules into scope:
 import math
 import io
 
-let angle = math.pi / 4.0
-let result = math.sin(angle)
+angle = math.pi / 4.0
+result = math.sin(angle)
 ```
 
 ### Importing Specific Items
@@ -1042,7 +1050,7 @@ let result = math.sin(angle)
 ```pyro
 import math { sqrt, pow, pi }
 
-let hypotenuse = sqrt(pow(3.0, 2) + pow(4.0, 2))
+hypotenuse = sqrt(pow(3.0, 2) + pow(4.0, 2))
 print(hypotenuse)    # 5.0
 ```
 
@@ -1063,7 +1071,7 @@ my_project/
 import utils
 import models/user
 
-let u = user.User("Aravind", "aravind@example.com")
+u = user.User("Aravind", "aravind@example.com")
 utils.log("User created: " + u.name)
 ```
 
@@ -1117,9 +1125,9 @@ Example using multiple standard library modules:
 import io
 import json
 
-let path = "config.json"
-let contents = io.read(path)
-let config = json.parse(contents)
+path = "config.json"
+contents = io.read(path)
+config = json.parse(contents)
 
 print(config["app_name"])
 ```
@@ -1144,7 +1152,7 @@ fn divide(a, b)
 ### Handling Results with match
 
 ```pyro
-let result = divide(10.0, 3.0)
+result = divide(10.0, 3.0)
 
 match result
     ok(value) -> print("Result: " + str(value))
@@ -1157,8 +1165,8 @@ For concise error propagation, use `?` to unwrap a `Result` or return the error 
 
 ```pyro
 fn read_config(path)
-    let content = io.read_file(path)?    # propagates error if file read fails
-    let config = json.parse(content)?    # propagates error if JSON is invalid
+    content = io.read_file(path)?    # propagates error if file read fails
+    config = json.parse(content)?    # propagates error if JSON is invalid
     return ok(config)
 ```
 
@@ -1166,9 +1174,9 @@ fn read_config(path)
 
 ```pyro
 fn process_user(id)
-    let user = db.find_user(id)?
-    let profile = db.find_profile(user.profile_id)?
-    let formatted = fmt.format_profile(profile)?
+    user = db.find_user(id)?
+    profile = db.find_profile(user.profile_id)?
+    formatted = fmt.format_profile(profile)?
     return ok(formatted)
 ```
 
@@ -1185,9 +1193,9 @@ fn process_user(id)
 ### Providing Default Values
 
 ```pyro
-let name = get_user_name(id).unwrap_or("Anonymous")
+name = get_user_name(id).unwrap_or("Anonymous")
 
-let config = read_config("app.conf").unwrap_or({})
+config = read_config("app.conf").unwrap_or({})
 ```
 
 ---
@@ -1200,7 +1208,7 @@ Pyro uses `#` for comments. There is only one style -- single-line comments. Sim
 
 ```pyro
 # This is a comment
-let x = 42    # Inline comment
+x = 42    # Inline comment
 ```
 
 ### Multi-Line Comments
@@ -1230,8 +1238,8 @@ Use `##` for documentation comments that can be extracted by tooling:
 ##
 ## Returns: the Euclidean distance
 fn distance(x1, y1, x2, y2)
-    let dx = x2 - x1
-    let dy = y2 - y1
+    dx = x2 - x1
+    dy = y2 - y1
     return math.sqrt(dx * dx + dy * dy)
 ```
 
@@ -1247,7 +1255,7 @@ Declare an asynchronous function with `async fn`:
 
 ```pyro
 async fn fetch_data(url)
-    let response = await net.get(url)
+    response = await net.get(url)
     return ok(response.body)
 ```
 
@@ -1257,7 +1265,7 @@ Use `await` to pause execution until an async operation completes:
 
 ```pyro
 async fn main()
-    let data = await fetch_data("https://api.example.com/users")
+    data = await fetch_data("https://api.example.com/users")
     match data
         ok(body) -> print(body)
         err(msg) -> print("Failed: " + msg)
@@ -1269,12 +1277,12 @@ Run multiple async operations concurrently:
 
 ```pyro
 async fn fetch_all()
-    let users = fetch_data("https://api.example.com/users")
-    let posts = fetch_data("https://api.example.com/posts")
-    let comments = fetch_data("https://api.example.com/comments")
+    users = fetch_data("https://api.example.com/users")
+    posts = fetch_data("https://api.example.com/posts")
+    comments = fetch_data("https://api.example.com/comments")
 
     # Await all three concurrently
-    let results = await all([users, posts, comments])
+    results = await all([users, posts, comments])
 
     for result in results
         match result
@@ -1286,7 +1294,7 @@ async fn fetch_all()
 
 ```pyro
 async fn process_stream(url)
-    let stream = await net.stream(url)
+    stream = await net.stream(url)
 
     for await chunk in stream
         print("Received: " + str(chunk.length()) + " bytes")
@@ -1296,7 +1304,7 @@ async fn process_stream(url)
 
 ```pyro
 async fn main()
-    let result = await fetch_data("https://api.example.com/users")
+    result = await fetch_data("https://api.example.com/users")
         |> json.parse
         |> extract_names
         |> sort
@@ -1317,7 +1325,7 @@ async fn handle_request(req)
         _ -> return net.Response(404, "Not Found")
 
 async fn main()
-    let server = net.Server("0.0.0.0", 8080)
+    server = net.Server("0.0.0.0", 8080)
     print("Listening on port 8080")
     await server.listen(handle_request)
 ```
@@ -1336,12 +1344,12 @@ Pyro automatically sanitizes user input in web contexts to prevent common attack
 import web
 import validate
 
-let app = web.app()
+app = web.app()
 
 app.post("/api/comment")
-    let body = web.body()
+    body = web.body()
     # Auto-sanitized: XSS payloads are stripped
-    let safe_comment = validate.sanitize(body["comment"])
+    safe_comment = validate.sanitize(body["comment"])
     return web.json({"comment": safe_comment})
 
 app.listen(8080)
@@ -1354,13 +1362,13 @@ The `db` module uses parameterized queries by default, making SQL injection impo
 ```pyro
 import db
 
-let conn = db.connect("postgres://localhost/mydb")
+conn = db.connect("postgres://localhost/mydb")
 
 # Safe: parameterized query (NEVER concatenate user input)
-let user = conn.query("SELECT * FROM users WHERE id = ?", [user_id])
+user = conn.query("SELECT * FROM users WHERE id = ?", [user_id])
 
 # Batch operations are also safe
-let users = conn.query("SELECT * FROM users WHERE role = ? AND active = ?", ["admin", true])
+users = conn.query("SELECT * FROM users WHERE role = ? AND active = ?", ["admin", true])
 ```
 
 ### XSS Prevention
@@ -1371,15 +1379,15 @@ The `web` module auto-escapes HTML output in templates:
 import web
 import validate
 
-let app = web.app()
+app = web.app()
 
 app.get("/profile")
-    let name = web.query("name")
+    name = web.query("name")
     # Auto-escaped in templates -- no XSS possible
     return web.render("profile.html", {"name": name})
 
 # Manual escaping when needed
-let safe_html = validate.escape_html(user_input)
+safe_html = validate.escape_html(user_input)
 ```
 
 ### Built-in Crypto
@@ -1388,19 +1396,19 @@ let safe_html = validate.escape_html(user_input)
 import crypto
 
 # Hashing
-let hashed = crypto.hash("sha256", "my secret data")
-let password_hash = crypto.bcrypt("user_password", 12)
-let valid = crypto.bcrypt_verify("user_password", password_hash)
+hashed = crypto.hash("sha256", "my secret data")
+password_hash = crypto.bcrypt("user_password", 12)
+valid = crypto.bcrypt_verify("user_password", password_hash)
 
 # Encryption
-let key = crypto.generate_key("aes256")
-let encrypted = crypto.encrypt(key, "sensitive data")
-let decrypted = crypto.decrypt(key, encrypted)
+key = crypto.generate_key("aes256")
+encrypted = crypto.encrypt(key, "sensitive data")
+decrypted = crypto.decrypt(key, encrypted)
 
 # Signing
-let keypair = crypto.generate_keypair("ed25519")
-let signature = crypto.sign(keypair.private, "message")
-let verified = crypto.verify(keypair.public, "message", signature)
+keypair = crypto.generate_keypair("ed25519")
+signature = crypto.sign(keypair.private, "message")
+verified = crypto.verify(keypair.public, "message", signature)
 ```
 
 ### Built-in Auth
@@ -1409,11 +1417,11 @@ let verified = crypto.verify(keypair.public, "message", signature)
 import auth
 
 # JWT tokens
-let token = auth.jwt_sign({"user_id": 123, "role": "admin"}, "secret_key")
-let claims = auth.jwt_verify(token, "secret_key")
+token = auth.jwt_sign({"user_id": 123, "role": "admin"}, "secret_key")
+claims = auth.jwt_verify(token, "secret_key")
 
 # OAuth2 helpers
-let oauth = auth.oauth2({
+oauth = auth.oauth2({
     "provider": "google",
     "client_id": "your_client_id",
     "client_secret": "your_secret",
@@ -1426,18 +1434,18 @@ let oauth = auth.oauth2({
 ```pyro
 import validate
 
-let email = validate.email("user@example.com")     # true/false
-let url = validate.url("https://pyro-lang.org")     # true/false
-let safe = validate.alphanumeric(user_input)         # true/false
+email = validate.email("user@example.com")     # true/false
+url = validate.url("https://pyro-lang.org")     # true/false
+safe = validate.alphanumeric(user_input)         # true/false
 
 # Schema validation
-let schema = validate.schema({
+schema = validate.schema({
     "name": "string",
     "age": "int",
     "email": "email"
 })
 
-let result = schema.check({"name": "Aravind", "age": 25, "email": "a@b.com"})
+result = schema.check({"name": "Aravind", "age": 25, "email": "a@b.com"})
 # ok or err with details
 ```
 
@@ -1511,8 +1519,7 @@ print("Hello, World!")
 
 **Pyro:**
 ```pyro
-fn main()
-    print("Hello, World!")
+print("Hello, World!")
 ```
 
 #### Variables
@@ -1527,11 +1534,11 @@ numbers.append(4)    # always mutable
 
 **Pyro:**
 ```pyro
-let name = "Pyro"         # truly immutable
-let pi = 3.14159          # enforced by compiler
-let numbers = [1, 2, 3]   # immutable list
-mut items = [1, 2, 3]     # explicitly mutable
-items.push(4)             # allowed because of mut
+name = "Pyro"         # immutable by default
+pi = 3.14159          # enforced by compiler
+numbers = [1, 2, 3]   # immutable list
+mut items = [1, 2, 3] # explicitly mutable
+items.push(4)         # allowed because of mut
 ```
 
 #### Functions
@@ -1563,7 +1570,7 @@ result = to_string(add_ten(double(5)))
 **Pyro:**
 ```pyro
 # Pipe operator -- read left-to-right
-let result = 5 |> double |> add_ten |> to_string
+result = 5 |> double |> add_ten |> to_string
 ```
 
 #### Pattern Matching
@@ -1604,10 +1611,10 @@ finally:
 
 **Pyro:**
 ```pyro
-let result = parse_int(user_input)
+result = parse_int(user_input)
 match result
     ok(value) ->
-        let processed = process(value)
+        processed = process(value)
         match processed
             ok(data) -> print(data)
             err(msg) -> print("Processing failed: " + msg)
@@ -1615,8 +1622,8 @@ match result
 
 # Or more concisely with ? operator:
 fn handle_input(input)
-    let value = parse_int(input)?
-    let processed = process(value)?
+    value = parse_int(input)?
+    processed = process(value)?
     return ok(processed)
 ```
 
@@ -1639,8 +1646,8 @@ class User:
 **Pyro:**
 ```pyro
 struct User
-    let name
-    let age
+    name
+    age
 
     fn greet(self)
         return "Hi, I'm " + self.name
@@ -1666,7 +1673,7 @@ Pyro gives you Python-like syntax with C++-like speed.
 
 ```
 # Variables
-let x = 10              # immutable
+x = 10              # immutable
 mut y = 20              # mutable
 
 # Functions (no type annotations)
@@ -1694,12 +1701,12 @@ match value
 
 # Structs (no field types)
 struct Point
-    let x
-    let y
+    x
+    y
 
 # Collections
-let list = [1, 2, 3]
-let map = {"key": "value"}
+list = [1, 2, 3]
+map = {"key": "value"}
 
 # Async
 async fn fetch(url)
@@ -1709,7 +1716,7 @@ async fn fetch(url)
 import math { sqrt, pi }
 
 # Error handling
-let result = risky_operation()?
+result = risky_operation()?
 
 # Comments
 # This is a comment
