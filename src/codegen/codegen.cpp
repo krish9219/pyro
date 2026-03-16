@@ -1775,6 +1775,7 @@ void CodeGenerator::emit_import(const ImportStmt& stmt) {
         emit_line("if (rel[0] == '/') rel = rel.substr(1);");
         emit_line("std::string sep = (dir.back()=='/' || dir.back()=='\\\\') ? \"\" : \"/\";");
         emit_line("std::string file_path = dir + sep + rel;");
+        emit_line("std::cerr << \"[pyro] Trying: \" << file_path << std::endl;");
         emit_line("std::ifstream file(file_path, std::ios::binary);");
         emit_line("if (file.is_open()) {");
         indent();
