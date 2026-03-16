@@ -358,102 +358,85 @@ print("Hello from Pyro!")
 print("Welcome to the Playground!")
 
 name = "World"
-print("Hello, " + name + "!")`,
+print("Hello, {name}!")`,
 
-  fibonacci: `# Fibonacci — recursive with timing
+  fibonacci: `# Fibonacci with timing
 import time
 
-fn fib(n: int) -> int {
-    match n {
-        0 => 0,
-        1 => 1,
-        _ => fib(n-1) + fib(n-2)
-    }
-}
+fn fib(n)
+    if n <= 1
+        return n
+    return fib(n - 1) + fib(n - 2)
 
-start = time::now()
+start = time.now()
+for i in 0..15
+    print("fib({i}) = {fib(i)}")
+elapsed = time.now() - start
+print("Completed in {elapsed} ms")`,
 
-for i in 0..20 {
-    print("fib(" + str(i) + ") = " + str(fib(i)))
-}
-
-elapsed = time::elapsed(start)
-print("\\nCompleted in " + str(elapsed) + "ms")`,
-
-  pipes: `# Pipe Operator — data flows left to right
-words = "hello world from pyro"
-
-words
-    |> split(" ")
-    |> map(|w| capitalize(w))
-    |> join(" ")
-    |> print
-
-# Square even numbers and sum them
-[1,2,3,4,5,6,7,8,9,10]
-    |> filter(|x| x % 2 == 0)
-    |> map(|x| x * x)
-    |> reduce(|a, b| a + b)
-    |> print
-# Output: 220`,
-
-  strings: `# String Interpolation & Operations
-name = "Pyro"
-version = 1.0
-author = "Aravind"
-
-print("Language: " + name)
-print("Version: " + str(version))
-print("Author: " + author)
-
-# String methods
-msg = "  hello pyro  "
-print(msg |> trim |> upper)
-
-# Repeat
-print("=" * 30)
-print("Pyro is awesome!")
-print("=" * 30)`,
-
-  lists: `# List Operations — map, filter, reduce
+  pipes: `# Pipe Operator
 nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-# Filter even numbers
+# Filter even numbers, square them
 evens = nums |> filter(|x| x % 2 == 0)
-print("Evens: " + str(evens))
+print("Evens: {evens}")
 
-# Square all numbers
-squares = nums |> map(|x| x * x)
-print("Squares: " + str(squares))
+squares = evens |> map(|x| x * x)
+print("Squared: {squares}")
 
-# Sum with reduce
-total = nums |> reduce(|a, b| a + b)
-print("Sum: " + str(total))
+total = squares |> sum
+print("Sum of even squares: {total}")`,
 
-# Chained operations
-result = nums
-    |> filter(|x| x > 3)
-    |> map(|x| x * 2)
-print("Filtered & doubled: " + str(result))`,
+  strings: `# String Interpolation
+name = "Pyro"
+version = "1.0.0"
+author = "Aravind Pilla"
 
-  math: `# Math Operations
+print("Language: {name}")
+print("Version: {version}")
+print("Creator: {author}")
+
+# String operations
+msg = "hello pyro"
+print(msg.upper())
+print(msg.split(" "))
+print("Pyro".repeat(3))`,
+
+  lists: `# List Operations
+nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+# Filter
+evens = nums |> filter(|x| x % 2 == 0)
+print("Evens: {evens}")
+
+# Map
+doubled = nums |> map(|x| x * 2)
+print("Doubled: {doubled}")
+
+# Sum
+print("Sum: {nums |> sum}")
+
+# Sort and reverse
+data = [5, 2, 8, 1, 9, 3]
+print("Sorted: {data.sort()}")
+print("Reversed: {data.reverse()}")`,
+
+  math: `# Math Module
 import math
 
-print("Pi: " + str(math::PI))
-print("E:  " + str(math::E))
+print("Pi: {math.PI}")
+print("E:  {math.E}")
+print("Tau: {math.TAU}")
 
-# Basic operations
-print("sqrt(144) = " + str(math::sqrt(144)))
-print("pow(2, 10) = " + str(math::pow(2, 10)))
-print("abs(-42) = " + str(math::abs(-42)))
+# Functions
+print("sqrt(144) = {math.sqrt(144)}")
+print("abs(-42) = {math.abs(-42)}")
+print("pow(2, 10) = {math.pow(2, 10)}")
 
 # Trigonometry
-angle = math::PI / 4.0
-print("sin(pi/4) = " + str(math::sin(angle)))
-print("cos(pi/4) = " + str(math::cos(angle)))
-
-# Random
-print("\\nRandom number: " + str(math::random(1, 100)))`
+angle = math.PI / 4.0
+print("sin(pi/4) = {math.sin(angle)}")
+print("cos(pi/4) = {math.cos(angle)}")`
 };
 
 const editor = document.getElementById('code-editor');
