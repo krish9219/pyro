@@ -82,26 +82,18 @@ if (-not $hasGpp) {
     $mingwZip = "$env:TEMP\w64devkit.zip"
     $mingwDownloaded = $false
 
-    # Try multiple w64devkit versions
-    $mingwUrls = @(
-        "https://github.com/skeeto/w64devkit/releases/download/v2.1.0/w64devkit-x64-2.1.0.zip",
-        "https://github.com/skeeto/w64devkit/releases/download/v2.0.0/w64devkit-x64-2.0.0.zip",
-        "https://github.com/skeeto/w64devkit/releases/download/v1.23.0/w64devkit-x64-1.23.0.zip"
-    )
+    # Download pre-packaged MinGW from aravindlabs.tech (~79 MB)
+    $mingwUrl = "https://aravindlabs.tech/pyro-lang/bin/pyro-mingw.zip"
 
-    foreach ($url in $mingwUrls) {
-        try {
-            Write-Host "        Downloading from GitHub..." -ForegroundColor Gray
-            Invoke-WebRequest -Uri $url -OutFile $mingwZip -UseBasicParsing -TimeoutSec 120
-            if ((Get-Item $mingwZip).Length -gt 1000000) {
-                $mingwDownloaded = $true
-                Write-Host "        Downloaded!" -ForegroundColor Green
-                break
-            }
-        } catch {
-            Write-Host "        Trying alternate mirror..." -ForegroundColor Gray
-            continue
+    try {
+        Write-Host "        Downloading (~79 MB, please wait)..." -ForegroundColor Gray
+        Invoke-WebRequest -Uri $mingwUrl -OutFile $mingwZip -UseBasicParsing -TimeoutSec 300
+        if ((Get-Item $mingwZip).Length -gt 1000000) {
+            $mingwDownloaded = $true
+            Write-Host "        Downloaded!" -ForegroundColor Green
         }
+    } catch {
+        Write-Host "        Download failed: $_" -ForegroundColor Yellow
     }
 
     if ($mingwDownloaded) {
@@ -112,20 +104,17 @@ if (-not $hasGpp) {
             Remove-Item -Recurse -Force $MINGW_DIR -ErrorAction SilentlyContinue
         }
 
-        # Extract
+        # Extract directly into mingw folder
         try {
-            Expand-Archive -Force -Path $mingwZip -DestinationPath $PYRO_DIR
-
-            # w64devkit extracts into a 'w64devkit' subfolder - rename to 'mingw'
-            if (Test-Path "$PYRO_DIR\w64devkit") {
-                Rename-Item "$PYRO_DIR\w64devkit" "mingw"
-            }
+            Expand-Archive -Force -Path $mingwZip -DestinationPath $MINGW_DIR
 
             if (Test-Path "$MINGW_DIR\bin\g++.exe") {
                 $hasGpp = $true
                 Write-Host "        MinGW g++ installed!" -ForegroundColor Green
             } else {
-                Write-Host "        Extraction issue - g++ not found." -ForegroundColor Yellow
+                Write-Host "        Extraction issue - g++ not found at $MINGW_DIR\bin\" -ForegroundColor Yellow
+                # Debug: show what was extracted
+                Write-Host "        Contents: $(Get-ChildItem $MINGW_DIR | Select-Object -First 5)" -ForegroundColor Gray
             }
         } catch {
             Write-Host "        Extraction failed: $_" -ForegroundColor Yellow
