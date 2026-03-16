@@ -649,35 +649,14 @@ print("Sentiment: {label}")
 summary = ai.summarize("Pyro is a compiled programming language that transpiles to C++ for native performance. It has 23 keywords and 76 built-in modules.", 20)
 print("Summary: {summary}")`,
 
-  viz: `# Visualization — SVG charts, zero matplotlib
-# Generates SVG files viewable in any browser
+  viz: `# Visualization — SVG charts rendered live
 import viz
 
-# Bar chart
+# Bar chart — print SVG directly to see it
 labels = ["Pyro", "Python", "Java", "Go", "Rust"]
 speeds = [79.0, 1.0, 15.0, 30.0, 85.0]
-svg = viz.bar_chart(labels, speeds, "Speed Comparison")
-viz.save("bar.svg", svg)
-
-# Pie chart
-langs = ["Python", "JavaScript", "Pyro", "Go"]
-usage = [35.0, 25.0, 20.0, 20.0]
-svg = viz.pie_chart(langs, usage, "Language Usage")
-viz.save("pie.svg", svg)
-
-# Line chart
-x = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0]
-y = [10.0, 25.0, 40.0, 35.0, 60.0, 55.0, 80.0]
-svg = viz.line_chart(x, y, "Growth Over Time")
-viz.save("line.svg", svg)
-
-# Scatter plot
-ages = [20.0, 25.0, 30.0, 35.0, 40.0, 45.0]
-scores = [60.0, 70.0, 85.0, 80.0, 90.0, 95.0]
-svg = viz.scatter(ages, scores, "Age vs Score")
-viz.save("scatter.svg", svg)
-
-print("4 charts generated as SVG files!")`
+svg = viz.bar_chart(labels, speeds, "Speed Comparison (x faster)")
+print(svg)`
 };
 
 const editor = document.getElementById('code-editor');
@@ -787,7 +766,22 @@ async function runCode() {
       result = '(no output)';
     }
 
-    output.textContent = result;
+    // Detect SVG output and render it visually
+    if (result.includes('<svg') && result.includes('</svg>')) {
+      // Split into text before SVG, the SVG, and text after
+      const svgStart = result.indexOf('<svg');
+      const svgEnd = result.indexOf('</svg>') + 6;
+      const before = result.substring(0, svgStart).trim();
+      const svg = result.substring(svgStart, svgEnd);
+      const after = result.substring(svgEnd).trim();
+      let html = '';
+      if (before) html += '<pre style="margin:0 0 10px">' + before.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</pre>';
+      html += '<div style="background:white;border-radius:8px;padding:10px;display:inline-block">' + svg + '</div>';
+      if (after) html += '<pre style="margin:10px 0 0">' + after.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</pre>';
+      output.innerHTML = html;
+    } else {
+      output.textContent = result;
+    }
     output.classList.toggle('has-error', hasError && !data.output);
 
     // Status badge
