@@ -100,6 +100,11 @@ void CodeGenerator::emit_headers() {
     emit_line("}");
     emit_line("");
 
+    // Pair print support
+    emit_line("template<typename A, typename B>");
+    emit_line("std::ostream& operator<<(std::ostream& os, const std::pair<A,B>& p) { os<<p.first<<\": \"<<p.second; return os; }");
+    emit_line("");
+
     // Vector print support
     emit_line("template<typename T>");
     emit_line("std::ostream& operator<<(std::ostream& os, const std::vector<T>& v) {");
@@ -762,6 +767,15 @@ std::string CodeGenerator::generate(const Program& program, const std::string& s
     if (imports_.count("nn")) {
         emit_line("#include <random>");
         emit_line("#include <fstream>");
+    }
+    if (imports_.count("nlp")) {
+        emit_line("#include <regex>");
+        emit_line("#include <algorithm>");
+        emit_line("#include <set>");
+    }
+    if (imports_.count("cv")) {
+        emit_line("#include <fstream>");
+        emit_line("#include <algorithm>");
     }
 
     emit_headers();
@@ -3142,6 +3156,247 @@ void CodeGenerator::emit_import(const ImportStmt& stmt) {
         dedent();
         emit_line("} // namespace pyro_img");
         emit_line("");
+    } else if (stmt.module == "cv") {
+        emit_line("namespace pyro_cv {");
+        indent();
+
+        // Image struct
+        emit_line("struct Image {");
+        indent();
+        emit_line("int64_t width=0, height=0, channels=3;");
+        emit_line("std::vector<uint8_t> data; // RGB pixels");
+        emit_line("");
+        emit_line("uint8_t& at(int64_t y, int64_t x, int64_t c) { return data[(y*width+x)*channels+c]; }");
+        emit_line("const uint8_t& at(int64_t y, int64_t x, int64_t c) const { return data[(y*width+x)*channels+c]; }");
+        dedent();
+        emit_line("};");
+        emit_line("");
+        emit_line("std::ostream& operator<<(std::ostream& os, const Image& img) { os<<\"Image(\"<<img.width<<\"x\"<<img.height<<\", \"<<img.channels<<\"ch)\"; return os; }");
+        emit_line("");
+
+        // Create blank image
+        emit_line("Image create(int64_t w, int64_t h, uint8_t r=0, uint8_t g=0, uint8_t b=0) {");
+        indent();
+        emit_line("Image img; img.width=w; img.height=h; img.data.resize(w*h*3);");
+        emit_line("for(int64_t i=0;i<w*h;i++){img.data[i*3]=r;img.data[i*3+1]=g;img.data[i*3+2]=b;}");
+        emit_line("return img;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Load PPM
+        emit_line("Image load(const std::string& path) {");
+        indent();
+        emit_line("Image img;");
+        emit_line("std::ifstream f(path, std::ios::binary);");
+        emit_line("if(!f.is_open()) throw std::runtime_error(\"Cannot open image: \"+path);");
+        emit_line("std::string magic; f>>magic;");
+        emit_line("if(magic==\"P6\"||magic==\"P3\") {");
+        indent();
+        emit_line("int w,h,maxval; f>>w>>h>>maxval; f.get();");
+        emit_line("img.width=w; img.height=h; img.data.resize(w*h*3);");
+        emit_line("if(magic==\"P6\") f.read((char*)img.data.data(), w*h*3);");
+        emit_line("else { for(int i=0;i<w*h*3;i++){int v;f>>v;img.data[i]=(uint8_t)v;} }");
+        dedent();
+        emit_line("} else if(magic==\"P5\") {");
+        indent();
+        emit_line("int w,h,maxval; f>>w>>h>>maxval; f.get();");
+        emit_line("img.width=w; img.height=h; img.channels=1; img.data.resize(w*h);");
+        emit_line("f.read((char*)img.data.data(), w*h);");
+        dedent();
+        emit_line("} else throw std::runtime_error(\"Unsupported image format: \"+magic+\" (use PPM/PGM)\");");
+        emit_line("return img;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Save PPM/BMP
+        emit_line("void save(const Image& img, const std::string& path) {");
+        indent();
+        emit_line("if(path.find(\".bmp\")!=std::string::npos||path.find(\".BMP\")!=std::string::npos) {");
+        indent();
+        emit_line("// Save as BMP");
+        emit_line("int w=img.width, h=img.height;");
+        emit_line("int row_size = (w*3+3)&~3;");
+        emit_line("int data_size = row_size*h;");
+        emit_line("int file_size = 54 + data_size;");
+        emit_line("std::ofstream f(path, std::ios::binary);");
+        emit_line("uint8_t header[54] = {};");
+        emit_line("header[0]='B'; header[1]='M';");
+        emit_line("*(int*)&header[2]=file_size; *(int*)&header[10]=54;");
+        emit_line("*(int*)&header[14]=40; *(int*)&header[18]=w; *(int*)&header[22]=h;");
+        emit_line("*(short*)&header[26]=1; *(short*)&header[28]=24; *(int*)&header[34]=data_size;");
+        emit_line("f.write((char*)header, 54);");
+        emit_line("std::vector<uint8_t> row(row_size, 0);");
+        emit_line("for(int y=h-1;y>=0;y--) {");
+        indent();
+        emit_line("for(int x=0;x<w;x++){");
+        indent();
+        emit_line("if(img.channels==3){row[x*3+2]=img.data[(y*w+x)*3];row[x*3+1]=img.data[(y*w+x)*3+1];row[x*3]=img.data[(y*w+x)*3+2];}");
+        emit_line("else{uint8_t v=img.data[y*w+x];row[x*3]=v;row[x*3+1]=v;row[x*3+2]=v;}");
+        dedent();
+        emit_line("}");
+        emit_line("f.write((char*)row.data(), row_size);");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("} else {");
+        indent();
+        emit_line("// Save as PPM");
+        emit_line("std::ofstream f(path, std::ios::binary);");
+        emit_line("f<<\"P6\\n\"<<img.width<<\" \"<<img.height<<\"\\n255\\n\";");
+        emit_line("if(img.channels==3) f.write((char*)img.data.data(),img.data.size());");
+        emit_line("else { for(size_t i=0;i<img.data.size();i++){f.put(img.data[i]);f.put(img.data[i]);f.put(img.data[i]);} }");
+        dedent();
+        emit_line("}");
+        emit_line("std::cout << \"Image saved: \" << path << std::endl;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Grayscale
+        emit_line("Image grayscale(const Image& img) {");
+        indent();
+        emit_line("Image out; out.width=img.width; out.height=img.height; out.channels=1; out.data.resize(img.width*img.height);");
+        emit_line("for(int64_t i=0;i<img.width*img.height;i++) {");
+        indent();
+        emit_line("if(img.channels==3) out.data[i]=(uint8_t)(0.299*img.data[i*3]+0.587*img.data[i*3+1]+0.114*img.data[i*3+2]);");
+        emit_line("else out.data[i]=img.data[i];");
+        dedent();
+        emit_line("}");
+        emit_line("return out;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Resize (nearest neighbor)
+        emit_line("Image resize(const Image& img, int64_t w, int64_t h) {");
+        indent();
+        emit_line("Image out; out.width=w; out.height=h; out.channels=img.channels; out.data.resize(w*h*img.channels);");
+        emit_line("for(int64_t y=0;y<h;y++) for(int64_t x=0;x<w;x++) {");
+        indent();
+        emit_line("int64_t sx=x*img.width/w, sy=y*img.height/h;");
+        emit_line("for(int64_t c=0;c<img.channels;c++) out.data[(y*w+x)*img.channels+c]=img.data[(sy*img.width+sx)*img.channels+c];");
+        dedent();
+        emit_line("}");
+        emit_line("return out;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Flip
+        emit_line("Image flip(const Image& img, const std::string& dir=\"horizontal\") {");
+        indent();
+        emit_line("Image out=img;");
+        emit_line("if(dir==\"horizontal\") { for(int64_t y=0;y<img.height;y++) for(int64_t x=0;x<img.width/2;x++) for(int64_t c=0;c<img.channels;c++) std::swap(out.data[(y*img.width+x)*img.channels+c],out.data[(y*img.width+(img.width-1-x))*img.channels+c]); }");
+        emit_line("else { for(int64_t y=0;y<img.height/2;y++) for(int64_t x=0;x<img.width;x++) for(int64_t c=0;c<img.channels;c++) std::swap(out.data[(y*img.width+x)*img.channels+c],out.data[((img.height-1-y)*img.width+x)*img.channels+c]); }");
+        emit_line("return out;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Blur (box blur)
+        emit_line("Image blur(const Image& img, int64_t radius=2) {");
+        indent();
+        emit_line("Image out=img;");
+        emit_line("for(int64_t y=radius;y<img.height-radius;y++) for(int64_t x=radius;x<img.width-radius;x++) for(int64_t c=0;c<img.channels;c++) {");
+        indent();
+        emit_line("int sum=0, count=0;");
+        emit_line("for(int64_t dy=-radius;dy<=radius;dy++) for(int64_t dx=-radius;dx<=radius;dx++) { sum+=img.data[((y+dy)*img.width+(x+dx))*img.channels+c]; count++; }");
+        emit_line("out.data[(y*img.width+x)*img.channels+c]=(uint8_t)(sum/count);");
+        dedent();
+        emit_line("}");
+        emit_line("return out;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Edge detection (Sobel)
+        emit_line("Image edges(const Image& img) {");
+        indent();
+        emit_line("Image gray = (img.channels==3) ? grayscale(img) : img;");
+        emit_line("Image out; out.width=gray.width; out.height=gray.height; out.channels=1; out.data.resize(gray.width*gray.height, 0);");
+        emit_line("for(int64_t y=1;y<gray.height-1;y++) for(int64_t x=1;x<gray.width-1;x++) {");
+        indent();
+        emit_line("int gx = -gray.data[(y-1)*gray.width+(x-1)] + gray.data[(y-1)*gray.width+(x+1)] - 2*gray.data[y*gray.width+(x-1)] + 2*gray.data[y*gray.width+(x+1)] - gray.data[(y+1)*gray.width+(x-1)] + gray.data[(y+1)*gray.width+(x+1)];");
+        emit_line("int gy = -gray.data[(y-1)*gray.width+(x-1)] - 2*gray.data[(y-1)*gray.width+x] - gray.data[(y-1)*gray.width+(x+1)] + gray.data[(y+1)*gray.width+(x-1)] + 2*gray.data[(y+1)*gray.width+x] + gray.data[(y+1)*gray.width+(x+1)];");
+        emit_line("int mag = std::min(255, (int)std::sqrt(gx*gx + gy*gy));");
+        emit_line("out.data[y*gray.width+x] = (uint8_t)mag;");
+        dedent();
+        emit_line("}");
+        emit_line("return out;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Threshold
+        emit_line("Image threshold(const Image& img, int64_t thresh=128) {");
+        indent();
+        emit_line("Image gray = (img.channels==3) ? grayscale(img) : img;");
+        emit_line("Image out=gray;");
+        emit_line("for(auto& v:out.data) v=(v>thresh)?255:0;");
+        emit_line("return out;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Brightness
+        emit_line("Image brightness(const Image& img, int64_t delta) {");
+        indent();
+        emit_line("Image out=img;");
+        emit_line("for(auto& v:out.data) v=(uint8_t)std::max(0,std::min(255,(int)v+int(delta)));");
+        emit_line("return out;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Invert
+        emit_line("Image invert(const Image& img) { Image out=img; for(auto& v:out.data) v=255-v; return out; }");
+        emit_line("");
+
+        // Crop
+        emit_line("Image crop(const Image& img, int64_t x, int64_t y, int64_t w, int64_t h) {");
+        indent();
+        emit_line("Image out; out.width=w; out.height=h; out.channels=img.channels; out.data.resize(w*h*img.channels);");
+        emit_line("for(int64_t dy=0;dy<h;dy++) for(int64_t dx=0;dx<w;dx++) for(int64_t c=0;c<img.channels;c++)");
+        indent();
+        emit_line("out.data[(dy*w+dx)*img.channels+c]=img.data[((y+dy)*img.width+(x+dx))*img.channels+c];");
+        dedent();
+        dedent();
+        emit_line("return out;");
+        emit_line("}");
+        emit_line("");
+
+        // Draw rectangle
+        emit_line("void draw_rect(Image& img, int64_t x, int64_t y, int64_t w, int64_t h, uint8_t r=255, uint8_t g=0, uint8_t b=0) {");
+        indent();
+        emit_line("for(int64_t dx=0;dx<w;dx++){if(y>=0&&y<img.height&&x+dx>=0&&x+dx<img.width){img.at(y,x+dx,0)=r;img.at(y,x+dx,1)=g;img.at(y,x+dx,2)=b;} if(y+h-1>=0&&y+h-1<img.height&&x+dx>=0&&x+dx<img.width){img.at(y+h-1,x+dx,0)=r;img.at(y+h-1,x+dx,1)=g;img.at(y+h-1,x+dx,2)=b;}}");
+        emit_line("for(int64_t dy=0;dy<h;dy++){if(y+dy>=0&&y+dy<img.height&&x>=0&&x<img.width){img.at(y+dy,x,0)=r;img.at(y+dy,x,1)=g;img.at(y+dy,x,2)=b;} if(y+dy>=0&&y+dy<img.height&&x+w-1>=0&&x+w-1<img.width){img.at(y+dy,x+w-1,0)=r;img.at(y+dy,x+w-1,1)=g;img.at(y+dy,x+w-1,2)=b;}}");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Draw filled rectangle
+        emit_line("void fill_rect(Image& img, int64_t x, int64_t y, int64_t w, int64_t h, uint8_t r=255, uint8_t g=0, uint8_t b=0) {");
+        indent();
+        emit_line("for(int64_t dy=0;dy<h;dy++) for(int64_t dx=0;dx<w;dx++) if(y+dy>=0&&y+dy<img.height&&x+dx>=0&&x+dx<img.width){img.at(y+dy,x+dx,0)=r;img.at(y+dy,x+dx,1)=g;img.at(y+dy,x+dx,2)=b;}");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Histogram (pixel value distribution)
+        emit_line("std::vector<int64_t> histogram(const Image& img) {");
+        indent();
+        emit_line("Image gray = (img.channels==3) ? grayscale(img) : img;");
+        emit_line("std::vector<int64_t> hist(256, 0);");
+        emit_line("for(auto v:gray.data) hist[v]++;");
+        emit_line("return hist;");
+        dedent();
+        emit_line("}");
+
+        dedent();
+        emit_line("} // namespace pyro_cv");
+        emit_line("");
     } else if (stmt.module == "cloud") {
         emit_line("namespace pyro_cloud {");
         indent();
@@ -4971,6 +5226,271 @@ void CodeGenerator::emit_import(const ImportStmt& stmt) {
         dedent();
         emit_line("} // namespace pyro_nn");
         emit_line("");
+    } else if (stmt.module == "nlp") {
+        emit_line("namespace pyro_nlp {");
+        indent();
+
+        // Stopwords
+        emit_line("static const std::set<std::string> _stopwords = {\"a\",\"an\",\"the\",\"is\",\"are\",\"was\",\"were\",\"be\",\"been\",\"being\",\"have\",\"has\",\"had\",\"do\",\"does\",\"did\",\"will\",\"would\",\"could\",\"should\",\"may\",\"might\",\"can\",\"shall\",\"to\",\"of\",\"in\",\"for\",\"on\",\"with\",\"at\",\"by\",\"from\",\"as\",\"into\",\"about\",\"between\",\"through\",\"during\",\"before\",\"after\",\"above\",\"below\",\"and\",\"but\",\"or\",\"nor\",\"not\",\"so\",\"yet\",\"both\",\"either\",\"neither\",\"each\",\"every\",\"all\",\"any\",\"few\",\"more\",\"most\",\"other\",\"some\",\"such\",\"no\",\"only\",\"own\",\"same\",\"than\",\"too\",\"very\",\"just\",\"because\",\"if\",\"when\",\"while\",\"where\",\"how\",\"what\",\"which\",\"who\",\"whom\",\"this\",\"that\",\"these\",\"those\",\"i\",\"me\",\"my\",\"we\",\"our\",\"you\",\"your\",\"he\",\"him\",\"his\",\"she\",\"her\",\"it\",\"its\",\"they\",\"them\",\"their\"};");
+        emit_line("");
+
+        // Lowercase
+        emit_line("std::string lowercase(const std::string& s) { std::string r=s; for(auto& c:r) c=std::tolower(c); return r; }");
+        emit_line("");
+
+        // Tokenize (word)
+        emit_line("std::vector<std::string> tokenize(const std::string& text) {");
+        indent();
+        emit_line("std::vector<std::string> tokens;");
+        emit_line("std::string word;");
+        emit_line("for(char c : text) {");
+        indent();
+        emit_line("if(std::isalnum(c) || c=='\\'') { word += c; }");
+        emit_line("else { if(!word.empty()) { tokens.push_back(word); word.clear(); } if(std::ispunct(c)) tokens.push_back(std::string(1,c)); }");
+        dedent();
+        emit_line("}");
+        emit_line("if(!word.empty()) tokens.push_back(word);");
+        emit_line("return tokens;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Word tokenize (alphabetic words only)
+        emit_line("std::vector<std::string> word_tokenize(const std::string& text) {");
+        indent();
+        emit_line("std::vector<std::string> tokens;");
+        emit_line("std::string word;");
+        emit_line("for(char c : text) {");
+        indent();
+        emit_line("if(std::isalpha(c) || c=='\\'') word += c;");
+        emit_line("else if(!word.empty()) { tokens.push_back(word); word.clear(); }");
+        dedent();
+        emit_line("}");
+        emit_line("if(!word.empty()) tokens.push_back(word);");
+        emit_line("return tokens;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Sentence tokenize
+        emit_line("std::vector<std::string> sent_tokenize(const std::string& text) {");
+        indent();
+        emit_line("std::vector<std::string> sents;");
+        emit_line("std::string sent;");
+        emit_line("for(size_t i=0;i<text.size();i++) {");
+        indent();
+        emit_line("sent += text[i];");
+        emit_line("if((text[i]=='.'||text[i]=='!'||text[i]=='?') && (i+1>=text.size()||text[i+1]==' '||text[i+1]=='\\n')) {");
+        indent();
+        emit_line("while(!sent.empty()&&sent[0]==' ') sent.erase(0,1);");
+        emit_line("if(!sent.empty()) sents.push_back(sent);");
+        emit_line("sent.clear();");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("}");
+        emit_line("while(!sent.empty()&&sent[0]==' ') sent.erase(0,1);");
+        emit_line("if(!sent.empty()) sents.push_back(sent);");
+        emit_line("return sents;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Remove stopwords
+        emit_line("std::string remove_stopwords(const std::string& text) {");
+        indent();
+        emit_line("auto words = word_tokenize(text);");
+        emit_line("std::string result;");
+        emit_line("for(auto& w : words) { std::string lw=lowercase(w); if(_stopwords.find(lw)==_stopwords.end()) { if(!result.empty()) result+=\" \"; result+=w; } }");
+        emit_line("return result;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Remove punctuation
+        emit_line("std::string remove_punctuation(const std::string& text) {");
+        indent();
+        emit_line("std::string result; for(char c:text) if(!std::ispunct(c)) result+=c; return result;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Simple stemmer (Porter-like suffix stripping)
+        emit_line("std::string stem(const std::string& word) {");
+        indent();
+        emit_line("std::string w = lowercase(word);");
+        emit_line("if(w.size()>4 && w.substr(w.size()-3)==\"ing\") return w.substr(0,w.size()-3);");
+        emit_line("if(w.size()>3 && w.substr(w.size()-2)==\"ed\") return w.substr(0,w.size()-2);");
+        emit_line("if(w.size()>3 && w.substr(w.size()-2)==\"er\") return w.substr(0,w.size()-2);");
+        emit_line("if(w.size()>3 && w.substr(w.size()-2)==\"ly\") return w.substr(0,w.size()-2);");
+        emit_line("if(w.size()>4 && w.substr(w.size()-3)==\"ies\") return w.substr(0,w.size()-3)+\"y\";");
+        emit_line("if(w.size()>2 && w.back()=='s' && w[w.size()-2]!='s') return w.substr(0,w.size()-1);");
+        emit_line("return w;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // N-grams
+        emit_line("std::vector<std::string> ngrams(const std::string& text, int64_t n=2) {");
+        indent();
+        emit_line("auto words = word_tokenize(text);");
+        emit_line("std::vector<std::string> result;");
+        emit_line("for(size_t i=0;i+n<=words.size();i++) {");
+        indent();
+        emit_line("std::string gram; for(int64_t j=0;j<n;j++){if(j)gram+=\" \";gram+=words[i+j];} result.push_back(gram);");
+        dedent();
+        emit_line("}");
+        emit_line("return result;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Word frequency
+        emit_line("std::unordered_map<std::string, int64_t> word_count(const std::string& text) {");
+        indent();
+        emit_line("auto words = word_tokenize(text);");
+        emit_line("std::unordered_map<std::string, int64_t> counts;");
+        emit_line("for(auto& w : words) counts[lowercase(w)]++;");
+        emit_line("return counts;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // TF-IDF (single document keywords)
+        emit_line("std::vector<std::pair<std::string, double>> keywords(const std::string& text, int64_t top=10) {");
+        indent();
+        emit_line("auto counts = word_count(text);");
+        emit_line("int64_t total=0; for(auto& [w,c]:counts) total+=c;");
+        emit_line("std::vector<std::pair<std::string, double>> scored;");
+        emit_line("for(auto& [w,c]:counts) {");
+        indent();
+        emit_line("if(_stopwords.count(w)||w.size()<3) continue;");
+        emit_line("scored.push_back({w, (double)c/total});");
+        dedent();
+        emit_line("}");
+        emit_line("std::sort(scored.begin(),scored.end(),[](auto& a,auto& b){return a.second>b.second;});");
+        emit_line("if((int64_t)scored.size()>top) scored.resize(top);");
+        emit_line("return scored;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Cosine similarity between two texts
+        emit_line("double similarity(const std::string& a, const std::string& b) {");
+        indent();
+        emit_line("auto ca = word_count(a), cb = word_count(b);");
+        emit_line("std::set<std::string> all_words;");
+        emit_line("for(auto& [w,_]:ca) all_words.insert(w);");
+        emit_line("for(auto& [w,_]:cb) all_words.insert(w);");
+        emit_line("double dot=0, na=0, nb=0;");
+        emit_line("for(auto& w:all_words) { double va=ca.count(w)?ca[w]:0, vb=cb.count(w)?cb[w]:0; dot+=va*vb; na+=va*va; nb+=vb*vb; }");
+        emit_line("return (na>0&&nb>0) ? dot/(std::sqrt(na)*std::sqrt(nb)) : 0.0;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Sentiment analysis (lexicon-based)
+        emit_line("struct SentimentResult { std::string label; double score; };");
+        emit_line("std::ostream& operator<<(std::ostream& os, const SentimentResult& r) { os<<r.label<<\" (\"<<std::fixed<<std::setprecision(2)<<r.score<<\")\"; return os; }");
+        emit_line("");
+        emit_line("static const std::set<std::string> _pos_words = {\"good\",\"great\",\"excellent\",\"amazing\",\"wonderful\",\"fantastic\",\"awesome\",\"love\",\"like\",\"best\",\"happy\",\"joy\",\"beautiful\",\"brilliant\",\"perfect\",\"outstanding\",\"superb\",\"incredible\",\"magnificent\",\"delightful\",\"pleasant\",\"nice\",\"cool\",\"fun\",\"enjoy\",\"fast\",\"easy\",\"simple\",\"powerful\",\"impressive\"};");
+        emit_line("static const std::set<std::string> _neg_words = {\"bad\",\"terrible\",\"awful\",\"horrible\",\"hate\",\"worst\",\"poor\",\"ugly\",\"slow\",\"difficult\",\"hard\",\"boring\",\"annoying\",\"disappointing\",\"pathetic\",\"useless\",\"broken\",\"stupid\",\"dumb\",\"fail\",\"failure\",\"problem\",\"error\",\"bug\",\"crash\",\"sucks\",\"painful\",\"frustrating\",\"confusing\",\"complex\"};");
+        emit_line("");
+        emit_line("SentimentResult sentiment(const std::string& text) {");
+        indent();
+        emit_line("auto words = word_tokenize(text);");
+        emit_line("int pos=0, neg=0;");
+        emit_line("for(auto& w : words) { std::string lw=lowercase(w); if(_pos_words.count(lw)) pos++; if(_neg_words.count(lw)) neg++; }");
+        emit_line("int total=pos+neg; if(total==0) return {\"neutral\", 0.5};");
+        emit_line("double score = (double)pos/total;");
+        emit_line("if(score>0.6) return {\"positive\", score};");
+        emit_line("if(score<0.4) return {\"negative\", 1.0-score};");
+        emit_line("return {\"neutral\", 0.5};");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Named Entity Recognition (rule-based)
+        emit_line("struct Entity { std::string text; std::string type; };");
+        emit_line("std::ostream& operator<<(std::ostream& os, const Entity& e) { os<<e.text<<\" [\"<<e.type<<\"]\"; return os; }");
+        emit_line("");
+        emit_line("std::vector<Entity> ner(const std::string& text) {");
+        indent();
+        emit_line("std::vector<Entity> entities;");
+        emit_line("auto tokens = tokenize(text);");
+        emit_line("// Find capitalized sequences (potential names/places)");
+        emit_line("std::string current;");
+        emit_line("for(size_t i=0;i<tokens.size();i++) {");
+        indent();
+        emit_line("if(!tokens[i].empty() && std::isupper(tokens[i][0]) && std::isalpha(tokens[i][0])) {");
+        indent();
+        emit_line("if(!current.empty()) current+=\" \";");
+        emit_line("current+=tokens[i];");
+        dedent();
+        emit_line("} else {");
+        indent();
+        emit_line("if(!current.empty() && current.find(' ')!=std::string::npos) {");
+        indent();
+        emit_line("// Multi-word capitalized = likely entity");
+        emit_line("std::string type = \"ENTITY\";");
+        emit_line("// Simple heuristics");
+        emit_line("std::string lc=lowercase(current);");
+        emit_line("if(i<tokens.size()&&(tokens[i]==\"said\"||tokens[i]==\"says\"||tokens[i]==\"told\")) type=\"PERSON\";");
+        emit_line("else if(lc.find(\"city\")!=std::string::npos||lc.find(\"york\")!=std::string::npos||lc.find(\"london\")!=std::string::npos||lc.find(\"india\")!=std::string::npos) type=\"LOCATION\";");
+        emit_line("else if(lc.find(\"inc\")!=std::string::npos||lc.find(\"corp\")!=std::string::npos||lc.find(\"ltd\")!=std::string::npos||lc.find(\"company\")!=std::string::npos) type=\"ORGANIZATION\";");
+        emit_line("entities.push_back({current, type});");
+        dedent();
+        emit_line("}");
+        emit_line("current.clear();");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("}");
+        emit_line("if(!current.empty()&&current.find(' ')!=std::string::npos) entities.push_back({current,\"ENTITY\"});");
+        emit_line("return entities;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Summarize (extractive - pick top sentences by keyword density)
+        emit_line("std::string summarize(const std::string& text, int64_t sentences=3) {");
+        indent();
+        emit_line("auto sents = sent_tokenize(text);");
+        emit_line("if((int64_t)sents.size()<=sentences) return text;");
+        emit_line("auto kw = keywords(text, 20);");
+        emit_line("std::set<std::string> important;");
+        emit_line("for(auto& [w,_]:kw) important.insert(w);");
+        emit_line("// Score each sentence");
+        emit_line("std::vector<std::pair<double, size_t>> scored;");
+        emit_line("for(size_t i=0;i<sents.size();i++) {");
+        indent();
+        emit_line("auto words=word_tokenize(sents[i]); double score=0;");
+        emit_line("for(auto& w:words) if(important.count(lowercase(w))) score++;");
+        emit_line("if(!words.empty()) score/=words.size();");
+        emit_line("if(i==0) score+=0.3; // First sentence bonus");
+        emit_line("scored.push_back({score, i});");
+        dedent();
+        emit_line("}");
+        emit_line("std::sort(scored.begin(),scored.end(),[](auto& a,auto& b){return a.first>b.first;});");
+        emit_line("// Pick top sentences in original order");
+        emit_line("std::vector<size_t> picks;");
+        emit_line("for(int64_t i=0;i<sentences&&i<(int64_t)scored.size();i++) picks.push_back(scored[i].second);");
+        emit_line("std::sort(picks.begin(),picks.end());");
+        emit_line("std::string result;");
+        emit_line("for(auto idx:picks) { if(!result.empty()) result+=\" \"; result+=sents[idx]; }");
+        emit_line("return result;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Word count / character count
+        emit_line("int64_t count_words(const std::string& text) { return word_tokenize(text).size(); }");
+        emit_line("int64_t count_chars(const std::string& text) { return text.size(); }");
+        emit_line("int64_t count_sentences(const std::string& text) { return sent_tokenize(text).size(); }");
+
+        dedent();
+        emit_line("} // namespace pyro_nlp");
+        emit_line("");
     }
 }
 
@@ -5353,6 +5873,7 @@ std::string CodeGenerator::emit_member(const MemberExpr& expr) {
         if (id->name == "queue") return "pyro_queue::" + expr.member;
         if (id->name == "ml") return "pyro_ml::" + expr.member;
         if (id->name == "img") return "pyro_img::" + expr.member;
+        if (id->name == "cv") return "pyro_cv::" + expr.member;
         if (id->name == "viz") return "pyro_viz::" + expr.member;
         if (id->name == "cloud") return "pyro_cloud::" + expr.member;
         if (id->name == "ui") return "pyro_ui::" + expr.member;
@@ -5416,6 +5937,7 @@ std::string CodeGenerator::emit_member(const MemberExpr& expr) {
         if (id->name == "ai") return "pyro_ai::" + expr.member;
         if (id->name == "tensor") return "pyro_tensor::" + expr.member;
         if (id->name == "nn") return "pyro_nn::" + expr.member;
+        if (id->name == "nlp") return "pyro_nlp::" + expr.member;
         if (id->name == "plot") return "pyro_plot::" + expr.member;
         if (enum_names_.count(id->name)) return id->name + "::" + expr.member;
         // db Row field access: row.name -> row.get("name")
