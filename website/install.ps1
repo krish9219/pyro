@@ -10,7 +10,7 @@ Write-Host "  P.Y.R.O - Performance You Really Own" -ForegroundColor DarkYellow
 Write-Host ""
 
 $REPO = "krish9219/pyro"
-$INSTALL_DIR = Join-Path $env:USERPROFILE ".pyro" "bin"
+$INSTALL_DIR = "$env:USERPROFILE\.pyro\bin"
 
 # Create install directory
 if (-not (Test-Path $INSTALL_DIR)) {
@@ -42,7 +42,7 @@ if (-not $hasCmake) {
 
 # Check for Visual Studio Build Tools
 $hasVS = $false
-$vsWherePath = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio" "Installer" "vswhere.exe"
+$vsWherePath = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
 if (Test-Path $vsWherePath) {
     $vsPath = & $vsWherePath -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath 2>$null
     if ($vsPath) { $hasVS = $true }
@@ -65,7 +65,7 @@ if (-not $hasVS -and -not $hasGpp) {
 }
 
 Write-Host "  Cloning Pyro..." -ForegroundColor Cyan
-$buildDir = Join-Path $env:TEMP "pyro-build"
+$buildDir = "$env:TEMP\pyro-build"
 if (Test-Path $buildDir) {
     Remove-Item -Recurse -Force $buildDir
 }
@@ -73,7 +73,7 @@ git clone --depth 1 "https://github.com/$REPO.git" $buildDir 2>&1 | Out-Null
 
 Write-Host "  Building Pyro..." -ForegroundColor Cyan
 Push-Location $buildDir
-$bld = Join-Path $buildDir "build"
+$bld = "$buildDir\build"
 if (-not (Test-Path $bld)) {
     New-Item -ItemType Directory -Force -Path $bld | Out-Null
 }
@@ -84,20 +84,21 @@ if ($hasVS) {
     Write-Host "  Using Visual Studio compiler..." -ForegroundColor Gray
     cmake .. -G "Visual Studio 17 2022" -DCMAKE_BUILD_TYPE=Release 2>&1 | Out-Null
     cmake --build . --config Release 2>&1 | Out-Null
-    $exePath = Join-Path $bld "Release" "pyro.exe"
+    $exePath = "$bld\Release\pyro.exe"
 } elseif ($hasGpp) {
     Write-Host "  Using MinGW compiler..." -ForegroundColor Gray
     cmake .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release 2>&1 | Out-Null
     cmake --build . 2>&1 | Out-Null
-    $exePath = Join-Path $bld "pyro.exe"
+    $exePath = "$bld\pyro.exe"
 }
 
 if ($exePath -and (Test-Path $exePath)) {
-    Copy-Item $exePath (Join-Path $INSTALL_DIR "pyro.exe") -Force
+    Copy-Item $exePath "$INSTALL_DIR\pyro.exe" -Force
     Write-Host "  Built successfully!" -ForegroundColor Green
 } else {
     Write-Host "  Build failed." -ForegroundColor Red
-    Write-Host "  Make sure Visual Studio Build Tools with C++ are installed." -ForegroundColor Yellow
+    Write-Host "  Make sure Visual Studio Build Tools with C++ workload are installed." -ForegroundColor Yellow
+    Write-Host "  Then restart PowerShell and try again." -ForegroundColor Yellow
     Pop-Location
     Read-Host "  Press Enter to close"
     return
@@ -108,7 +109,7 @@ Remove-Item -Recurse -Force $buildDir -ErrorAction SilentlyContinue
 
 # Add to PATH
 $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
-if ($userPath -notlike "*\.pyro*") {
+if (-not ($userPath -like "*.pyro*")) {
     [Environment]::SetEnvironmentVariable("Path", "$userPath;$INSTALL_DIR", "User")
     $env:PATH += ";$INSTALL_DIR"
     Write-Host "  Added to PATH" -ForegroundColor Green
@@ -117,14 +118,13 @@ if ($userPath -notlike "*\.pyro*") {
 # Verify
 Write-Host ""
 try {
-    $pyroExe = Join-Path $INSTALL_DIR "pyro.exe"
-    & $pyroExe version
+    & "$INSTALL_DIR\pyro.exe" version
 } catch {
     Write-Host "  Warning: Could not verify installation" -ForegroundColor Yellow
 }
 Write-Host ""
 Write-Host "  Pyro installed successfully!" -ForegroundColor Green
-Write-Host "  Location: $INSTALL_DIR\pyro.exe" -ForegroundColor Gray
+Write-Host "  Location: $INSTALL_DIR" -ForegroundColor Gray
 Write-Host ""
 Write-Host "  Try it:" -ForegroundColor Cyan
 Write-Host "    pyro run hello.ro" -ForegroundColor White
