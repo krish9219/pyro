@@ -77,7 +77,11 @@ std::vector<pyro::StmtPtr> resolve_imports(
             file.open(file_path);
         }
         if (!file.is_open()) {
+#ifdef _WIN32
+            file_path = std::string(std::getenv("LOCALAPPDATA") ? std::getenv("LOCALAPPDATA") : ".") + "\\Pyro\\stdlib\\" + rel_path + ".ro";
+#else
             file_path = "/usr/local/lib/pyro/stdlib/" + rel_path + ".ro";
+#endif
             file.open(file_path);
         }
         if (!file.is_open()) {
@@ -440,8 +444,12 @@ void cmd_fmt(const std::string& path) {
 void cmd_debug(const std::string& source_path, const std::string& source) {
     std::string cpp_code = compile_to_cpp(source, source_path);
     std::string base = fs::path(source_path).stem().string();
-    std::string tmp_cpp = "/tmp/pyro_debug_" + base + ".cpp";
-    std::string tmp_bin = "/tmp/pyro_debug_" + base;
+    std::string tmp_cpp = get_temp_dir() + "pyro_debug_" + base + ".cpp";
+#ifdef _WIN32
+    std::string tmp_bin = get_temp_dir() + "pyro_debug_" + base + ".exe";
+#else
+    std::string tmp_bin = get_temp_dir() + "pyro_debug_" + base;
+#endif
 
     std::ofstream tmp(tmp_cpp);
     tmp << cpp_code;
@@ -459,9 +467,14 @@ void cmd_debug(const std::string& source_path, const std::string& source) {
 
     // Try gdb first, fall back to lldb
     std::string debugger;
+#ifdef _WIN32
+    if (std::system("where gdb > NUL 2>&1") == 0) debugger = "gdb";
+    else if (std::system("where lldb > NUL 2>&1") == 0) debugger = "lldb";
+#else
     if (std::system("which gdb > /dev/null 2>&1") == 0) debugger = "gdb";
     else if (std::system("which lldb > /dev/null 2>&1") == 0) debugger = "lldb";
-    else {
+#endif
+    if (debugger.empty()) {
         std::cerr << "No debugger found. Install gdb or lldb.\n";
         fs::remove(tmp_cpp);
         fs::remove(tmp_bin);
@@ -527,15 +540,23 @@ void cmd_check(const std::string& path) {
 void cmd_bench(const std::string& path, const std::string& source) {
     std::string cpp = compile_to_cpp(source, path);
     std::string base = fs::path(path).stem().string();
-    std::string tmp_cpp = "/tmp/pyro_bench_" + base + ".cpp";
-    std::string tmp_bin = "/tmp/pyro_bench_" + base;
+    std::string tmp_cpp = get_temp_dir() + "pyro_bench_" + base + ".cpp";
+#ifdef _WIN32
+    std::string tmp_bin = get_temp_dir() + "pyro_bench_" + base + ".exe";
+#else
+    std::string tmp_bin = get_temp_dir() + "pyro_bench_" + base;
+#endif
 
     std::ofstream f(tmp_cpp);
     f << cpp;
     f.close();
 
     std::string compiler = detect_compiler();
+#ifdef _WIN32
+    int ret = std::system((compiler + " -std=c++20 -O2 -o " + tmp_bin + " " + tmp_cpp + detect_link_flags(cpp) + " 2>NUL").c_str());
+#else
     int ret = std::system((compiler + " -std=c++20 -O2 -o " + tmp_bin + " " + tmp_cpp + detect_link_flags(cpp) + " 2>/dev/null").c_str());
+#endif
     if (ret != 0) {
         std::cerr << "Compilation failed\n";
         std::cerr << "Generated C++ saved at: " << tmp_cpp << "\n";
@@ -546,7 +567,11 @@ void cmd_bench(const std::string& path, const std::string& source) {
     double total = 0;
     for (int i = 0; i < 10; i++) {
         auto start = std::chrono::high_resolution_clock::now();
+#ifdef _WIN32
+        std::system((tmp_bin + " > NUL 2>&1").c_str());
+#else
         std::system((tmp_bin + " > /dev/null 2>&1").c_str());
+#endif
         auto end = std::chrono::high_resolution_clock::now();
         double ms = std::chrono::duration<double, std::milli>(end - start).count();
         total += ms;
@@ -582,20 +607,43 @@ void cmd_doc(const std::string& path) {
 void cmd_profile(const std::string& path, const std::string& source) {
     std::string cpp = compile_to_cpp(source, path);
     std::string base = fs::path(path).stem().string();
-    std::string tmp_cpp = "/tmp/pyro_profile_" + base + ".cpp";
-    std::string tmp_bin = "/tmp/pyro_profile_" + base;
+    std::string tmp_cpp = get_temp_dir() + "pyro_profile_" + base + ".cpp";
+#ifdef _WIN32
+    std::string tmp_bin = get_temp_dir() + "pyro_profile_" + base + ".exe";
+#else
+    std::string tmp_bin = get_temp_dir() + "pyro_profile_" + base;
+#endif
 
     std::ofstream f(tmp_cpp); f << cpp; f.close();
 
     std::string flags = detect_link_flags(cpp);
     std::string compiler = detect_compiler();
+#ifdef _WIN32
+    int ret = std::system((compiler + " -std=c++20 -O2 -pg -o " + tmp_bin + " " + tmp_cpp + flags + " 2>NUL").c_str());
+#else
     int ret = std::system((compiler + " -std=c++20 -O2 -pg -o " + tmp_bin + " " + tmp_cpp + flags + " 2>/dev/null").c_str());
+#endif
     if (ret != 0) { std::cerr << "Compilation failed\n"; return; }
 
     std::cout << "Profiling " << path << "...\n";
+#ifdef _WIN32
+    std::system((tmp_bin + " > NUL 2>&1").c_str());
+#else
     std::system((tmp_bin + " > /dev/null 2>&1").c_str());
+#endif
 
     // Generate profile report
+#ifdef _WIN32
+    // gprof is not typically available on Windows; fall back to basic timing
+    std::cout << "Profiling with gprof not supported on Windows. Basic timing:\n";
+    for (int i = 0; i < 5; i++) {
+        auto start = std::chrono::high_resolution_clock::now();
+        std::system((tmp_bin + " > NUL 2>&1").c_str());
+        auto end = std::chrono::high_resolution_clock::now();
+        double ms = std::chrono::duration<double, std::milli>(end - start).count();
+        std::cout << "  Run " << (i+1) << ": " << ms << " ms\n";
+    }
+#else
     if (std::system("which gprof > /dev/null 2>&1") == 0) {
         std::system(("gprof " + tmp_bin + " gmon.out 2>/dev/null | head -40").c_str());
     } else {
@@ -609,6 +657,7 @@ void cmd_profile(const std::string& path, const std::string& source) {
             std::cout << "  Run " << (i+1) << ": " << ms << " ms\n";
         }
     }
+#endif
 
     fs::remove(tmp_cpp); fs::remove(tmp_bin); fs::remove("gmon.out");
 }

@@ -618,11 +618,18 @@ std::string CodeGenerator::generate(const Program& program, const std::string& s
     }
     if (imports_.count("net")) {
         if (!imports_.count("web")) {
-            emit_line("#include <sys/socket.h>");
-            emit_line("#include <netinet/in.h>");
-            emit_line("#include <unistd.h>");
+            emit_line("#ifdef _WIN32");
+            emit_line("  #include <winsock2.h>");
+            emit_line("  #include <ws2tcpip.h>");
+            emit_line("#else");
+            emit_line("  #include <sys/socket.h>");
+            emit_line("  #include <netinet/in.h>");
+            emit_line("  #include <unistd.h>");
+            emit_line("#endif");
         }
-        emit_line("#include <arpa/inet.h>");
+        emit_line("#ifndef _WIN32");
+        emit_line("  #include <arpa/inet.h>");
+        emit_line("#endif");
     }
     if (imports_.count("log")) {
         emit_line("#include <ctime>");
@@ -645,7 +652,9 @@ std::string CodeGenerator::generate(const Program& program, const std::string& s
     if (imports_.count("os") || imports_.count("env") || imports_.count("subprocess") || imports_.count("process")) {
         emit_line("#include <cstdlib>");
         if (!imports_.count("net") && !imports_.count("web")) {
-            emit_line("#include <unistd.h>");
+            emit_line("#ifndef _WIN32");
+            emit_line("  #include <unistd.h>");
+            emit_line("#endif");
         }
     }
     if (imports_.count("random")) {
@@ -674,28 +683,44 @@ std::string CodeGenerator::generate(const Program& program, const std::string& s
         // uses istringstream from <sstream> already included
     }
     if (imports_.count("dns") || imports_.count("ping")) {
-        emit_line("#include <netdb.h>");
+        emit_line("#ifdef _WIN32");
+        emit_line("  #include <winsock2.h>");
+        emit_line("  #include <ws2tcpip.h>");
+        emit_line("#else");
+        emit_line("  #include <netdb.h>");
         if (!imports_.count("net") && !imports_.count("web")) {
-            emit_line("#include <sys/socket.h>");
-            emit_line("#include <netinet/in.h>");
-            emit_line("#include <unistd.h>");
+            emit_line("  #include <sys/socket.h>");
+            emit_line("  #include <netinet/in.h>");
+            emit_line("  #include <unistd.h>");
         }
-        emit_line("#include <arpa/inet.h>");
+        emit_line("  #include <arpa/inet.h>");
+        emit_line("#endif");
     }
     if (imports_.count("http") || imports_.count("smtp") || imports_.count("websocket")) {
         if (!imports_.count("net") && !imports_.count("web")) {
-            emit_line("#include <sys/socket.h>");
-            emit_line("#include <netinet/in.h>");
-            emit_line("#include <unistd.h>");
-            emit_line("#include <arpa/inet.h>");
+            emit_line("#ifdef _WIN32");
+            emit_line("  #include <winsock2.h>");
+            emit_line("  #include <ws2tcpip.h>");
+            emit_line("#else");
+            emit_line("  #include <sys/socket.h>");
+            emit_line("  #include <netinet/in.h>");
+            emit_line("  #include <unistd.h>");
+            emit_line("  #include <arpa/inet.h>");
+            emit_line("#endif");
         }
-        emit_line("#include <netdb.h>");
+        emit_line("#ifndef _WIN32");
+        emit_line("  #include <netdb.h>");
+        emit_line("#endif");
     }
     if (imports_.count("signal")) {
         emit_line("#include <csignal>");
     }
     if (imports_.count("process")) {
-        emit_line("#include <sys/wait.h>");
+        emit_line("#ifdef _WIN32");
+        emit_line("  #include <windows.h>");
+        emit_line("#else");
+        emit_line("  #include <sys/wait.h>");
+        emit_line("#endif");
     }
     if (imports_.count("compress")) {
         // uses hex encoding fallback
@@ -2345,7 +2370,11 @@ void CodeGenerator::emit_import(const ImportStmt& stmt) {
         emit_line("}");
         emit_line("void send(const std::string& data) { ::send(fd, data.c_str(), data.size(), 0); }");
         emit_line("std::string recv(int bufsize = 4096) { char buf[4096]; int n = ::recv(fd, buf, bufsize, 0); return n > 0 ? std::string(buf, n) : \"\"; }");
+        emit_line("#ifdef _WIN32");
+        emit_line("void close() { closesocket(fd); }");
+        emit_line("#else");
         emit_line("void close() { ::close(fd); }");
+        emit_line("#endif");
         dedent();
         emit_line("};");
         emit_line("TcpClient tcp_client() { return TcpClient{}; }");
@@ -2864,14 +2893,22 @@ void CodeGenerator::emit_import(const ImportStmt& stmt) {
         emit_line("namespace pyro_os {");
         indent();
         emit_line("std::string env(const std::string& name) { auto* v = std::getenv(name.c_str()); return v ? v : \"\"; }");
+        emit_line("#ifdef _WIN32");
+        emit_line("void setenv(const std::string& name, const std::string& val) { _putenv_s(name.c_str(), val.c_str()); }");
+        emit_line("#else");
         emit_line("void setenv(const std::string& name, const std::string& val) { ::setenv(name.c_str(), val.c_str(), 1); }");
+        emit_line("#endif");
         emit_line("std::string platform() { ");
         emit_line("#ifdef __linux__"); emit_line("return \"linux\";");
         emit_line("#elif __APPLE__"); emit_line("return \"macos\";");
         emit_line("#elif _WIN32"); emit_line("return \"windows\";");
         emit_line("#else"); emit_line("return \"unknown\";");
         emit_line("#endif"); emit_line("}");
+        emit_line("#ifdef _WIN32");
+        emit_line("int64_t pid() { return GetCurrentProcessId(); }");
+        emit_line("#else");
         emit_line("int64_t pid() { return getpid(); }");
+        emit_line("#endif");
         emit_line("std::string cwd() { return std::filesystem::current_path().string(); }");
         emit_line("int64_t cpus() { return std::thread::hardware_concurrency(); }");
         dedent(); emit_line("} // namespace pyro_os"); emit_line("");
@@ -2917,9 +2954,17 @@ void CodeGenerator::emit_import(const ImportStmt& stmt) {
         emit_line("Result run(const std::string& cmd) {");
         indent();
         emit_line("std::string result; char buf[256];");
+        emit_line("#ifdef _WIN32");
+        emit_line("FILE* pipe = _popen(cmd.c_str(), \"r\"); if (!pipe) return {\"\", -1};");
+        emit_line("#else");
         emit_line("FILE* pipe = popen(cmd.c_str(), \"r\"); if (!pipe) return {\"\", -1};");
+        emit_line("#endif");
         emit_line("while (fgets(buf, sizeof(buf), pipe)) result += buf;");
+        emit_line("#ifdef _WIN32");
+        emit_line("int code = _pclose(pipe); return {result, code};");
+        emit_line("#else");
         emit_line("int code = pclose(pipe); return {result, WEXITSTATUS(code)};");
+        emit_line("#endif");
         dedent(); emit_line("}");
         emit_line("std::string exec(const std::string& cmd) { return run(cmd).output; }");
         emit_line("int shell(const std::string& cmd) { return std::system(cmd.c_str()); }");
@@ -3585,15 +3630,27 @@ void CodeGenerator::emit_import(const ImportStmt& stmt) {
         indent();
         emit_line("int fd = socket(AF_INET, SOCK_STREAM, 0);");
         emit_line("struct hostent* he = gethostbyname(host.c_str());");
+        emit_line("#ifdef _WIN32");
+        emit_line("if (!he) { closesocket(fd); return {-1,\"DNS failed\"}; }");
+        emit_line("#else");
         emit_line("if (!he) { ::close(fd); return {-1,\"DNS failed\"}; }");
+        emit_line("#endif");
         emit_line("struct sockaddr_in addr; addr.sin_family=AF_INET; addr.sin_port=htons(port);");
         emit_line("std::memcpy(&addr.sin_addr, he->h_addr_list[0], he->h_length);");
+        emit_line("#ifdef _WIN32");
+        emit_line("if (::connect(fd,(struct sockaddr*)&addr,sizeof(addr))<0) { closesocket(fd); return {-1,\"Connect failed\"}; }");
+        emit_line("#else");
         emit_line("if (::connect(fd,(struct sockaddr*)&addr,sizeof(addr))<0) { ::close(fd); return {-1,\"Connect failed\"}; }");
+        emit_line("#endif");
         emit_line("std::string req = \"GET \"+path+\" HTTP/1.1\\r\\nHost: \"+host+\"\\r\\nConnection: close\\r\\n\\r\\n\";");
         emit_line("::send(fd, req.c_str(), req.size(), 0);");
         emit_line("std::string response; char buf[4096]; int n;");
         emit_line("while ((n=::recv(fd,buf,sizeof(buf),0))>0) response.append(buf,n);");
+        emit_line("#ifdef _WIN32");
+        emit_line("closesocket(fd);");
+        emit_line("#else");
         emit_line("::close(fd);");
+        emit_line("#endif");
         emit_line("Response r; r.status=0;");
         emit_line("auto sp = response.find(' '); if(sp!=std::string::npos) try{r.status=std::stoi(response.substr(sp+1,3));}catch(...){}");
         emit_line("auto bs = response.find(\"\\r\\n\\r\\n\"); if(bs!=std::string::npos) r.body=response.substr(bs+4);");
@@ -3686,10 +3743,18 @@ void CodeGenerator::emit_import(const ImportStmt& stmt) {
         emit_line("int64_t ping(const std::string& host) {");
         indent();
         emit_line("auto start=std::chrono::steady_clock::now();");
+        emit_line("#ifdef _WIN32");
+        emit_line("int fd=socket(AF_INET,SOCK_STREAM,0); struct hostent* he=gethostbyname(host.c_str()); if(!he){closesocket(fd);return -1;}");
+        emit_line("#else");
         emit_line("int fd=socket(AF_INET,SOCK_STREAM,0); struct hostent* he=gethostbyname(host.c_str()); if(!he){::close(fd);return -1;}");
+        emit_line("#endif");
         emit_line("struct sockaddr_in addr; addr.sin_family=AF_INET; addr.sin_port=htons(80); std::memcpy(&addr.sin_addr,he->h_addr_list[0],he->h_length);");
         emit_line("struct timeval tv; tv.tv_sec=2; tv.tv_usec=0; setsockopt(fd,SOL_SOCKET,SO_SNDTIMEO,&tv,sizeof(tv));");
+        emit_line("#ifdef _WIN32");
+        emit_line("int result=::connect(fd,(struct sockaddr*)&addr,sizeof(addr)); closesocket(fd); if(result<0) return -1;");
+        emit_line("#else");
         emit_line("int result=::connect(fd,(struct sockaddr*)&addr,sizeof(addr)); ::close(fd); if(result<0) return -1;");
+        emit_line("#endif");
         emit_line("return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()-start).count();");
         dedent();
         emit_line("}");
@@ -3699,10 +3764,17 @@ void CodeGenerator::emit_import(const ImportStmt& stmt) {
     } else if (stmt.module == "process") {
         emit_line("namespace pyro_process {");
         indent();
+        emit_line("#ifdef _WIN32");
+        emit_line("int64_t pid() { return (int64_t)GetCurrentProcessId(); }");
+        emit_line("int64_t ppid() { return 0; }");
+        emit_line("int64_t spawn(const std::string& cmd) { STARTUPINFOA si={}; PROCESS_INFORMATION pi={}; si.cb=sizeof(si); std::string c=\"cmd.exe /c \"+cmd; CreateProcessA(NULL,(LPSTR)c.c_str(),NULL,NULL,FALSE,0,NULL,NULL,&si,&pi); CloseHandle(pi.hThread); return (int64_t)pi.hProcess; }");
+        emit_line("int wait_pid(int64_t p) { WaitForSingleObject((HANDLE)p,INFINITE); DWORD code; GetExitCodeProcess((HANDLE)p,&code); CloseHandle((HANDLE)p); return (int)code; }");
+        emit_line("#else");
         emit_line("int64_t pid() { return (int64_t)getpid(); }");
         emit_line("int64_t ppid() { return (int64_t)getppid(); }");
         emit_line("int64_t spawn(const std::string& cmd) { pid_t p=fork(); if(p==0){execl(\"/bin/sh\",\"sh\",\"-c\",cmd.c_str(),nullptr);_exit(1);} return (int64_t)p; }");
         emit_line("int wait_pid(int64_t p) { int status; waitpid((pid_t)p,&status,0); return WEXITSTATUS(status); }");
+        emit_line("#endif");
         dedent();
         emit_line("} // namespace pyro_process");
         emit_line("");
