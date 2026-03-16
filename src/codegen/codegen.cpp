@@ -1,0 +1,4178 @@
+#include "codegen/codegen.h"
+#include <stdexcept>
+
+namespace pyro {
+
+CodeGenerator::CodeGenerator() : indent_level_(0), has_main_(false) {}
+
+void CodeGenerator::emit(const std::string& code) {
+    output_ << code;
+}
+
+void CodeGenerator::emit_line(const std::string& code) {
+    emit_indent();
+    output_ << code << "\n";
+}
+
+void CodeGenerator::emit_indent() {
+    for (int i = 0; i < indent_level_; i++) {
+        output_ << "    ";
+    }
+}
+
+void CodeGenerator::indent() { indent_level_++; }
+void CodeGenerator::dedent() { indent_level_--; }
+
+std::string CodeGenerator::map_type(const std::string& pyro_type) {
+    if (pyro_type == "int") return "int64_t";
+    if (pyro_type == "float") return "double";
+    if (pyro_type == "str") return "std::string";
+    if (pyro_type == "bool") return "bool";
+    if (pyro_type == "void" || pyro_type.empty()) return "void";
+    if (pyro_type.find("list[") == 0) {
+        std::string inner = pyro_type.substr(5, pyro_type.size() - 6);
+        return "std::vector<" + map_type(inner) + ">";
+    }
+    if (pyro_type.find("map[") == 0) {
+        // Simplified map parsing
+        return "std::unordered_map<std::string, pyro::Any>";
+    }
+    return pyro_type; // User-defined type
+}
+
+std::string CodeGenerator::infer_type(const ExprPtr& expr) {
+    if (!expr) return "void";
+    if (std::holds_alternative<IntLiteral>(expr->node)) return "int64_t";
+    if (std::holds_alternative<FloatLiteral>(expr->node)) return "double";
+    if (std::holds_alternative<StringLiteral>(expr->node)) return "std::string";
+    if (std::holds_alternative<StringInterpExpr>(expr->node)) return "std::string";
+    if (std::holds_alternative<BoolLiteral>(expr->node)) return "bool";
+    if (std::holds_alternative<NilLiteral>(expr->node)) return "std::nullptr_t";
+    if (std::holds_alternative<ListExpr>(expr->node)) return "auto";
+    return "auto";
+}
+
+void CodeGenerator::emit_headers() {
+    emit_line("#include <iostream>");
+    emit_line("#include <string>");
+    emit_line("#include <vector>");
+    emit_line("#include <unordered_map>");
+    emit_line("#include <functional>");
+    emit_line("#include <memory>");
+    emit_line("#include <cstdint>");
+    emit_line("#include <sstream>");
+    emit_line("#include <algorithm>");
+    emit_line("#include <deque>");
+    emit_line("#include <iomanip>");
+    emit_line("#include <cstring>");
+    emit_line("#include <numeric>");
+    emit_line("#include <cmath>");
+    emit_line("#include <future>");
+    emit_line("#include <thread>");
+    emit_line("#include <chrono>");
+    emit_line("#include <queue>");
+    emit_line("#include <mutex>");
+    emit_line("#include <condition_variable>");
+    emit_line("");
+
+    // Pyro runtime
+    emit_line("// Pyro Runtime");
+    emit_line("namespace pyro {");
+    indent();
+
+    // Vector print support
+    // Map print support
+    emit_line("template<typename K, typename V>");
+    emit_line("std::ostream& operator<<(std::ostream& os, const std::unordered_map<K, V>& m) {");
+    indent();
+    emit_line("os << \"{\";");
+    emit_line("bool first = true;");
+    emit_line("for (const auto& [k, v] : m) {");
+    indent();
+    emit_line("if (!first) os << \", \";");
+    emit_line("os << k << \": \" << v;");
+    emit_line("first = false;");
+    dedent();
+    emit_line("}");
+    emit_line("os << \"}\";");
+    emit_line("return os;");
+    dedent();
+    emit_line("}");
+    emit_line("");
+
+    // Vector print support
+    emit_line("template<typename T>");
+    emit_line("std::ostream& operator<<(std::ostream& os, const std::vector<T>& v) {");
+    indent();
+    emit_line("os << \"[\";");
+    emit_line("for (size_t i = 0; i < v.size(); i++) {");
+    indent();
+    emit_line("if (i > 0) os << \", \";");
+    emit_line("os << v[i];");
+    dedent();
+    emit_line("}");
+    emit_line("os << \"]\";");
+    emit_line("return os;");
+    dedent();
+    emit_line("}");
+    emit_line("");
+
+    emit_line("template<typename... Args>");
+    emit_line("void print(Args&&... args) {");
+    indent();
+    emit_line("((std::cout << std::forward<Args>(args)), ...);");
+    emit_line("std::cout << std::endl;");
+    dedent();
+    emit_line("}");
+    emit_line("");
+    emit_line("template<typename T>");
+    emit_line("std::string to_str(const T& val) {");
+    indent();
+    emit_line("std::ostringstream ss;");
+    emit_line("ss << val;");
+    emit_line("return ss.str();");
+    dedent();
+    emit_line("}");
+    emit_line("");
+    emit_line("int64_t len(const std::string& s) { return s.size(); }");
+    emit_line("template<typename T>");
+    emit_line("int64_t len(const std::vector<T>& v) { return v.size(); }");
+    emit_line("");
+
+    // List methods
+    emit_line("template<typename T, typename F>");
+    emit_line("auto map(const std::vector<T>& v, F f) {");
+    indent();
+    emit_line("std::vector<decltype(f(v[0]))> r; r.reserve(v.size());");
+    emit_line("for (const auto& x : v) r.push_back(f(x));");
+    emit_line("return r;");
+    dedent();
+    emit_line("}");
+    emit_line("");
+
+    emit_line("template<typename T, typename F>");
+    emit_line("std::vector<T> filter(const std::vector<T>& v, F f) {");
+    indent();
+    emit_line("std::vector<T> r;");
+    emit_line("for (const auto& x : v) if (f(x)) r.push_back(x);");
+    emit_line("return r;");
+    dedent();
+    emit_line("}");
+    emit_line("");
+
+    emit_line("template<typename T, typename A, typename F>");
+    emit_line("A reduce(const std::vector<T>& v, A init, F f) {");
+    indent();
+    emit_line("for (const auto& x : v) init = f(init, x);");
+    emit_line("return init;");
+    dedent();
+    emit_line("}");
+    emit_line("");
+
+    emit_line("template<typename T>");
+    emit_line("std::vector<T> sorted(std::vector<T> v) { std::sort(v.begin(), v.end()); return v; }");
+    emit_line("template<typename T, typename F>");
+    emit_line("std::vector<T> sorted(std::vector<T> v, F f) { std::sort(v.begin(), v.end(), f); return v; }");
+    emit_line("");
+
+    emit_line("template<typename T, typename F>");
+    emit_line("T find(const std::vector<T>& v, F f) {");
+    indent();
+    emit_line("for (const auto& x : v) if (f(x)) return x;");
+    emit_line("throw std::runtime_error(\"find: no match\");");
+    dedent();
+    emit_line("}");
+    emit_line("");
+
+    emit_line("template<typename T, typename U>");
+    emit_line("bool contains(const std::vector<T>& v, const U& val) {");
+    indent();
+    emit_line("for (const auto& x : v) if (x == val) return true;");
+    emit_line("return false;");
+    dedent();
+    emit_line("}");
+    emit_line("");
+
+    emit_line("template<typename T>");
+    emit_line("std::vector<T> reversed(std::vector<T> v) { std::reverse(v.begin(), v.end()); return v; }");
+    emit_line("");
+
+    emit_line("template<typename T>");
+    emit_line("std::string join(const std::vector<T>& v, const std::string& sep) {");
+    indent();
+    emit_line("std::ostringstream ss;");
+    emit_line("for (size_t i = 0; i < v.size(); i++) { if (i > 0) ss << sep; ss << v[i]; }");
+    emit_line("return ss.str();");
+    dedent();
+    emit_line("}");
+    emit_line("");
+
+    emit_line("template<typename T, typename U>");
+    emit_line("void push(std::vector<T>& v, U&& val) { v.push_back(std::forward<U>(val)); }");
+    emit_line("template<typename T>");
+    emit_line("T pop(std::vector<T>& v) { T val = v.back(); v.pop_back(); return val; }");
+    emit_line("");
+
+    emit_line("template<typename T>");
+    emit_line("T sum(const std::vector<T>& v) { T s = 0; for (const auto& x : v) s += x; return s; }");
+    emit_line("template<typename T>");
+    emit_line("T min_val(const std::vector<T>& v) { return *std::min_element(v.begin(), v.end()); }");
+    emit_line("template<typename T>");
+    emit_line("T max_val(const std::vector<T>& v) { return *std::max_element(v.begin(), v.end()); }");
+    emit_line("");
+
+    // --- String methods ---
+    emit_line("std::string upper(const std::string& s) { std::string r = s; std::transform(r.begin(), r.end(), r.begin(), ::toupper); return r; }");
+    emit_line("std::string lower(const std::string& s) { std::string r = s; std::transform(r.begin(), r.end(), r.begin(), ::tolower); return r; }");
+    emit_line("std::vector<std::string> split(const std::string& s, const std::string& delim) {");
+    indent();
+    emit_line("std::vector<std::string> result;");
+    emit_line("size_t start = 0, end;");
+    emit_line("while ((end = s.find(delim, start)) != std::string::npos) {");
+    indent();
+    emit_line("result.push_back(s.substr(start, end - start));");
+    emit_line("start = end + delim.size();");
+    dedent();
+    emit_line("}");
+    emit_line("result.push_back(s.substr(start));");
+    emit_line("return result;");
+    dedent();
+    emit_line("}");
+    emit_line("std::string trim(const std::string& s) {");
+    indent();
+    emit_line("auto start = s.find_first_not_of(\" \\t\\r\\n\");");
+    emit_line("auto end = s.find_last_not_of(\" \\t\\r\\n\");");
+    emit_line("return (start == std::string::npos) ? std::string(\"\") : s.substr(start, end - start + 1);");
+    dedent();
+    emit_line("}");
+    emit_line("bool starts_with(const std::string& s, const std::string& prefix) { return s.rfind(prefix, 0) == 0; }");
+    emit_line("bool ends_with(const std::string& s, const std::string& suffix) { return s.size() >= suffix.size() && s.compare(s.size()-suffix.size(), suffix.size(), suffix) == 0; }");
+    emit_line("std::string replace_all(const std::string& s, const std::string& from, const std::string& to) {");
+    indent();
+    emit_line("std::string r = s; size_t pos = 0;");
+    emit_line("while ((pos = r.find(from, pos)) != std::string::npos) { r.replace(pos, from.size(), to); pos += to.size(); }");
+    emit_line("return r;");
+    dedent();
+    emit_line("}");
+    emit_line("std::string slice(const std::string& s, int64_t start, int64_t end) {");
+    indent();
+    emit_line("if (start < 0) start = s.size() + start;");
+    emit_line("if (end < 0) end = s.size() + end;");
+    emit_line("if (start < 0) start = 0;");
+    emit_line("if (end > (int64_t)s.size()) end = s.size();");
+    emit_line("if (start >= end) return \"\";");
+    emit_line("return s.substr(start, end - start);");
+    dedent();
+    emit_line("}");
+    emit_line("std::string repeat(const std::string& s, int64_t n) { std::string r; for (int64_t i = 0; i < n; i++) r += s; return r; }");
+    emit_line("std::vector<std::string> chars(const std::string& s) { std::vector<std::string> r; for (char c : s) r.push_back(std::string(1, c)); return r; }");
+    emit_line("");
+
+    // --- Map methods ---
+    emit_line("template<typename K, typename V>");
+    emit_line("std::vector<K> keys(const std::unordered_map<K,V>& m) { std::vector<K> r; for (const auto& [k,v] : m) r.push_back(k); return r; }");
+    emit_line("template<typename K, typename V>");
+    emit_line("std::vector<V> values(const std::unordered_map<K,V>& m) { std::vector<V> r; for (const auto& [k,v] : m) r.push_back(v); return r; }");
+    emit_line("template<typename K, typename V>");
+    emit_line("bool has(const std::unordered_map<K,V>& m, const K& key) { return m.count(key) > 0; }");
+    emit_line("template<typename K, typename V>");
+    emit_line("V get(const std::unordered_map<K,V>& m, const K& key, const V& def) { auto it = m.find(key); return it != m.end() ? it->second : def; }");
+    emit_line("template<typename K, typename V>");
+    emit_line("int64_t map_size(const std::unordered_map<K,V>& m) { return m.size(); }");
+    emit_line("");
+
+    // --- Result type for error handling ---
+    emit_line("struct PyroResult {");
+    indent();
+    emit_line("bool is_ok;");
+    emit_line("std::string value;");
+    emit_line("std::string error;");
+    dedent();
+    emit_line("};");
+    emit_line("template<typename T>");
+    emit_line("PyroResult ok(const T& val) { return {true, to_str(val), \"\"}; }");
+    emit_line("PyroResult err(const std::string& msg) { return {false, \"\", msg}; }");
+    emit_line("std::ostream& operator<<(std::ostream& os, const PyroResult& r) {");
+    indent();
+    emit_line("if (r.is_ok) os << \"ok(\" << r.value << \")\";");
+    emit_line("else os << \"err(\" << r.error << \")\";");
+    emit_line("return os;");
+    dedent();
+    emit_line("}");
+    emit_line("");
+
+    // --- Custom error type ---
+    emit_line("struct PyroError : public std::runtime_error {");
+    indent();
+    emit_line("std::string type;");
+    emit_line("PyroError(const std::string& msg, const std::string& t = \"Error\")");
+    emit_line("    : std::runtime_error(msg), type(t) {}");
+    dedent();
+    emit_line("};");
+    emit_line("");
+
+    // --- Nil coalescing ---
+    emit_line("template<typename T, typename U>");
+    emit_line("auto nil_coalesce(const T& val, const U& def) { return val; }");
+    emit_line("template<>");
+    emit_line("inline auto nil_coalesce<std::string, std::string>(const std::string& val, const std::string& def) { return val.empty() ? def : val; }");
+    emit_line("");
+
+    // Range helper
+    emit_line("struct Range {");
+    indent();
+    emit_line("int64_t start_, end_;");
+    emit_line("Range(int64_t s, int64_t e) : start_(s), end_(e) {}");
+    emit_line("struct Iterator {");
+    indent();
+    emit_line("int64_t val;");
+    emit_line("int64_t operator*() const { return val; }");
+    emit_line("Iterator& operator++() { ++val; return *this; }");
+    emit_line("bool operator!=(const Iterator& o) const { return val != o.val; }");
+    dedent();
+    emit_line("};");
+    emit_line("Iterator begin() const { return {start_}; }");
+    emit_line("Iterator end() const { return {end_}; }");
+    dedent();
+    emit_line("};");
+    emit_line("Range range(int64_t s, int64_t e) { return Range(s, e); }");
+    emit_line("");
+    emit_line("// Async utilities");
+    emit_line("void async_sleep(int64_t ms) {");
+    indent();
+    emit_line("std::this_thread::sleep_for(std::chrono::milliseconds(ms));");
+    dedent();
+    emit_line("}");
+    emit_line("");
+    emit_line("template<typename T>");
+    emit_line("auto async_all(std::vector<std::future<T>>& futures) {");
+    indent();
+    emit_line("std::vector<T> results;");
+    emit_line("for (auto& f : futures) results.push_back(f.get());");
+    emit_line("return results;");
+    dedent();
+    emit_line("}");
+    emit_line("");
+
+    // async_race
+    emit_line("template<typename T>");
+    emit_line("T async_race(std::vector<std::future<T>>& futures) {");
+    indent();
+    emit_line("while (true) {");
+    indent();
+    emit_line("for (auto& f : futures) {");
+    indent();
+    emit_line("if (f.wait_for(std::chrono::milliseconds(1)) == std::future_status::ready) {");
+    indent();
+    emit_line("return f.get();");
+    dedent();
+    emit_line("}");
+    dedent();
+    emit_line("}");
+    dedent();
+    emit_line("}");
+    dedent();
+    emit_line("}");
+    emit_line("");
+
+    // async_timeout
+    emit_line("template<typename T>");
+    emit_line("std::string async_timeout(int64_t ms, std::future<T>& f) {");
+    indent();
+    emit_line("if (f.wait_for(std::chrono::milliseconds(ms)) == std::future_status::ready) {");
+    indent();
+    emit_line("std::ostringstream ss; ss << f.get(); return ss.str();");
+    dedent();
+    emit_line("}");
+    emit_line("return \"\";");
+    dedent();
+    emit_line("}");
+    emit_line("");
+
+    // Channel
+    emit_line("template<typename T = std::string>");
+    emit_line("struct Channel {");
+    indent();
+    emit_line("std::queue<T> buffer;");
+    emit_line("std::mutex mtx;");
+    emit_line("std::condition_variable cv;");
+    emit_line("bool closed = false;");
+    emit_line("size_t capacity;");
+    emit_line("");
+    emit_line("Channel(size_t cap = 0) : capacity(cap) {}");
+    emit_line("");
+    emit_line("void send(const T& val) {");
+    indent();
+    emit_line("std::unique_lock<std::mutex> lock(mtx);");
+    emit_line("if (capacity > 0) cv.wait(lock, [&]{ return buffer.size() < capacity || closed; });");
+    emit_line("if (closed) throw std::runtime_error(\"send on closed channel\");");
+    emit_line("buffer.push(val);");
+    emit_line("cv.notify_one();");
+    dedent();
+    emit_line("}");
+    emit_line("");
+    emit_line("T recv() {");
+    indent();
+    emit_line("std::unique_lock<std::mutex> lock(mtx);");
+    emit_line("cv.wait(lock, [&]{ return !buffer.empty() || closed; });");
+    emit_line("if (buffer.empty() && closed) throw std::runtime_error(\"recv on closed channel\");");
+    emit_line("T val = buffer.front(); buffer.pop();");
+    emit_line("cv.notify_one();");
+    emit_line("return val;");
+    dedent();
+    emit_line("}");
+    emit_line("");
+    emit_line("bool try_recv(T& val) {");
+    indent();
+    emit_line("std::lock_guard<std::mutex> lock(mtx);");
+    emit_line("if (buffer.empty()) return false;");
+    emit_line("val = buffer.front(); buffer.pop();");
+    emit_line("return true;");
+    dedent();
+    emit_line("}");
+    emit_line("");
+    emit_line("void close() {");
+    indent();
+    emit_line("std::lock_guard<std::mutex> lock(mtx);");
+    emit_line("closed = true;");
+    emit_line("cv.notify_all();");
+    dedent();
+    emit_line("}");
+    emit_line("");
+    emit_line("bool is_closed() const { return closed; }");
+    emit_line("size_t size() { std::lock_guard<std::mutex> lock(mtx); return buffer.size(); }");
+    dedent();
+    emit_line("};");
+    emit_line("");
+    emit_line("template<typename T = std::string>");
+    emit_line("auto channel(size_t cap = 0) { return std::make_shared<Channel<T>>(cap); }");
+    emit_line("");
+
+    // WorkerPool
+    emit_line("struct WorkerPool {");
+    indent();
+    emit_line("std::vector<std::thread> workers;");
+    emit_line("std::queue<std::function<void()>> tasks;");
+    emit_line("std::mutex mtx;");
+    emit_line("std::condition_variable cv;");
+    emit_line("bool stopped = false;");
+    emit_line("");
+    emit_line("WorkerPool(int n) {");
+    indent();
+    emit_line("for (int i = 0; i < n; i++) {");
+    indent();
+    emit_line("workers.emplace_back([this] {");
+    indent();
+    emit_line("while (true) {");
+    indent();
+    emit_line("std::function<void()> task;");
+    emit_line("{");
+    indent();
+    emit_line("std::unique_lock<std::mutex> lock(mtx);");
+    emit_line("cv.wait(lock, [this]{ return stopped || !tasks.empty(); });");
+    emit_line("if (stopped && tasks.empty()) return;");
+    emit_line("task = std::move(tasks.front());");
+    emit_line("tasks.pop();");
+    dedent();
+    emit_line("}");
+    emit_line("task();");
+    dedent();
+    emit_line("}");
+    dedent();
+    emit_line("});");
+    dedent();
+    emit_line("}");
+    dedent();
+    emit_line("}");
+    emit_line("");
+    emit_line("template<typename F>");
+    emit_line("void submit(F&& f) {");
+    indent();
+    emit_line("{");
+    indent();
+    emit_line("std::lock_guard<std::mutex> lock(mtx);");
+    emit_line("tasks.push(std::forward<F>(f));");
+    dedent();
+    emit_line("}");
+    emit_line("cv.notify_one();");
+    dedent();
+    emit_line("}");
+    emit_line("");
+    emit_line("void shutdown() {");
+    indent();
+    emit_line("{ std::lock_guard<std::mutex> lock(mtx); stopped = true; }");
+    emit_line("cv.notify_all();");
+    emit_line("for (auto& w : workers) w.join();");
+    dedent();
+    emit_line("}");
+    emit_line("");
+    emit_line("~WorkerPool() { if (!stopped) shutdown(); }");
+    dedent();
+    emit_line("};");
+    emit_line("");
+    emit_line("auto worker_pool(int n = 4) { return std::make_shared<WorkerPool>(n); }");
+    emit_line("");
+
+    // Mutex wrapper
+    emit_line("struct Mutex {");
+    indent();
+    emit_line("std::mutex mtx;");
+    emit_line("void lock() { mtx.lock(); }");
+    emit_line("void unlock() { mtx.unlock(); }");
+    dedent();
+    emit_line("};");
+    emit_line("auto mutex() { return std::make_shared<Mutex>(); }");
+
+    dedent();
+    emit_line("} // namespace pyro");
+    emit_line("");
+    emit_line("using namespace pyro;");
+    emit_line("");
+}
+
+std::string CodeGenerator::generate(const Program& program, const std::string& source_file) {
+    output_.str("");
+    output_.clear();
+    source_file_ = source_file;
+
+    // Scan for imports to determine which stdlib namespaces to emit
+    for (const auto& stmt : program.statements) {
+        if (auto* imp = std::get_if<ImportStmt>(&stmt->node)) {
+            imports_.insert(imp->module);
+        }
+    }
+
+    // Scan for enums to register names
+    for (const auto& stmt : program.statements) {
+        if (auto* e = std::get_if<EnumDef>(&stmt->node)) {
+            enum_names_.insert(e->name);
+        }
+    }
+
+    // Scan for async functions to register names
+    for (const auto& stmt : program.statements) {
+        if (auto* fn = std::get_if<FnDef>(&stmt->node)) {
+            if (fn->is_async) {
+                async_functions_.insert(fn->name);
+            }
+        }
+    }
+
+    emit_line("// Generated by Pyro Compiler v1.0");
+    emit_line("// Creator: Aravind Pilla");
+    emit_line("");
+
+    // Extra headers for stdlib modules
+    if (imports_.count("math")) {
+        emit_line("#include <random>");
+    }
+    if (imports_.count("io") || imports_.count("data") || imports_.count("img") || imports_.count("viz")) {
+        emit_line("#include <fstream>");
+        emit_line("#include <filesystem>");
+    }
+    if (imports_.count("data")) {
+        emit_line("#include <set>");
+        if (!imports_.count("math") && !imports_.count("random") && !imports_.count("crypto") && !imports_.count("auth")) {
+            emit_line("#include <random>");
+        }
+    }
+    if (imports_.count("db")) {
+        if (!imports_.count("io") && !imports_.count("data") && !imports_.count("img") && !imports_.count("fs") && !imports_.count("path") && !imports_.count("config") && !imports_.count("csv")) {
+            emit_line("#include <fstream>");
+        }
+    }
+    if (imports_.count("cache")) {
+        if (!imports_.count("time")) {
+            emit_line("#include <chrono>");
+        }
+    }
+    if (imports_.count("web")) {
+        emit_line("#include <sys/socket.h>");
+        emit_line("#include <netinet/in.h>");
+        emit_line("#include <unistd.h>");
+    }
+    if (imports_.count("crypto")) {
+        emit_line("#include <random>");
+        emit_line("#include <iomanip>");
+        emit_line("#include <cstring>");
+        emit_line("#include <openssl/sha.h>");
+        emit_line("#include <openssl/evp.h>");
+        emit_line("#include <openssl/hmac.h>");
+        emit_line("#include <openssl/rand.h>");
+        emit_line("#include <openssl/kdf.h>");
+    }
+    if (imports_.count("validate")) {
+        // uses std::istringstream already included via sstream
+    }
+    if (imports_.count("time")) {
+        emit_line("#include <chrono>");
+        emit_line("#include <ctime>");
+        emit_line("#include <thread>");
+    }
+    if (imports_.count("net")) {
+        if (!imports_.count("web")) {
+            emit_line("#include <sys/socket.h>");
+            emit_line("#include <netinet/in.h>");
+            emit_line("#include <unistd.h>");
+        }
+        emit_line("#include <arpa/inet.h>");
+    }
+    if (imports_.count("log")) {
+        emit_line("#include <ctime>");
+    }
+    // New stdlib module headers
+    if (imports_.count("re")) {
+        emit_line("#include <regex>");
+    }
+    if (imports_.count("uuid")) {
+        if (!imports_.count("math") && !imports_.count("random")) {
+            emit_line("#include <random>");
+        }
+    }
+    if (imports_.count("fs") || imports_.count("path") || imports_.count("config")) {
+        if (!imports_.count("io") && !imports_.count("data") && !imports_.count("img")) {
+            emit_line("#include <fstream>");
+            emit_line("#include <filesystem>");
+        }
+    }
+    if (imports_.count("os") || imports_.count("env") || imports_.count("subprocess") || imports_.count("process")) {
+        emit_line("#include <cstdlib>");
+        if (!imports_.count("net") && !imports_.count("web")) {
+            emit_line("#include <unistd.h>");
+        }
+    }
+    if (imports_.count("random")) {
+        if (!imports_.count("math")) {
+            emit_line("#include <random>");
+        }
+    }
+    if (imports_.count("encoding")) {
+        if (!imports_.count("crypto")) {
+            emit_line("#include <iomanip>");
+        }
+    }
+    if (imports_.count("collections")) {
+        emit_line("#include <deque>");
+    }
+    if (imports_.count("csv") || imports_.count("config") || imports_.count("mime") || imports_.count("template") || imports_.count("markdown")) {
+        if (!imports_.count("io") && !imports_.count("data") && !imports_.count("img") && !imports_.count("fs") && !imports_.count("path")) {
+            emit_line("#include <fstream>");
+            emit_line("#include <filesystem>");
+        }
+    }
+    if (imports_.count("sys")) {
+        emit_line("#include <cstdlib>");
+    }
+    if (imports_.count("text") || imports_.count("markdown")) {
+        // uses istringstream from <sstream> already included
+    }
+    if (imports_.count("dns") || imports_.count("ping")) {
+        emit_line("#include <netdb.h>");
+        if (!imports_.count("net") && !imports_.count("web")) {
+            emit_line("#include <sys/socket.h>");
+            emit_line("#include <netinet/in.h>");
+            emit_line("#include <unistd.h>");
+        }
+        emit_line("#include <arpa/inet.h>");
+    }
+    if (imports_.count("http") || imports_.count("smtp") || imports_.count("websocket")) {
+        if (!imports_.count("net") && !imports_.count("web")) {
+            emit_line("#include <sys/socket.h>");
+            emit_line("#include <netinet/in.h>");
+            emit_line("#include <unistd.h>");
+            emit_line("#include <arpa/inet.h>");
+        }
+        emit_line("#include <netdb.h>");
+    }
+    if (imports_.count("signal")) {
+        emit_line("#include <csignal>");
+    }
+    if (imports_.count("process")) {
+        emit_line("#include <sys/wait.h>");
+    }
+    if (imports_.count("compress")) {
+        // uses hex encoding fallback
+    }
+    if (imports_.count("auth")) {
+        if (!imports_.count("crypto")) {
+            emit_line("#include <random>");
+            emit_line("#include <iomanip>");
+        }
+    }
+
+    emit_headers();
+
+    // Emit stdlib namespaces
+    for (const auto& stmt : program.statements) {
+        if (auto* imp = std::get_if<ImportStmt>(&stmt->node)) {
+            emit_import(*imp);
+        }
+    }
+
+    // Check if there's a main function
+    for (const auto& stmt : program.statements) {
+        if (auto* fn = std::get_if<FnDef>(&stmt->node)) {
+            if (fn->name == "main") {
+                has_main_ = true;
+                break;
+            }
+        }
+    }
+
+    // Forward declarations skipped for template structs
+    emit_line("");
+
+    // Emit enums first
+    for (const auto& stmt : program.statements) {
+        if (std::holds_alternative<EnumDef>(stmt->node)) {
+            emit_statement(stmt);
+            emit_line("");
+        }
+    }
+
+    // Emit structs
+    for (const auto& stmt : program.statements) {
+        if (std::holds_alternative<StructDef>(stmt->node)) {
+            emit_statement(stmt);
+            emit_line("");
+        }
+    }
+
+    // Emit functions (except main)
+    for (const auto& stmt : program.statements) {
+        if (auto* fn = std::get_if<FnDef>(&stmt->node)) {
+            if (fn->name != "main") {
+                emit_statement(stmt);
+                emit_line("");
+            }
+        }
+    }
+
+    // Emit top-level statements in main
+    if (!has_main_) {
+        emit_line("int main() {");
+        indent();
+        for (const auto& stmt : program.statements) {
+            if (!std::holds_alternative<FnDef>(stmt->node) &&
+                !std::holds_alternative<StructDef>(stmt->node) &&
+                !std::holds_alternative<ImportStmt>(stmt->node) &&
+                !std::holds_alternative<EnumDef>(stmt->node)) {
+                emit_statement(stmt);
+            }
+        }
+        emit_line("return 0;");
+        dedent();
+        emit_line("}");
+    } else {
+        for (const auto& stmt : program.statements) {
+            if (auto* fn = std::get_if<FnDef>(&stmt->node)) {
+                if (fn->name == "main") {
+                    emit_statement(stmt);
+                }
+            }
+        }
+    }
+
+    return output_.str();
+}
+
+void CodeGenerator::emit_statement(const StmtPtr& stmt) {
+    if (!source_file_.empty() && stmt->line > 0) {
+        output_ << "#line " << stmt->line << " \"" << source_file_ << "\"\n";
+    }
+    std::visit([this](const auto& s) {
+        using T = std::decay_t<decltype(s)>;
+        if constexpr (std::is_same_v<T, LetStmt>) emit_let(s);
+        else if constexpr (std::is_same_v<T, AssignStmt>) emit_assign(s);
+        else if constexpr (std::is_same_v<T, FnDef>) emit_fn(s);
+        else if constexpr (std::is_same_v<T, StructDef>) emit_struct(s);
+        else if constexpr (std::is_same_v<T, IfStmt>) emit_if(s);
+        else if constexpr (std::is_same_v<T, ForStmt>) emit_for(s);
+        else if constexpr (std::is_same_v<T, WhileStmt>) emit_while(s);
+        else if constexpr (std::is_same_v<T, ReturnStmt>) emit_return(s);
+        else if constexpr (std::is_same_v<T, ImportStmt>) emit_import(s);
+        else if constexpr (std::is_same_v<T, MatchStmt>) emit_match(s);
+        else if constexpr (std::is_same_v<T, TryCatchStmt>) emit_try_catch(s);
+        else if constexpr (std::is_same_v<T, ExprStmt>) emit_expr_stmt(s);
+        else if constexpr (std::is_same_v<T, EnumDef>) emit_enum(s);
+        else if constexpr (std::is_same_v<T, ThrowStmt>) emit_throw(s);
+        else if constexpr (std::is_same_v<T, PrintStmt>) {
+            // handled via ExprStmt with print call
+        }
+    }, stmt->node);
+}
+
+void CodeGenerator::emit_let(const LetStmt& stmt) {
+    // Track this variable as declared
+    declared_vars_.insert(stmt.name);
+
+    // Check if initializer is a call to an async function — futures must be non-const
+    bool is_future = false;
+    if (stmt.initializer) {
+        if (auto* call = std::get_if<CallExpr>(&stmt.initializer->node)) {
+            if (auto* id = std::get_if<Identifier>(&call->callee->node)) {
+                if (async_functions_.count(id->name)) {
+                    is_future = true;
+                }
+            }
+        }
+    }
+
+    if (stmt.is_mutable || is_future) {
+        emit_line("auto " + stmt.name + " = " + emit_expr(stmt.initializer) + ";");
+    } else {
+        emit_line("const auto " + stmt.name + " = " + emit_expr(stmt.initializer) + ";");
+    }
+}
+
+void CodeGenerator::emit_assign(const AssignStmt& stmt) {
+    // If target is a simple identifier not yet declared, auto-declare it (bare assignment)
+    if (auto* id = std::get_if<Identifier>(&stmt.target->node)) {
+        if (declared_vars_.find(id->name) == declared_vars_.end()) {
+            // First assignment — auto-declare as mutable (like Python)
+            declared_vars_.insert(id->name);
+            emit_line("auto " + id->name + " = " + emit_expr(stmt.value) + ";");
+            return;
+        }
+    }
+    emit_line(emit_expr(stmt.target) + " = " + emit_expr(stmt.value) + ";");
+}
+
+void CodeGenerator::emit_fn(const FnDef& fn) {
+    std::string name = fn.name;
+    std::string ret = "auto";
+
+    // Handle main specially
+    if (name == "main") {
+        ret = "int";
+    } else {
+        name = mangle_name(name);
+    }
+
+    std::string params_str;
+    bool first_param = true;
+    bool has_self = false;
+    for (size_t i = 0; i < fn.params.size(); i++) {
+        // Handle 'self' parameter
+        if (fn.params[i].first == "self") {
+            has_self = true;
+            continue; // self is implicit in C++
+        }
+        if (!first_param) params_str += ", ";
+        first_param = false;
+        std::string ptype = fn.params[i].second.empty() ? "auto" : map_type(fn.params[i].second);
+        params_str += ptype + " " + fn.params[i].first;
+    }
+
+    std::string const_qual = has_self ? " const" : "";
+
+    // Register function parameters as declared variables
+    for (const auto& p : fn.params) {
+        if (p.first != "self") {
+            declared_vars_.insert(p.first);
+        }
+    }
+
+    if (fn.is_expr_body) {
+        if (fn.is_async && name != "main") {
+            emit_line(ret + " " + name + "(" + params_str + ")" + const_qual + " {");
+            indent();
+            if (has_self) emit_line("const auto& self = *this;");
+            emit_line("return std::async(std::launch::async, [=]() {");
+            indent();
+            emit_line("return " + emit_expr(fn.expr_body) + ";");
+            dedent();
+            emit_line("});");
+            dedent();
+            emit_line("}");
+        } else {
+            emit_line(ret + " " + name + "(" + params_str + ")" + const_qual + " {");
+            indent();
+            if (has_self) emit_line("const auto& self = *this;");
+            emit_line("return " + emit_expr(fn.expr_body) + ";");
+            dedent();
+            emit_line("}");
+        }
+        return;
+    }
+
+    if (fn.is_async && name != "main") {
+        // Async function: wrap body in std::async to return std::future
+        emit_line(ret + " " + name + "(" + params_str + ")" + const_qual + " {");
+        indent();
+        if (has_self) emit_line("const auto& self = *this;");
+        emit_line("return std::async(std::launch::async, [=]() {");
+        indent();
+        for (const auto& s : fn.body) {
+            emit_statement(s);
+        }
+        dedent();
+        emit_line("});");
+        dedent();
+        emit_line("}");
+    } else {
+        emit_line(ret + " " + name + "(" + params_str + ")" + const_qual + " {");
+        indent();
+        if (has_self) emit_line("const auto& self = *this;");
+        for (const auto& s : fn.body) {
+            emit_statement(s);
+        }
+        if (name == "main") {
+            emit_line("return 0;");
+        }
+        dedent();
+        emit_line("}");
+    }
+}
+
+void CodeGenerator::emit_struct(const StructDef& s) {
+    // Check if all fields have explicit types
+    bool all_typed = true;
+    for (const auto& f : s.fields) {
+        if (f.second.empty()) { all_typed = false; break; }
+    }
+
+    // Emit as a template struct for dynamic field types (untyped fields)
+    if (!s.fields.empty() && !all_typed) {
+        std::string tmpl_params;
+        int tmpl_idx = 0;
+        for (size_t i = 0; i < s.fields.size(); i++) {
+            if (s.fields[i].second.empty()) {
+                if (tmpl_idx > 0) tmpl_params += ", ";
+                tmpl_params += "typename T" + std::to_string(i);
+                tmpl_idx++;
+            }
+        }
+        if (tmpl_idx > 0) {
+            emit_line("template<" + tmpl_params + ">");
+        }
+    }
+    emit_line("struct " + s.name + " {");
+    indent();
+
+    // Fields
+    for (size_t i = 0; i < s.fields.size(); i++) {
+        std::string ftype = s.fields[i].second.empty()
+            ? "T" + std::to_string(i)
+            : map_type(s.fields[i].second);
+        emit_line(ftype + " " + s.fields[i].first + ";");
+    }
+    if (!s.fields.empty()) emit_line("");
+
+    // Constructor
+    if (!s.fields.empty()) {
+        std::string ctor_params;
+        std::string ctor_init;
+        for (size_t i = 0; i < s.fields.size(); i++) {
+            if (i > 0) { ctor_params += ", "; ctor_init += ", "; }
+            std::string ftype = s.fields[i].second.empty()
+                ? "T" + std::to_string(i)
+                : map_type(s.fields[i].second);
+            ctor_params += ftype + " " + s.fields[i].first + "_";
+            ctor_init += s.fields[i].first + "(" + s.fields[i].first + "_)";
+        }
+        emit_line(s.name + "(" + ctor_params + ") : " + ctor_init + " {}");
+        emit_line("");
+    }
+
+    // Methods
+    for (const auto& method : s.methods) {
+        emit_statement(method);
+    }
+
+    dedent();
+    emit_line("};");
+
+    // Deduction guide for CTAD (only for structs with untyped fields)
+    if (!s.fields.empty() && !all_typed) {
+        bool has_tmpl = false;
+        for (const auto& f : s.fields) {
+            if (f.second.empty()) { has_tmpl = true; break; }
+        }
+        if (has_tmpl) {
+            std::string tmpl_params;
+            std::string ctor_params;
+            std::string tmpl_args;
+            int tmpl_idx = 0;
+            for (size_t i = 0; i < s.fields.size(); i++) {
+                if (i > 0) { ctor_params += ", "; tmpl_args += ", "; }
+                if (s.fields[i].second.empty()) {
+                    if (tmpl_idx > 0) tmpl_params += ", ";
+                    tmpl_params += "typename T" + std::to_string(i);
+                    ctor_params += "T" + std::to_string(i);
+                    tmpl_args += "T" + std::to_string(i);
+                    tmpl_idx++;
+                } else {
+                    std::string mt = map_type(s.fields[i].second);
+                    ctor_params += mt;
+                    tmpl_args += mt;
+                }
+            }
+            emit_line("template<" + tmpl_params + ">");
+            emit_line(s.name + "(" + ctor_params + ") -> " + s.name + "<" + tmpl_args + ">;");
+        }
+    }
+}
+
+void CodeGenerator::emit_if(const IfStmt& stmt) {
+    emit_line("if (" + emit_expr(stmt.condition) + ") {");
+    indent();
+    for (const auto& s : stmt.then_body) emit_statement(s);
+    dedent();
+
+    if (!stmt.else_body.empty()) {
+        emit_line("} else {");
+        indent();
+        for (const auto& s : stmt.else_body) emit_statement(s);
+        dedent();
+    }
+    emit_line("}");
+}
+
+void CodeGenerator::emit_for(const ForStmt& stmt) {
+    // Register loop variable as declared so bare assignments inside don't re-declare it
+    declared_vars_.insert(stmt.var_name);
+    emit_line("for (auto " + stmt.var_name + " : " + emit_expr(stmt.iterable) + ") {");
+    indent();
+    for (const auto& s : stmt.body) emit_statement(s);
+    dedent();
+    emit_line("}");
+}
+
+void CodeGenerator::emit_while(const WhileStmt& stmt) {
+    emit_line("while (" + emit_expr(stmt.condition) + ") {");
+    indent();
+    for (const auto& s : stmt.body) emit_statement(s);
+    dedent();
+    emit_line("}");
+}
+
+void CodeGenerator::emit_return(const ReturnStmt& stmt) {
+    if (stmt.value) {
+        emit_line("return " + emit_expr(stmt.value) + ";");
+    } else {
+        emit_line("return;");
+    }
+}
+
+void CodeGenerator::emit_import(const ImportStmt& stmt) {
+    if (stmt.module == "math") {
+        emit_line("namespace pyro_math {");
+        indent();
+        emit_line("const double PI = 3.141592653589793;");
+        emit_line("const double E = 2.718281828459045;");
+        emit_line("const double TAU = 6.283185307179586;");
+        emit_line("");
+        emit_line("auto abs(auto x) { return std::abs(x); }");
+        emit_line("auto sqrt(auto x) { return std::sqrt(x); }");
+        emit_line("auto pow(auto x, auto y) { return std::pow(x, y); }");
+        emit_line("auto ceil(auto x) { return std::ceil(x); }");
+        emit_line("auto floor(auto x) { return std::floor(x); }");
+        emit_line("auto round(auto x) { return std::round(x); }");
+        emit_line("auto sin(auto x) { return std::sin(x); }");
+        emit_line("auto cos(auto x) { return std::cos(x); }");
+        emit_line("auto tan(auto x) { return std::tan(x); }");
+        emit_line("auto log(auto x) { return std::log(x); }");
+        emit_line("auto log2(auto x) { return std::log2(x); }");
+        emit_line("auto log10(auto x) { return std::log10(x); }");
+        emit_line("auto exp(auto x) { return std::exp(x); }");
+        emit_line("");
+        emit_line("static std::mt19937 _rng(std::random_device{}());");
+        emit_line("double random() { return std::uniform_real_distribution<>(0.0, 1.0)(_rng); }");
+        emit_line("int64_t randint(int64_t a, int64_t b) { return std::uniform_int_distribution<int64_t>(a, b)(_rng); }");
+        dedent();
+        emit_line("} // namespace pyro_math");
+        emit_line("");
+    } else if (stmt.module == "io") {
+        emit_line("namespace pyro_io {");
+        indent();
+        emit_line("std::string read(const std::string& path) {");
+        indent();
+        emit_line("std::ifstream f(path);");
+        emit_line("if (!f.is_open()) throw std::runtime_error(\"Cannot open file: \" + path);");
+        emit_line("std::stringstream ss; ss << f.rdbuf(); return ss.str();");
+        dedent();
+        emit_line("}");
+        emit_line("void write(const std::string& path, const std::string& content) {");
+        indent();
+        emit_line("std::ofstream f(path);");
+        emit_line("if (!f.is_open()) throw std::runtime_error(\"Cannot write file: \" + path);");
+        emit_line("f << content;");
+        dedent();
+        emit_line("}");
+        emit_line("void append(const std::string& path, const std::string& content) {");
+        indent();
+        emit_line("std::ofstream f(path, std::ios::app);");
+        emit_line("f << content;");
+        dedent();
+        emit_line("}");
+        emit_line("std::vector<std::string> readlines(const std::string& path) {");
+        indent();
+        emit_line("std::ifstream f(path);");
+        emit_line("std::vector<std::string> lines;");
+        emit_line("std::string line;");
+        emit_line("while (std::getline(f, line)) lines.push_back(line);");
+        emit_line("return lines;");
+        dedent();
+        emit_line("}");
+        emit_line("bool exists(const std::string& path) {");
+        indent();
+        emit_line("return std::filesystem::exists(path);");
+        dedent();
+        emit_line("}");
+        emit_line("void remove(const std::string& path) {");
+        indent();
+        emit_line("std::filesystem::remove(path);");
+        dedent();
+        emit_line("}");
+        emit_line("void mkdir(const std::string& path) {");
+        indent();
+        emit_line("std::filesystem::create_directories(path);");
+        dedent();
+        emit_line("}");
+        emit_line("std::vector<std::string> listdir(const std::string& path) {");
+        indent();
+        emit_line("std::vector<std::string> entries;");
+        emit_line("for (const auto& e : std::filesystem::directory_iterator(path))");
+        indent();
+        emit_line("entries.push_back(e.path().string());");
+        dedent();
+        emit_line("return entries;");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("} // namespace pyro_io");
+        emit_line("");
+    } else if (stmt.module == "json") {
+        emit_line("namespace pyro_json {");
+        indent();
+        // JsonValue struct
+        emit_line("struct JsonValue {");
+        indent();
+        emit_line("enum Type { Null, Bool, Number, String, Array, Object };");
+        emit_line("Type type = Null;");
+        emit_line("std::string str_val;");
+        emit_line("double num_val = 0;");
+        emit_line("bool bool_val = false;");
+        emit_line("std::vector<JsonValue> arr;");
+        emit_line("std::unordered_map<std::string, JsonValue> obj;");
+        emit_line("");
+        emit_line("JsonValue& operator[](const std::string& key) { return obj[key]; }");
+        emit_line("JsonValue& operator[](size_t idx) { return arr[idx]; }");
+        emit_line("std::string as_string() const { return str_val; }");
+        emit_line("double as_number() const { return num_val; }");
+        emit_line("bool as_bool() const { return bool_val; }");
+        emit_line("int64_t size() const { return type == Array ? (int64_t)arr.size() : type == Object ? (int64_t)obj.size() : 0; }");
+        emit_line("");
+        emit_line("friend std::ostream& operator<<(std::ostream& os, const JsonValue& v) {");
+        indent();
+        emit_line("switch (v.type) {");
+        indent();
+        emit_line("case Null: os << \"null\"; break;");
+        emit_line("case Bool: os << (v.bool_val ? \"true\" : \"false\"); break;");
+        emit_line("case Number: os << v.num_val; break;");
+        emit_line("case String: os << \"\\\"\" << v.str_val << \"\\\"\"; break;");
+        emit_line("case Array: {");
+        indent();
+        emit_line("os << \"[\";");
+        emit_line("for (size_t i = 0; i < v.arr.size(); i++) { if (i) os << \", \"; os << v.arr[i]; }");
+        emit_line("os << \"]\"; break;");
+        dedent();
+        emit_line("}");
+        emit_line("case Object: {");
+        indent();
+        emit_line("os << \"{\";");
+        emit_line("bool first = true;");
+        emit_line("for (const auto& [k, val] : v.obj) { if (!first) os << \", \"; os << \"\\\"\" << k << \"\\\": \" << val; first = false; }");
+        emit_line("os << \"}\"; break;");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("}");
+        emit_line("return os;");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("};");
+        emit_line("");
+        // JsonParser class
+        emit_line("class JsonParser {");
+        indent();
+        emit_line("std::string src; size_t pos = 0;");
+        emit_line("void skip_ws() { while (pos < src.size() && isspace(src[pos])) pos++; }");
+        emit_line("char cur() { return pos < src.size() ? src[pos] : 0; }");
+        dedent();
+        emit_line("public:");
+        indent();
+        emit_line("JsonParser(const std::string& s) : src(s) {}");
+        emit_line("JsonValue parse_value() {");
+        indent();
+        emit_line("skip_ws();");
+        emit_line("if (cur() == '\"') return parse_string();");
+        emit_line("if (cur() == '{') return parse_object();");
+        emit_line("if (cur() == '[') return parse_array();");
+        emit_line("if (cur() == 't' || cur() == 'f') return parse_bool();");
+        emit_line("if (cur() == 'n') { pos += 4; return JsonValue{}; }");
+        emit_line("return parse_number();");
+        dedent();
+        emit_line("}");
+        emit_line("JsonValue parse_string() {");
+        indent();
+        emit_line("pos++;");
+        emit_line("std::string s;");
+        emit_line("while (pos < src.size() && src[pos] != '\"') {");
+        indent();
+        emit_line("if (src[pos] == '\\\\') { pos++; if (src[pos] == 'n') s += '\\n'; else if (src[pos] == 't') s += '\\t'; else s += src[pos]; }");
+        emit_line("else s += src[pos];");
+        emit_line("pos++;");
+        dedent();
+        emit_line("}");
+        emit_line("pos++;");
+        emit_line("JsonValue v; v.type = JsonValue::String; v.str_val = s; return v;");
+        dedent();
+        emit_line("}");
+        emit_line("JsonValue parse_number() {");
+        indent();
+        emit_line("size_t start = pos;");
+        emit_line("if (cur() == '-') pos++;");
+        emit_line("while (pos < src.size() && (isdigit(src[pos]) || src[pos] == '.')) pos++;");
+        emit_line("JsonValue v; v.type = JsonValue::Number; v.num_val = std::stod(src.substr(start, pos - start)); return v;");
+        dedent();
+        emit_line("}");
+        emit_line("JsonValue parse_bool() {");
+        indent();
+        emit_line("JsonValue v; v.type = JsonValue::Bool;");
+        emit_line("if (cur() == 't') { v.bool_val = true; pos += 4; }");
+        emit_line("else { v.bool_val = false; pos += 5; }");
+        emit_line("return v;");
+        dedent();
+        emit_line("}");
+        emit_line("JsonValue parse_array() {");
+        indent();
+        emit_line("pos++;");
+        emit_line("JsonValue v; v.type = JsonValue::Array;");
+        emit_line("skip_ws();");
+        emit_line("if (cur() == ']') { pos++; return v; }");
+        emit_line("v.arr.push_back(parse_value());");
+        emit_line("while (skip_ws(), cur() == ',') { pos++; v.arr.push_back(parse_value()); }");
+        emit_line("pos++;");
+        emit_line("return v;");
+        dedent();
+        emit_line("}");
+        emit_line("JsonValue parse_object() {");
+        indent();
+        emit_line("pos++;");
+        emit_line("JsonValue v; v.type = JsonValue::Object;");
+        emit_line("skip_ws();");
+        emit_line("if (cur() == '}') { pos++; return v; }");
+        emit_line("auto key = parse_string().str_val; skip_ws(); pos++;");
+        emit_line("v.obj[key] = parse_value();");
+        emit_line("while (skip_ws(), cur() == ',') { pos++; skip_ws(); auto k = parse_string().str_val; skip_ws(); pos++; v.obj[k] = parse_value(); }");
+        emit_line("pos++;");
+        emit_line("return v;");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("};");
+        emit_line("");
+        // Free functions
+        emit_line("JsonValue parse(const std::string& s) { JsonParser p(s); return p.parse_value(); }");
+        emit_line("");
+        emit_line("template<typename T>");
+        emit_line("std::string stringify(const T& val) { std::ostringstream ss; ss << val; return ss.str(); }");
+        emit_line("std::string stringify(const JsonValue& v) { std::ostringstream ss; ss << v; return ss.str(); }");
+        emit_line("std::string stringify(const std::string& s) { return \"\\\"\" + s + \"\\\"\"; }");
+        emit_line("std::string stringify(int64_t n) { return std::to_string(n); }");
+        emit_line("std::string stringify(double d) { return std::to_string(d); }");
+        emit_line("std::string stringify(bool b) { return b ? \"true\" : \"false\"; }");
+        dedent();
+        emit_line("} // namespace pyro_json");
+        emit_line("");
+    } else if (stmt.module == "data") {
+        emit_line("namespace pyro_data {");
+        indent();
+        emit_line("struct Series {");
+        indent();
+        emit_line("std::string name;");
+        emit_line("std::vector<std::string> values;");
+        emit_line("");
+        emit_line("double mean() const { double s = 0; for (auto& v : values) s += std::stod(v); return s / values.size(); }");
+        emit_line("double sum() const { double s = 0; for (auto& v : values) s += std::stod(v); return s; }");
+        emit_line("double min_val() const { double m = std::stod(values[0]); for (auto& v : values) m = std::min(m, std::stod(v)); return m; }");
+        emit_line("double max_val() const { double m = std::stod(values[0]); for (auto& v : values) m = std::max(m, std::stod(v)); return m; }");
+        emit_line("int64_t count() const { return values.size(); }");
+        emit_line("");
+        emit_line("friend std::ostream& operator<<(std::ostream& os, const Series& s) {");
+        indent();
+        emit_line("os << s.name << \": [\";");
+        emit_line("for (size_t i = 0; i < s.values.size() && i < 5; i++) { if (i) os << \", \"; os << s.values[i]; }");
+        emit_line("if (s.values.size() > 5) os << \", ... (\" << s.values.size() << \" total)\";");
+        emit_line("os << \"]\"; return os;");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("};");
+        emit_line("");
+        emit_line("struct DataFrame {");
+        indent();
+        emit_line("std::vector<std::string> columns;");
+        emit_line("std::vector<std::vector<std::string>> data;");
+        emit_line("");
+        emit_line("int64_t rows() const { return data.size(); }");
+        emit_line("int64_t cols() const { return columns.size(); }");
+        emit_line("");
+        emit_line("Series col(const std::string& name) const {");
+        indent();
+        emit_line("int idx = -1;");
+        emit_line("for (size_t i = 0; i < columns.size(); i++) if (columns[i] == name) { idx = i; break; }");
+        emit_line("if (idx < 0) throw std::runtime_error(\"Column not found: \" + name);");
+        emit_line("Series s; s.name = name;");
+        emit_line("for (const auto& row : data) s.values.push_back(row[idx]);");
+        emit_line("return s;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+        emit_line("void head(int n = 5) const {");
+        indent();
+        emit_line("for (const auto& c : columns) std::cout << c << \"\\t\"; std::cout << \"\\n\";");
+        emit_line("for (int i = 0; i < std::min(n, (int)data.size()); i++) {");
+        indent();
+        emit_line("for (const auto& v : data[i]) std::cout << v << \"\\t\"; std::cout << \"\\n\";");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("}");
+        emit_line("");
+        emit_line("friend std::ostream& operator<<(std::ostream& os, const DataFrame& df) {");
+        indent();
+        emit_line("os << \"DataFrame(\" << df.rows() << \" rows, \" << df.cols() << \" cols)\";");
+        emit_line("return os;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+        // where - filter rows
+        emit_line("template<typename F>");
+        emit_line("DataFrame where(const std::string& col_name, F pred) const {");
+        indent();
+        emit_line("int idx = -1;");
+        emit_line("for (size_t i = 0; i < columns.size(); i++) if (columns[i] == col_name) { idx = i; break; }");
+        emit_line("DataFrame result; result.columns = columns;");
+        emit_line("for (const auto& row : data) { if (pred(row[idx])) result.data.push_back(row); }");
+        emit_line("return result;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+        // sort_by
+        emit_line("DataFrame sort_by(const std::string& col_name, bool ascending = true) const {");
+        indent();
+        emit_line("int idx = -1;");
+        emit_line("for (size_t i = 0; i < columns.size(); i++) if (columns[i] == col_name) { idx = i; break; }");
+        emit_line("DataFrame result = *this;");
+        emit_line("std::sort(result.data.begin(), result.data.end(), [&](const auto& a, const auto& b) {");
+        indent();
+        emit_line("try { return ascending ? std::stod(a[idx]) < std::stod(b[idx]) : std::stod(a[idx]) > std::stod(b[idx]); }");
+        emit_line("catch(...) { return ascending ? a[idx] < b[idx] : a[idx] > b[idx]; }");
+        dedent();
+        emit_line("});");
+        emit_line("return result;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+        // select columns
+        emit_line("DataFrame select(const std::vector<std::string>& cols) const {");
+        indent();
+        emit_line("DataFrame result; result.columns = cols;");
+        emit_line("std::vector<int> indices;");
+        emit_line("for (const auto& c : cols) {");
+        indent();
+        emit_line("for (size_t i = 0; i < columns.size(); i++) if (columns[i] == c) { indices.push_back(i); break; }");
+        dedent();
+        emit_line("}");
+        emit_line("for (const auto& row : data) {");
+        indent();
+        emit_line("std::vector<std::string> new_row;");
+        emit_line("for (int i : indices) new_row.push_back(row[i]);");
+        emit_line("result.data.push_back(new_row);");
+        dedent();
+        emit_line("}");
+        emit_line("return result;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+        // describe
+        emit_line("void describe() const {");
+        indent();
+        emit_line("for (const auto& c : columns) {");
+        indent();
+        emit_line("Series s = col(c);");
+        emit_line("std::cout << c << \":\\n\";");
+        emit_line("std::cout << \"  count: \" << s.count() << \"\\n\";");
+        emit_line("try { std::cout << \"  mean:  \" << s.mean() << \"\\n\"; std::cout << \"  min:   \" << s.min_val() << \"\\n\"; std::cout << \"  max:   \" << s.max_val() << \"\\n\"; }");
+        emit_line("catch(...) { std::cout << \"  (non-numeric)\\n\"; }");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("}");
+        emit_line("");
+        // GroupResult struct (nested forward declaration via string)
+        emit_line("struct GroupResult {");
+        indent();
+        emit_line("std::string key;");
+        emit_line("std::unordered_map<std::string, double> aggregates;");
+        emit_line("friend std::ostream& operator<<(std::ostream& os, const GroupResult& g) {");
+        indent();
+        emit_line("os << g.key << \": {\"; bool f=true;");
+        emit_line("for (auto& [k,v] : g.aggregates) { if(!f)os<<\", \"; os<<k<<\"=\"<<v; f=false; }");
+        emit_line("return os << \"}\";");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("};");
+        emit_line("");
+        // groupby
+        emit_line("std::vector<GroupResult> groupby(const std::string& key_col, const std::string& agg_col, const std::string& func) const {");
+        indent();
+        emit_line("int ki=-1, ai=-1;");
+        emit_line("for(size_t i=0;i<columns.size();i++){if(columns[i]==key_col)ki=i;if(columns[i]==agg_col)ai=i;}");
+        emit_line("std::unordered_map<std::string, std::vector<double>> groups;");
+        emit_line("for(auto& row:data) groups[row[ki]].push_back(std::stod(row[ai]));");
+        emit_line("std::vector<GroupResult> results;");
+        emit_line("for(auto& [k,vals]:groups) {");
+        indent();
+        emit_line("double r=0;");
+        emit_line("if(func==\"sum\") { for(auto v:vals)r+=v; }");
+        emit_line("else if(func==\"mean\") { for(auto v:vals)r+=v; r/=vals.size(); }");
+        emit_line("else if(func==\"count\") { r=vals.size(); }");
+        emit_line("else if(func==\"min\") { r=vals[0]; for(auto v:vals)r=std::min(r,v); }");
+        emit_line("else if(func==\"max\") { r=vals[0]; for(auto v:vals)r=std::max(r,v); }");
+        emit_line("results.push_back({k, {{func, r}}});");
+        dedent();
+        emit_line("}");
+        emit_line("return results;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+        // merge
+        emit_line("DataFrame merge(const DataFrame& other, const std::string& on) const {");
+        indent();
+        emit_line("int li=-1, ri=-1;");
+        emit_line("for(size_t i=0;i<columns.size();i++) if(columns[i]==on) li=i;");
+        emit_line("for(size_t i=0;i<other.columns.size();i++) if(other.columns[i]==on) ri=i;");
+        emit_line("DataFrame result;");
+        emit_line("result.columns = columns;");
+        emit_line("for(auto& c:other.columns) if(c!=on) result.columns.push_back(c);");
+        emit_line("for(auto& lrow:data) {");
+        indent();
+        emit_line("for(auto& rrow:other.data) {");
+        indent();
+        emit_line("if(lrow[li]==rrow[ri]) {");
+        indent();
+        emit_line("auto merged = lrow;");
+        emit_line("for(size_t i=0;i<rrow.size();i++) if((int)i!=ri) merged.push_back(rrow[i]);");
+        emit_line("result.data.push_back(merged);");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("}");
+        emit_line("return result;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+        // apply
+        emit_line("template<typename F>");
+        emit_line("DataFrame apply(const std::string& col_name, F func) const {");
+        indent();
+        emit_line("DataFrame result = *this;");
+        emit_line("int idx=-1;");
+        emit_line("for(size_t i=0;i<columns.size();i++) if(columns[i]==col_name) idx=i;");
+        emit_line("for(auto& row:result.data) row[idx] = func(row[idx]);");
+        emit_line("return result;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+        // drop_duplicates
+        emit_line("DataFrame drop_duplicates() const {");
+        indent();
+        emit_line("DataFrame result; result.columns = columns;");
+        emit_line("std::set<std::vector<std::string>> seen;");
+        emit_line("for(auto& row:data) if(seen.insert(row).second) result.data.push_back(row);");
+        emit_line("return result;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+        // fillna
+        emit_line("DataFrame fillna(const std::string& val) const {");
+        indent();
+        emit_line("DataFrame result = *this;");
+        emit_line("for(auto& row:result.data) for(auto& cell:row) if(cell.empty()) cell=val;");
+        emit_line("return result;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+        // sample
+        emit_line("DataFrame sample(int n) const {");
+        indent();
+        emit_line("DataFrame result; result.columns = columns;");
+        emit_line("auto indices = data;");
+        emit_line("std::random_device rd; std::mt19937 g(rd());");
+        emit_line("std::shuffle(indices.begin(), indices.end(), g);");
+        emit_line("for(int i=0;i<n&&i<(int)indices.size();i++) result.data.push_back(indices[i]);");
+        emit_line("return result;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+        // to_json
+        emit_line("std::string to_json() const {");
+        indent();
+        emit_line("std::string r = \"[\";");
+        emit_line("for(size_t i=0;i<data.size();i++) {");
+        indent();
+        emit_line("if(i>0) r+=\",\";");
+        emit_line("r+=\"{\";");
+        emit_line("for(size_t j=0;j<columns.size()&&j<data[i].size();j++) {");
+        indent();
+        emit_line("if(j>0) r+=\",\";");
+        emit_line("r+=\"\\\"\"+columns[j]+\"\\\":\\\"\"+data[i][j]+\"\\\"\";");
+        dedent();
+        emit_line("}");
+        emit_line("r+=\"}\";");
+        dedent();
+        emit_line("}");
+        emit_line("return r+\"]\";");
+        dedent();
+        emit_line("}");
+        emit_line("");
+        // rename
+        emit_line("DataFrame rename(const std::string& old_name, const std::string& new_name) const {");
+        indent();
+        emit_line("DataFrame result = *this;");
+        emit_line("for(auto& c:result.columns) if(c==old_name) c=new_name;");
+        emit_line("return result;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+        // drop column
+        emit_line("DataFrame drop(const std::string& col_name) const {");
+        indent();
+        emit_line("int idx=-1;");
+        emit_line("for(size_t i=0;i<columns.size();i++) if(columns[i]==col_name) idx=i;");
+        emit_line("DataFrame result;");
+        emit_line("for(size_t i=0;i<columns.size();i++) if((int)i!=idx) result.columns.push_back(columns[i]);");
+        emit_line("for(auto& row:data) { std::vector<std::string> r; for(size_t i=0;i<row.size();i++) if((int)i!=idx) r.push_back(row[i]); result.data.push_back(r); }");
+        emit_line("return result;");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("};");
+        emit_line("");
+        emit_line("DataFrame read(const std::string& path) {");
+        indent();
+        emit_line("DataFrame df;");
+        emit_line("std::ifstream f(path);");
+        emit_line("if (!f.is_open()) throw std::runtime_error(\"Cannot open: \" + path);");
+        emit_line("std::string line;");
+        emit_line("if (std::getline(f, line)) {");
+        indent();
+        emit_line("std::istringstream ss(line);");
+        emit_line("std::string col;");
+        emit_line("while (std::getline(ss, col, ',')) {");
+        indent();
+        emit_line("col.erase(0, col.find_first_not_of(\" \\t\\r\\n\"));");
+        emit_line("col.erase(col.find_last_not_of(\" \\t\\r\\n\") + 1);");
+        emit_line("df.columns.push_back(col);");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("}");
+        emit_line("while (std::getline(f, line)) {");
+        indent();
+        emit_line("if (line.empty()) continue;");
+        emit_line("std::vector<std::string> row;");
+        emit_line("std::istringstream ss(line);");
+        emit_line("std::string val;");
+        emit_line("while (std::getline(ss, val, ',')) {");
+        indent();
+        emit_line("val.erase(0, val.find_first_not_of(\" \\t\\r\\n\"));");
+        emit_line("val.erase(val.find_last_not_of(\" \\t\\r\\n\") + 1);");
+        emit_line("row.push_back(val);");
+        dedent();
+        emit_line("}");
+        emit_line("df.data.push_back(row);");
+        dedent();
+        emit_line("}");
+        emit_line("return df;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+        emit_line("void write(const DataFrame& df, const std::string& path) {");
+        indent();
+        emit_line("std::ofstream f(path);");
+        emit_line("for (size_t i = 0; i < df.columns.size(); i++) { if (i) f << \",\"; f << df.columns[i]; }");
+        emit_line("f << \"\\n\";");
+        emit_line("for (const auto& row : df.data) {");
+        indent();
+        emit_line("for (size_t i = 0; i < row.size(); i++) { if (i) f << \",\"; f << row[i]; }");
+        emit_line("f << \"\\n\";");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("} // namespace pyro_data");
+        emit_line("");
+    } else if (stmt.module == "web") {
+        emit_line("namespace pyro_web {");
+        indent();
+        emit_line("struct Request {");
+        indent();
+        emit_line("std::string method, path, body;");
+        emit_line("std::unordered_map<std::string, std::string> headers, params, query;");
+        dedent();
+        emit_line("};");
+        emit_line("");
+        emit_line("struct Response {");
+        indent();
+        emit_line("int status = 200;");
+        emit_line("std::string body;");
+        emit_line("std::string content_type = \"text/html\";");
+        emit_line("std::string set_cookie(const std::string& name, const std::string& val, int max_age = 3600) {");
+        indent();
+        emit_line("return \"Set-Cookie: \" + name + \"=\" + val + \"; Max-Age=\" + std::to_string(max_age) + \"; Path=/; HttpOnly\";");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("};");
+        emit_line("");
+        emit_line("using Handler = std::function<Response(const Request&)>;");
+        emit_line("");
+        emit_line("static Request parse_request(const std::string& raw) {");
+        indent();
+        emit_line("Request req;");
+        emit_line("std::istringstream ss(raw);");
+        emit_line("ss >> req.method >> req.path;");
+        emit_line("auto qpos = req.path.find('?');");
+        emit_line("if (qpos != std::string::npos) {");
+        indent();
+        emit_line("std::string qs = req.path.substr(qpos + 1);");
+        emit_line("req.path = req.path.substr(0, qpos);");
+        emit_line("std::istringstream qss(qs);");
+        emit_line("std::string pair;");
+        emit_line("while (std::getline(qss, pair, '&')) {");
+        indent();
+        emit_line("auto eq = pair.find('=');");
+        emit_line("if (eq != std::string::npos) req.query[pair.substr(0, eq)] = pair.substr(eq + 1);");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("}");
+        emit_line("auto body_pos = raw.find(\"\\r\\n\\r\\n\");");
+        emit_line("if (body_pos != std::string::npos) req.body = raw.substr(body_pos + 4);");
+        emit_line("return req;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+        // Route matching helper
+        emit_line("static bool match_route(const std::string& pattern, const std::string& path, std::unordered_map<std::string, std::string>& params) {");
+        indent();
+        emit_line("std::istringstream pat_ss(pattern), path_ss(path);");
+        emit_line("std::string pat_seg, path_seg;");
+        emit_line("std::vector<std::string> pat_parts, path_parts;");
+        emit_line("while (std::getline(pat_ss, pat_seg, '/')) if (!pat_seg.empty()) pat_parts.push_back(pat_seg);");
+        emit_line("while (std::getline(path_ss, path_seg, '/')) if (!path_seg.empty()) path_parts.push_back(path_seg);");
+        emit_line("if (pat_parts.size() != path_parts.size()) return false;");
+        emit_line("for (size_t i = 0; i < pat_parts.size(); i++) {");
+        indent();
+        emit_line("if (pat_parts[i][0] == ':') { params[pat_parts[i].substr(1)] = path_parts[i]; }");
+        emit_line("else if (pat_parts[i] != path_parts[i]) return false;");
+        dedent();
+        emit_line("}");
+        emit_line("return true;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+        emit_line("struct App {");
+        indent();
+        emit_line("std::unordered_map<std::string, std::unordered_map<std::string, Handler>> routes;");
+        emit_line("std::vector<std::function<void(Request&)>> middlewares;");
+        emit_line("std::unordered_map<std::string, std::string> static_dirs;");
+        emit_line("");
+        emit_line("template<typename F> void use(F middleware) { middlewares.push_back(middleware); }");
+        emit_line("template<typename F> void get(const std::string& path, F h) { routes[\"GET\"][path] = [h](const Request& r) { return h(r); }; }");
+        emit_line("template<typename F> void post(const std::string& path, F h) { routes[\"POST\"][path] = [h](const Request& r) { return h(r); }; }");
+        emit_line("template<typename F> void put(const std::string& path, F h) { routes[\"PUT\"][path] = [h](const Request& r) { return h(r); }; }");
+        emit_line("template<typename F> void del(const std::string& path, F h) { routes[\"DELETE\"][path] = [h](const Request& r) { return h(r); }; }");
+        emit_line("");
+        emit_line("void serve_static(const std::string& url_prefix, const std::string& dir) {");
+        indent();
+        emit_line("routes[\"GET\"][\"__static__\" + url_prefix] = [=](const Request& req) -> Response {");
+        indent();
+        emit_line("return {404, \"Not Found\", \"text/plain\"};");
+        dedent();
+        emit_line("};");
+        emit_line("static_dirs[url_prefix] = dir;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+        emit_line("void listen(int port) {");
+        indent();
+        emit_line("int server_fd = socket(AF_INET, SOCK_STREAM, 0);");
+        emit_line("int opt = 1;");
+        emit_line("setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));");
+        emit_line("struct sockaddr_in addr;");
+        emit_line("addr.sin_family = AF_INET;");
+        emit_line("addr.sin_addr.s_addr = INADDR_ANY;");
+        emit_line("addr.sin_port = htons(port);");
+        emit_line("bind(server_fd, (struct sockaddr*)&addr, sizeof(addr));");
+        emit_line("::listen(server_fd, 128);");
+        emit_line("std::cout << \"Pyro server running on http://localhost:\" << port << std::endl;");
+        emit_line("while (true) {");
+        indent();
+        emit_line("struct sockaddr_in client_addr;");
+        emit_line("socklen_t client_len = sizeof(client_addr);");
+        emit_line("int client_fd = accept(server_fd, (struct sockaddr*)&client_addr, &client_len);");
+        emit_line("if (client_fd < 0) continue;");
+        emit_line("char buf[8192] = {0};");
+        emit_line("::read(client_fd, buf, sizeof(buf)-1);");
+        emit_line("std::string raw(buf);");
+        emit_line("Request req = parse_request(raw);");
+        emit_line("// Run middlewares");
+        emit_line("for (auto& mw : middlewares) mw(req);");
+        emit_line("Response res;");
+        emit_line("res.status = 404; res.body = \"Not Found\";");
+        emit_line("// Static file serving");
+        emit_line("bool static_handled = false;");
+        emit_line("for (auto& [prefix, dir] : static_dirs) {");
+        indent();
+        emit_line("if (req.path.find(prefix) == 0) {");
+        indent();
+        emit_line("std::string file_path = dir + req.path.substr(prefix.size());");
+        emit_line("std::ifstream file(file_path, std::ios::binary);");
+        emit_line("if (file.is_open()) {");
+        indent();
+        emit_line("std::ostringstream ss; ss << file.rdbuf();");
+        emit_line("std::string content = ss.str();");
+        emit_line("std::string ct = \"application/octet-stream\";");
+        emit_line("if (file_path.find(\".html\") != std::string::npos) ct = \"text/html\";");
+        emit_line("else if (file_path.find(\".css\") != std::string::npos) ct = \"text/css\";");
+        emit_line("else if (file_path.find(\".js\") != std::string::npos) ct = \"application/javascript\";");
+        emit_line("else if (file_path.find(\".json\") != std::string::npos) ct = \"application/json\";");
+        emit_line("else if (file_path.find(\".png\") != std::string::npos) ct = \"image/png\";");
+        emit_line("else if (file_path.find(\".jpg\") != std::string::npos || file_path.find(\".jpeg\") != std::string::npos) ct = \"image/jpeg\";");
+        emit_line("else if (file_path.find(\".svg\") != std::string::npos) ct = \"image/svg+xml\";");
+        emit_line("else if (file_path.find(\".txt\") != std::string::npos) ct = \"text/plain\";");
+        emit_line("std::string http_resp = \"HTTP/1.1 200 OK\\r\\nContent-Type: \" + ct + \"\\r\\nContent-Length: \" + std::to_string(content.size()) + \"\\r\\nConnection: close\\r\\n\\r\\n\" + content;");
+        emit_line("::write(client_fd, http_resp.c_str(), http_resp.size());");
+        emit_line("::close(client_fd);");
+        emit_line("static_handled = true;");
+        emit_line("break;");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("}");
+        emit_line("if (static_handled) continue;");
+        emit_line("// Try exact match first");
+        emit_line("if (routes.count(req.method) && routes[req.method].count(req.path)) {");
+        indent();
+        emit_line("res = routes[req.method][req.path](req);");
+        dedent();
+        emit_line("} else if (routes.count(req.method)) {");
+        indent();
+        emit_line("// Try pattern matching with :param routes");
+        emit_line("for (const auto& [pattern, handler] : routes[req.method]) {");
+        indent();
+        emit_line("std::unordered_map<std::string, std::string> params;");
+        emit_line("if (match_route(pattern, req.path, params)) {");
+        indent();
+        emit_line("Request matched_req = req;");
+        emit_line("matched_req.params = params;");
+        emit_line("res = handler(matched_req);");
+        emit_line("break;");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("}");
+        emit_line("std::string status_text = (res.status == 200) ? \"OK\" : (res.status == 302) ? \"Found\" : (res.status == 404) ? \"Not Found\" : \"Error\";");
+        emit_line("std::string http = \"HTTP/1.1 \" + std::to_string(res.status) + \" \" + status_text + \"\\r\\n\"");
+        emit_line("    \"Content-Type: \" + res.content_type + \"\\r\\n\"");
+        emit_line("    \"Content-Length: \" + std::to_string(res.body.size()) + \"\\r\\n\"");
+        emit_line("    \"Connection: close\\r\\n\\r\\n\" + res.body;");
+        emit_line("::write(client_fd, http.c_str(), http.size());");
+        emit_line("close(client_fd);");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("};");
+        emit_line("");
+        emit_line("App app() { return App{}; }");
+        emit_line("Response html(const std::string& body) { return {200, body, \"text/html\"}; }");
+        emit_line("Response json(const std::string& body) { return {200, body, \"application/json\"}; }");
+        emit_line("Response text(const std::string& body) { return {200, body, \"text/plain\"}; }");
+        emit_line("Response redirect(const std::string& url) { return {302, \"\", \"text/html\"}; }");
+        dedent();
+        emit_line("} // namespace pyro_web");
+        emit_line("");
+    } else if (stmt.module == "crypto") {
+        emit_line("namespace pyro_crypto {");
+        indent();
+        emit_line("");
+        emit_line("// --- Helper: bytes to hex string ---");
+        emit_line("std::string to_hex(const unsigned char* data, size_t len) {");
+        indent();
+        emit_line("std::ostringstream ss;");
+        emit_line("for (size_t i = 0; i < len; i++) ss << std::hex << std::setw(2) << std::setfill('0') << (int)data[i];");
+        emit_line("return ss.str();");
+        dedent();
+        emit_line("}");
+        emit_line("");
+        emit_line("std::string from_hex(const std::string& hex) {");
+        indent();
+        emit_line("std::string bytes;");
+        emit_line("for (size_t i = 0; i < hex.size(); i += 2) bytes += (char)std::stoi(hex.substr(i, 2), nullptr, 16);");
+        emit_line("return bytes;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Real SHA-256 via OpenSSL
+        emit_line("// --- Real SHA-256 via OpenSSL ---");
+        emit_line("std::string sha256(const std::string& input) {");
+        indent();
+        emit_line("unsigned char hash[SHA256_DIGEST_LENGTH];");
+        emit_line("SHA256(reinterpret_cast<const unsigned char*>(input.c_str()), input.size(), hash);");
+        emit_line("return to_hex(hash, SHA256_DIGEST_LENGTH);");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Real SHA-512 via OpenSSL
+        emit_line("// --- Real SHA-512 via OpenSSL ---");
+        emit_line("std::string sha512(const std::string& input) {");
+        indent();
+        emit_line("unsigned char hash[SHA512_DIGEST_LENGTH];");
+        emit_line("SHA512(reinterpret_cast<const unsigned char*>(input.c_str()), input.size(), hash);");
+        emit_line("return to_hex(hash, SHA512_DIGEST_LENGTH);");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Real HMAC-SHA256 via OpenSSL
+        emit_line("// --- Real HMAC-SHA256 via OpenSSL ---");
+        emit_line("std::string hmac_sha256(const std::string& key, const std::string& data) {");
+        indent();
+        emit_line("unsigned char result[EVP_MAX_MD_SIZE];");
+        emit_line("unsigned int len = 0;");
+        emit_line("HMAC(EVP_sha256(), key.c_str(), key.size(),");
+        emit_line("     reinterpret_cast<const unsigned char*>(data.c_str()), data.size(), result, &len);");
+        emit_line("return to_hex(result, len);");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Real AES-256-GCM encrypt via OpenSSL
+        emit_line("// --- Real AES-256-GCM encrypt via OpenSSL ---");
+        emit_line("std::string encrypt(const std::string& plaintext, const std::string& key) {");
+        indent();
+        emit_line("// Derive a 32-byte key from input via SHA-256");
+        emit_line("unsigned char derived_key[32];");
+        emit_line("SHA256(reinterpret_cast<const unsigned char*>(key.c_str()), key.size(), derived_key);");
+        emit_line("");
+        emit_line("// Generate random 12-byte IV");
+        emit_line("unsigned char iv[12];");
+        emit_line("RAND_bytes(iv, 12);");
+        emit_line("");
+        emit_line("// Encrypt");
+        emit_line("EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();");
+        emit_line("EVP_EncryptInit_ex(ctx, EVP_aes_256_gcm(), nullptr, derived_key, iv);");
+        emit_line("std::vector<unsigned char> ciphertext(plaintext.size() + 16);");
+        emit_line("int len = 0, ct_len = 0;");
+        emit_line("EVP_EncryptUpdate(ctx, ciphertext.data(), &len, reinterpret_cast<const unsigned char*>(plaintext.c_str()), plaintext.size());");
+        emit_line("ct_len = len;");
+        emit_line("EVP_EncryptFinal_ex(ctx, ciphertext.data() + len, &len);");
+        emit_line("ct_len += len;");
+        emit_line("");
+        emit_line("// Get auth tag");
+        emit_line("unsigned char tag[16];");
+        emit_line("EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_GET_TAG, 16, tag);");
+        emit_line("EVP_CIPHER_CTX_free(ctx);");
+        emit_line("");
+        emit_line("// Output: hex(iv) + hex(tag) + hex(ciphertext)");
+        emit_line("return to_hex(iv, 12) + to_hex(tag, 16) + to_hex(ciphertext.data(), ct_len);");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Real AES-256-GCM decrypt via OpenSSL
+        emit_line("// --- Real AES-256-GCM decrypt via OpenSSL ---");
+        emit_line("std::string decrypt(const std::string& hex_data, const std::string& key) {");
+        indent();
+        emit_line("unsigned char derived_key[32];");
+        emit_line("SHA256(reinterpret_cast<const unsigned char*>(key.c_str()), key.size(), derived_key);");
+        emit_line("");
+        emit_line("std::string raw = from_hex(hex_data);");
+        emit_line("if (raw.size() < 28) throw std::runtime_error(\"Invalid ciphertext\");");
+        emit_line("");
+        emit_line("unsigned char iv[12]; std::memcpy(iv, raw.data(), 12);");
+        emit_line("unsigned char tag[16]; std::memcpy(tag, raw.data() + 12, 16);");
+        emit_line("std::string ct = raw.substr(28);");
+        emit_line("");
+        emit_line("EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();");
+        emit_line("EVP_DecryptInit_ex(ctx, EVP_aes_256_gcm(), nullptr, derived_key, iv);");
+        emit_line("std::vector<unsigned char> plaintext(ct.size());");
+        emit_line("int len = 0, pt_len = 0;");
+        emit_line("EVP_DecryptUpdate(ctx, plaintext.data(), &len, reinterpret_cast<const unsigned char*>(ct.data()), ct.size());");
+        emit_line("pt_len = len;");
+        emit_line("EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_TAG, 16, tag);");
+        emit_line("int ret = EVP_DecryptFinal_ex(ctx, plaintext.data() + len, &len);");
+        emit_line("EVP_CIPHER_CTX_free(ctx);");
+        emit_line("if (ret <= 0) throw std::runtime_error(\"Decryption failed: authentication error\");");
+        emit_line("pt_len += len;");
+        emit_line("return std::string(reinterpret_cast<char*>(plaintext.data()), pt_len);");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Secure random token via OpenSSL RAND_bytes
+        emit_line("// --- Secure random token via OpenSSL ---");
+        emit_line("std::string random_token(int length = 32) {");
+        indent();
+        emit_line("static const char chars[] = \"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789\";");
+        emit_line("std::vector<unsigned char> buf(length);");
+        emit_line("RAND_bytes(buf.data(), length);");
+        emit_line("std::string token;");
+        emit_line("for (int i = 0; i < length; i++) token += chars[buf[i] % (sizeof(chars) - 1)];");
+        emit_line("return token;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Secure random bytes
+        emit_line("std::string random_bytes(int length) {");
+        indent();
+        emit_line("std::vector<unsigned char> buf(length);");
+        emit_line("RAND_bytes(buf.data(), length);");
+        emit_line("return to_hex(buf.data(), length);");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // UUID v4 via OpenSSL RAND_bytes
+        emit_line("std::string uuid() {");
+        indent();
+        emit_line("unsigned char buf[16];");
+        emit_line("RAND_bytes(buf, 16);");
+        emit_line("buf[6] = (buf[6] & 0x0F) | 0x40;");
+        emit_line("buf[8] = (buf[8] & 0x3F) | 0x80;");
+        emit_line("char out[37];");
+        emit_line("snprintf(out, sizeof(out),");
+        emit_line("    \"%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x\",");
+        emit_line("    buf[0],buf[1],buf[2],buf[3],buf[4],buf[5],buf[6],buf[7],");
+        emit_line("    buf[8],buf[9],buf[10],buf[11],buf[12],buf[13],buf[14],buf[15]);");
+        emit_line("return std::string(out);");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Password hashing via PBKDF2 (OpenSSL)
+        emit_line("// --- Password hashing via PBKDF2 (OpenSSL) ---");
+        emit_line("std::string hash_password(const std::string& password, int iterations = 100000) {");
+        indent();
+        emit_line("unsigned char salt[16];");
+        emit_line("RAND_bytes(salt, 16);");
+        emit_line("unsigned char derived[32];");
+        emit_line("PKCS5_PBKDF2_HMAC(password.c_str(), password.size(), salt, 16, iterations, EVP_sha256(), 32, derived);");
+        emit_line("return to_hex(salt, 16) + \"$\" + std::to_string(iterations) + \"$\" + to_hex(derived, 32);");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        emit_line("bool verify_password(const std::string& password, const std::string& hash) {");
+        indent();
+        emit_line("auto sep1 = hash.find('$');");
+        emit_line("auto sep2 = hash.find('$', sep1 + 1);");
+        emit_line("if (sep1 == std::string::npos || sep2 == std::string::npos) return false;");
+        emit_line("std::string salt_hex = hash.substr(0, sep1);");
+        emit_line("int iterations = std::stoi(hash.substr(sep1 + 1, sep2 - sep1 - 1));");
+        emit_line("std::string stored_hash = hash.substr(sep2 + 1);");
+        emit_line("std::string salt_bytes = from_hex(salt_hex);");
+        emit_line("unsigned char derived[32];");
+        emit_line("PKCS5_PBKDF2_HMAC(password.c_str(), password.size(),");
+        emit_line("    reinterpret_cast<const unsigned char*>(salt_bytes.data()), salt_bytes.size(),");
+        emit_line("    iterations, EVP_sha256(), 32, derived);");
+        emit_line("return to_hex(derived, 32) == stored_hash;");
+        dedent();
+        emit_line("}");
+
+        dedent();
+        emit_line("} // namespace pyro_crypto");
+        emit_line("");
+    } else if (stmt.module == "validate") {
+        emit_line("namespace pyro_validate {");
+        indent();
+        // email validation
+        emit_line("bool email(const std::string& s) {");
+        indent();
+        emit_line("auto at = s.find('@');");
+        emit_line("if (at == std::string::npos || at == 0) return false;");
+        emit_line("auto dot = s.find('.', at);");
+        emit_line("return dot != std::string::npos && dot > at + 1 && dot < s.size() - 1;");
+        dedent();
+        emit_line("}");
+        // url validation
+        emit_line("bool url(const std::string& s) {");
+        indent();
+        emit_line("return s.find(\"http://\") == 0 || s.find(\"https://\") == 0;");
+        dedent();
+        emit_line("}");
+        // ip validation
+        emit_line("bool ip(const std::string& s) {");
+        indent();
+        emit_line("int parts = 0; std::istringstream ss(s); std::string part;");
+        emit_line("while (std::getline(ss, part, '.')) {");
+        indent();
+        emit_line("try { int n = std::stoi(part); if (n < 0 || n > 255) return false; parts++; }");
+        emit_line("catch(...) { return false; }");
+        dedent();
+        emit_line("}");
+        emit_line("return parts == 4;");
+        dedent();
+        emit_line("}");
+        // sanitize (HTML)
+        emit_line("std::string sanitize(const std::string& s) {");
+        indent();
+        emit_line("std::string r;");
+        emit_line("for (char c : s) {");
+        indent();
+        emit_line("switch(c) {");
+        indent();
+        emit_line("case '<': r += \"&lt;\"; break;");
+        emit_line("case '>': r += \"&gt;\"; break;");
+        emit_line("case '&': r += \"&amp;\"; break;");
+        emit_line("case '\"': r += \"&quot;\"; break;");
+        emit_line("case '\\'': r += \"&#39;\"; break;");
+        emit_line("default: r += c;");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("}");
+        emit_line("return r;");
+        dedent();
+        emit_line("}");
+        // sql_safe
+        emit_line("std::string sql_safe(const std::string& s) {");
+        indent();
+        emit_line("std::string r;");
+        emit_line("for (char c : s) {");
+        indent();
+        emit_line("if (c == '\\'' || c == '\"' || c == '\\\\' || c == ';') r += '\\\\';");
+        emit_line("r += c;");
+        dedent();
+        emit_line("}");
+        emit_line("return r;");
+        dedent();
+        emit_line("}");
+        // password_strength
+        emit_line("int password_strength(const std::string& p) {");
+        indent();
+        emit_line("int score = 0;");
+        emit_line("if (p.size() >= 8) score++;");
+        emit_line("if (p.size() >= 12) score++;");
+        emit_line("bool has_upper = false, has_lower = false, has_digit = false, has_special = false;");
+        emit_line("for (char c : p) {");
+        indent();
+        emit_line("if (isupper(c)) has_upper = true;");
+        emit_line("if (islower(c)) has_lower = true;");
+        emit_line("if (isdigit(c)) has_digit = true;");
+        emit_line("if (!isalnum(c)) has_special = true;");
+        dedent();
+        emit_line("}");
+        emit_line("if (has_upper) score++; if (has_lower) score++; if (has_digit) score++; if (has_special) score++;");
+        emit_line("return score;");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("} // namespace pyro_validate");
+        emit_line("");
+    } else if (stmt.module == "time") {
+        emit_line("namespace pyro_time {");
+        indent();
+        emit_line("int64_t now() { return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(); }");
+        emit_line("int64_t millis() { return now(); }");
+        emit_line("double seconds() { return now() / 1000.0; }");
+        emit_line("");
+        emit_line("std::string format(int64_t ms, const std::string& fmt) {");
+        indent();
+        emit_line("auto tp = std::chrono::system_clock::time_point(std::chrono::milliseconds(ms));");
+        emit_line("auto t = std::chrono::system_clock::to_time_t(tp);");
+        emit_line("char buf[128];");
+        emit_line("std::strftime(buf, sizeof(buf), fmt.c_str(), std::localtime(&t));");
+        emit_line("return std::string(buf);");
+        dedent();
+        emit_line("}");
+        emit_line("");
+        emit_line("std::string today() { return format(now(), \"%Y-%m-%d\"); }");
+        emit_line("std::string timestamp() { return format(now(), \"%Y-%m-%d %H:%M:%S\"); }");
+        emit_line("int64_t year() { auto t = std::time(nullptr); return std::localtime(&t)->tm_year + 1900; }");
+        emit_line("int64_t month() { auto t = std::time(nullptr); return std::localtime(&t)->tm_mon + 1; }");
+        emit_line("int64_t day() { auto t = std::time(nullptr); return std::localtime(&t)->tm_mday; }");
+        emit_line("int64_t hour() { auto t = std::time(nullptr); return std::localtime(&t)->tm_hour; }");
+        emit_line("int64_t minute() { auto t = std::time(nullptr); return std::localtime(&t)->tm_min; }");
+        emit_line("int64_t second() { auto t = std::time(nullptr); return std::localtime(&t)->tm_sec; }");
+        emit_line("");
+        emit_line("void sleep(int64_t ms) { std::this_thread::sleep_for(std::chrono::milliseconds(ms)); }");
+        emit_line("");
+        emit_line("struct Timer {");
+        indent();
+        emit_line("int64_t start_time;");
+        emit_line("Timer() : start_time(now()) {}");
+        emit_line("int64_t elapsed() const { return now() - start_time; }");
+        emit_line("void reset() { start_time = now(); }");
+        dedent();
+        emit_line("};");
+        emit_line("Timer timer() { return Timer{}; }");
+        dedent();
+        emit_line("} // namespace pyro_time");
+        emit_line("");
+    } else if (stmt.module == "db") {
+        emit_line("namespace pyro_db {");
+        indent();
+        emit_line("struct Row {");
+        indent();
+        emit_line("std::vector<std::pair<std::string, std::string>> cols;");
+        emit_line("std::string get(const std::string& k) const { for (const auto& [name,val] : cols) if (name == k) return val; return \"\"; }");
+        emit_line("friend std::ostream& operator<<(std::ostream& os, const Row& r) {");
+        indent();
+        emit_line("os << \"{\"; bool f=true; for (const auto& [k,v] : r.cols) { if (!f) os << \", \"; os << k << \": \" << v; f=false; } return os << \"}\";");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("};");
+        emit_line("");
+        emit_line("struct Table {");
+        indent();
+        emit_line("std::string name;");
+        emit_line("std::vector<std::string> columns;");
+        emit_line("std::vector<std::vector<std::string>> rows;");
+        emit_line("void insert(const std::vector<std::string>& row) { rows.push_back(row); }");
+        emit_line("std::vector<Row> select_all() const {");
+        indent();
+        emit_line("std::vector<Row> result;");
+        emit_line("for (const auto& r : rows) { Row row; for (size_t i = 0; i < columns.size() && i < r.size(); i++) row.cols.push_back({columns[i], r[i]}); result.push_back(row); }");
+        emit_line("return result;");
+        dedent();
+        emit_line("}");
+        emit_line("int64_t count() const { return rows.size(); }");
+        emit_line("");
+        // where
+        emit_line("std::vector<Row> where(const std::string& col, const std::string& op, const std::string& value) const {");
+        indent();
+        emit_line("int ci=-1;");
+        emit_line("for(size_t i=0;i<columns.size();i++) if(columns[i]==col) ci=i;");
+        emit_line("std::vector<Row> result;");
+        emit_line("for(auto& r:rows) {");
+        indent();
+        emit_line("bool match=false;");
+        emit_line("if(op==\"==\") match = r[ci]==value;");
+        emit_line("else if(op==\"!=\") match = r[ci]!=value;");
+        emit_line("else if(op==\">\") { try{match=std::stod(r[ci])>std::stod(value);}catch(...){match=r[ci]>value;} }");
+        emit_line("else if(op==\"<\") { try{match=std::stod(r[ci])<std::stod(value);}catch(...){match=r[ci]<value;} }");
+        emit_line("else if(op==\">=\") { try{match=std::stod(r[ci])>=std::stod(value);}catch(...){match=r[ci]>=value;} }");
+        emit_line("else if(op==\"<=\") { try{match=std::stod(r[ci])<=std::stod(value);}catch(...){match=r[ci]<=value;} }");
+        emit_line("if(match) {");
+        indent();
+        emit_line("Row row; for(size_t i=0;i<columns.size()&&i<r.size();i++) row.cols.push_back({columns[i],r[i]});");
+        emit_line("result.push_back(row);");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("}");
+        emit_line("return result;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+        // update
+        emit_line("void update(const std::string& col, const std::string& val, const std::string& where_col, const std::string& where_val) {");
+        indent();
+        emit_line("int ci=-1, wi=-1;");
+        emit_line("for(size_t i=0;i<columns.size();i++){if(columns[i]==col)ci=i;if(columns[i]==where_col)wi=i;}");
+        emit_line("for(auto& r:rows) if(r[wi]==where_val) r[ci]=val;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+        // delete_where
+        emit_line("void delete_where(const std::string& col, const std::string& val) {");
+        indent();
+        emit_line("int ci=-1;");
+        emit_line("for(size_t i=0;i<columns.size();i++) if(columns[i]==col) ci=i;");
+        emit_line("rows.erase(std::remove_if(rows.begin(), rows.end(), [&](auto& r){return r[ci]==val;}), rows.end());");
+        dedent();
+        emit_line("}");
+        emit_line("");
+        // order_by
+        emit_line("std::vector<Row> order_by(const std::string& col, bool asc=true) const {");
+        indent();
+        emit_line("auto result = select_all();");
+        emit_line("std::sort(result.begin(), result.end(), [&](auto& a, auto& b){");
+        indent();
+        emit_line("return asc ? a.get(col)<b.get(col) : a.get(col)>b.get(col);");
+        dedent();
+        emit_line("});");
+        emit_line("return result;");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("};");
+        emit_line("");
+        emit_line("struct Database {");
+        indent();
+        emit_line("std::unordered_map<std::string, Table> tables;");
+        emit_line("Table& create_table(const std::string& name, const std::vector<std::string>& cols) {");
+        indent();
+        emit_line("tables[name] = Table{name, cols, {}}; return tables[name];");
+        dedent();
+        emit_line("}");
+        emit_line("Table& table(const std::string& name) { return tables.at(name); }");
+        emit_line("bool has_table(const std::string& name) const { return tables.count(name) > 0; }");
+        emit_line("std::vector<std::string> table_names() const { std::vector<std::string> r; for (const auto& [k,v] : tables) r.push_back(k); return r; }");
+        emit_line("");
+        // save
+        emit_line("void save(const std::string& path) const {");
+        indent();
+        emit_line("std::ofstream f(path);");
+        emit_line("for(auto& [name,table]:tables) {");
+        indent();
+        emit_line("f<<\"TABLE \"<<name<<\"\\n\";");
+        emit_line("for(size_t i=0;i<table.columns.size();i++){if(i)f<<\",\";f<<table.columns[i];}");
+        emit_line("f<<\"\\n\";");
+        emit_line("for(auto& row:table.rows){for(size_t i=0;i<row.size();i++){if(i)f<<\",\";f<<row[i];}f<<\"\\n\";}");
+        emit_line("f<<\"---\\n\";");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("}");
+        emit_line("");
+        // load (static)
+        emit_line("static Database load(const std::string& path) {");
+        indent();
+        emit_line("Database db; std::ifstream f(path); std::string line;");
+        emit_line("while(std::getline(f,line)) {");
+        indent();
+        emit_line("if(line.substr(0,6)==\"TABLE \") {");
+        indent();
+        emit_line("std::string name=line.substr(6);");
+        emit_line("std::getline(f,line);");
+        emit_line("std::vector<std::string> cols;");
+        emit_line("std::istringstream cs(line); std::string c;");
+        emit_line("while(std::getline(cs,c,',')) cols.push_back(c);");
+        emit_line("auto& t = db.create_table(name, cols);");
+        emit_line("while(std::getline(f,line) && line!=\"---\") {");
+        indent();
+        emit_line("std::vector<std::string> row;");
+        emit_line("std::istringstream rs(line); std::string v;");
+        emit_line("while(std::getline(rs,v,',')) row.push_back(v);");
+        emit_line("t.insert(row);");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("}");
+        emit_line("return db;");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("};");
+        emit_line("Database connect(const std::string& name = \":memory:\") { return Database{}; }");
+        dedent();
+        emit_line("} // namespace pyro_db");
+        emit_line("");
+    } else if (stmt.module == "net") {
+        emit_line("namespace pyro_net {");
+        indent();
+        emit_line("std::string hostname() { char buf[256]; gethostname(buf, sizeof(buf)); return std::string(buf); }");
+        emit_line("");
+        emit_line("struct TcpClient {");
+        indent();
+        emit_line("int fd = -1;");
+        emit_line("bool connect(const std::string& host, int port) {");
+        indent();
+        emit_line("fd = socket(AF_INET, SOCK_STREAM, 0);");
+        emit_line("struct sockaddr_in addr; addr.sin_family = AF_INET; addr.sin_port = htons(port);");
+        emit_line("inet_pton(AF_INET, host.c_str(), &addr.sin_addr);");
+        emit_line("return ::connect(fd, (struct sockaddr*)&addr, sizeof(addr)) == 0;");
+        dedent();
+        emit_line("}");
+        emit_line("void send(const std::string& data) { ::send(fd, data.c_str(), data.size(), 0); }");
+        emit_line("std::string recv(int bufsize = 4096) { char buf[4096]; int n = ::recv(fd, buf, bufsize, 0); return n > 0 ? std::string(buf, n) : \"\"; }");
+        emit_line("void close() { ::close(fd); }");
+        dedent();
+        emit_line("};");
+        emit_line("TcpClient tcp_client() { return TcpClient{}; }");
+        emit_line("");
+        emit_line("std::string http_get(const std::string& host, int port, const std::string& path) {");
+        indent();
+        emit_line("TcpClient c; c.connect(host, port);");
+        emit_line("c.send(\"GET \" + path + \" HTTP/1.1\\r\\nHost: \" + host + \"\\r\\nConnection: close\\r\\n\\r\\n\");");
+        emit_line("std::string response;");
+        emit_line("while (true) { auto chunk = c.recv(); if (chunk.empty()) break; response += chunk; }");
+        emit_line("c.close();");
+        emit_line("auto body_start = response.find(\"\\r\\n\\r\\n\");");
+        emit_line("return body_start != std::string::npos ? response.substr(body_start + 4) : response;");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("} // namespace pyro_net");
+        emit_line("");
+    } else if (stmt.module == "log") {
+        emit_line("namespace pyro_log {");
+        indent();
+        emit_line("enum Level { TRACE=0, LVL_DEBUG=1, INFO=2, WARN=3, ERROR=4, FATAL=5 };");
+        emit_line("static Level current_level = INFO;");
+        emit_line("static const char* level_names[] = {\"TRACE\", \"DEBUG\", \"INFO\", \"WARN\", \"ERROR\", \"FATAL\"};");
+        emit_line("");
+        emit_line("void set_level(const std::string& lvl) {");
+        indent();
+        emit_line("if (lvl == \"trace\") current_level = TRACE;");
+        emit_line("else if (lvl == \"debug\") current_level = LVL_DEBUG;");
+        emit_line("else if (lvl == \"info\") current_level = INFO;");
+        emit_line("else if (lvl == \"warn\") current_level = WARN;");
+        emit_line("else if (lvl == \"error\") current_level = ERROR;");
+        emit_line("else if (lvl == \"fatal\") current_level = FATAL;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+        emit_line("template<typename... Args>");
+        emit_line("void log_msg(Level lvl, Args&&... args) {");
+        indent();
+        emit_line("if (lvl < current_level) return;");
+        emit_line("auto t = std::time(nullptr); char ts[20]; std::strftime(ts, sizeof(ts), \"%H:%M:%S\", std::localtime(&t));");
+        emit_line("std::cout << \"[\" << ts << \" \" << level_names[lvl] << \"] \";");
+        emit_line("((std::cout << std::forward<Args>(args)), ...);");
+        emit_line("std::cout << std::endl;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+        emit_line("template<typename... Args> void trace(Args&&... args) { log_msg(TRACE, std::forward<Args>(args)...); }");
+        emit_line("template<typename... Args> void debug(Args&&... args) { log_msg(LVL_DEBUG, std::forward<Args>(args)...); }");
+        emit_line("template<typename... Args> void info(Args&&... args) { log_msg(INFO, std::forward<Args>(args)...); }");
+        emit_line("template<typename... Args> void warn(Args&&... args) { log_msg(WARN, std::forward<Args>(args)...); }");
+        emit_line("template<typename... Args> void error(Args&&... args) { log_msg(ERROR, std::forward<Args>(args)...); }");
+        emit_line("template<typename... Args> void fatal(Args&&... args) { log_msg(FATAL, std::forward<Args>(args)...); }");
+        dedent();
+        emit_line("} // namespace pyro_log");
+        emit_line("");
+    } else if (stmt.module == "test") {
+        emit_line("namespace pyro_test {");
+        indent();
+        emit_line("static int passed = 0, failed = 0;");
+        emit_line("");
+        emit_line("void assert_true(bool cond, const std::string& msg = \"\") {");
+        indent();
+        emit_line("if (cond) { passed++; std::cout << \"  PASS\"; }");
+        emit_line("else { failed++; std::cout << \"  FAIL\"; }");
+        emit_line("if (!msg.empty()) std::cout << \": \" << msg;");
+        emit_line("std::cout << std::endl;");
+        dedent();
+        emit_line("}");
+        emit_line("template<typename A, typename B>");
+        emit_line("void assert_eq(const A& a, const B& b, const std::string& msg = \"\") {");
+        indent();
+        emit_line("assert_true(a == b, msg.empty() ? \"expected \" + pyro::to_str(a) + \" == \" + pyro::to_str(b) : msg);");
+        dedent();
+        emit_line("}");
+        emit_line("template<typename A, typename B>");
+        emit_line("void assert_neq(const A& a, const B& b, const std::string& msg = \"\") {");
+        indent();
+        emit_line("assert_true(a != b, msg.empty() ? \"expected != \" : msg);");
+        dedent();
+        emit_line("}");
+        emit_line("void assert_gt(auto a, auto b, const std::string& msg = \"\") { assert_true(a > b, msg); }");
+        emit_line("void assert_lt(auto a, auto b, const std::string& msg = \"\") { assert_true(a < b, msg); }");
+        emit_line("");
+        emit_line("void describe(const std::string& name) { std::cout << \"\\n\" << name << std::endl; }");
+        emit_line("void it(const std::string& name) { std::cout << \"  \" << name << \": \"; }");
+        emit_line("");
+        emit_line("void summary() {");
+        indent();
+        emit_line("std::cout << \"\\n\" << passed << \" passed, \" << failed << \" failed, \" << (passed + failed) << \" total\" << std::endl;");
+        emit_line("if (failed > 0) std::cout << \"TESTS FAILED\" << std::endl;");
+        emit_line("else std::cout << \"ALL TESTS PASSED\" << std::endl;");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("} // namespace pyro_test");
+        emit_line("");
+    } else if (stmt.module == "cache") {
+        emit_line("namespace pyro_cache {");
+        indent();
+        emit_line("struct Cache {");
+        indent();
+        emit_line("std::unordered_map<std::string, std::string> store;");
+        emit_line("std::unordered_map<std::string, int64_t> expiry;");
+        emit_line("");
+        emit_line("void set(const std::string& key, const std::string& val, int64_t ttl_ms = 0) {");
+        indent();
+        emit_line("store[key] = val;");
+        emit_line("if (ttl_ms > 0) expiry[key] = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count() + ttl_ms;");
+        dedent();
+        emit_line("}");
+        emit_line("std::string get(const std::string& key, const std::string& def = \"\") {");
+        indent();
+        emit_line("if (store.count(key) == 0) return def;");
+        emit_line("if (expiry.count(key) && std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count() > expiry[key]) {");
+        indent();
+        emit_line("store.erase(key); expiry.erase(key); return def;");
+        dedent();
+        emit_line("}");
+        emit_line("return store[key];");
+        dedent();
+        emit_line("}");
+        emit_line("bool has(const std::string& key) { return store.count(key) > 0; }");
+        emit_line("void remove(const std::string& key) { store.erase(key); expiry.erase(key); }");
+        emit_line("void clear() { store.clear(); expiry.clear(); }");
+        emit_line("int64_t size() { return store.size(); }");
+        dedent();
+        emit_line("};");
+        emit_line("Cache create() { return Cache{}; }");
+        dedent();
+        emit_line("} // namespace pyro_cache");
+        emit_line("");
+    } else if (stmt.module == "queue") {
+        emit_line("namespace pyro_queue {");
+        indent();
+        emit_line("struct Queue {");
+        indent();
+        emit_line("std::vector<std::string> items;");
+        emit_line("void send(const std::string& item) { items.push_back(item); }");
+        emit_line("std::string receive() { if (items.empty()) throw std::runtime_error(\"Queue empty\"); std::string v = items.front(); items.erase(items.begin()); return v; }");
+        emit_line("bool empty() const { return items.empty(); }");
+        emit_line("int64_t size() const { return items.size(); }");
+        emit_line("std::string peek() const { if (items.empty()) throw std::runtime_error(\"Queue empty\"); return items.front(); }");
+        dedent();
+        emit_line("};");
+        emit_line("Queue create() { return Queue{}; }");
+        dedent();
+        emit_line("} // namespace pyro_queue");
+        emit_line("");
+    } else if (stmt.module == "ml") {
+        emit_line("namespace pyro_ml {");
+        indent();
+        emit_line("double mean(const std::vector<double>& v) { double s = 0; for (auto x : v) s += x; return s / v.size(); }");
+        emit_line("double std_dev(const std::vector<double>& v) {");
+        indent();
+        emit_line("double m = mean(v), s = 0;");
+        emit_line("for (auto x : v) s += (x - m) * (x - m);");
+        emit_line("return std::sqrt(s / v.size());");
+        dedent();
+        emit_line("}");
+        emit_line("std::vector<double> normalize(const std::vector<double>& v) {");
+        indent();
+        emit_line("double mn = *std::min_element(v.begin(), v.end());");
+        emit_line("double mx = *std::max_element(v.begin(), v.end());");
+        emit_line("double range = mx - mn; if (range == 0) range = 1;");
+        emit_line("std::vector<double> r; for (auto x : v) r.push_back((x - mn) / range); return r;");
+        dedent();
+        emit_line("}");
+        emit_line("struct LinearModel { double slope; double intercept; double predict(double x) const { return slope * x + intercept; } };");
+        emit_line("LinearModel linear_regression(const std::vector<double>& x, const std::vector<double>& y) {");
+        indent();
+        emit_line("double mx = mean(x), my = mean(y), num = 0, den = 0;");
+        emit_line("for (size_t i = 0; i < x.size(); i++) { num += (x[i] - mx) * (y[i] - my); den += (x[i] - mx) * (x[i] - mx); }");
+        emit_line("double slope = den != 0 ? num / den : 0;");
+        emit_line("return LinearModel{slope, my - slope * mx};");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("} // namespace pyro_ml");
+        emit_line("");
+    } else if (stmt.module == "img") {
+        emit_line("namespace pyro_img {");
+        indent();
+
+        // PPM image format (portable pixmap - no external deps needed)
+        emit_line("struct Image {");
+        indent();
+        emit_line("int width=0, height=0;");
+        emit_line("std::vector<unsigned char> pixels; // RGB");
+        emit_line("unsigned char get_r(int x, int y) const { return pixels[(y*width+x)*3]; }");
+        emit_line("unsigned char get_g(int x, int y) const { return pixels[(y*width+x)*3+1]; }");
+        emit_line("unsigned char get_b(int x, int y) const { return pixels[(y*width+x)*3+2]; }");
+        emit_line("void set_pixel(int x, int y, unsigned char r, unsigned char g, unsigned char b) {");
+        indent();
+        emit_line("if(x>=0&&x<width&&y>=0&&y<height){int i=(y*width+x)*3;pixels[i]=r;pixels[i+1]=g;pixels[i+2]=b;}");
+        dedent(); emit_line("}");
+        emit_line("friend std::ostream& operator<<(std::ostream& os, const Image& img) { return os << \"Image(\" << img.width << \"x\" << img.height << \")\"; }");
+        dedent(); emit_line("};");
+        emit_line("");
+
+        // Create blank image
+        emit_line("Image create(int w, int h, unsigned char r=255, unsigned char g=255, unsigned char b=255) {");
+        indent();
+        emit_line("Image img; img.width=w; img.height=h; img.pixels.resize(w*h*3);");
+        emit_line("for(int i=0;i<w*h;i++){img.pixels[i*3]=r;img.pixels[i*3+1]=g;img.pixels[i*3+2]=b;}");
+        emit_line("return img;");
+        dedent(); emit_line("}");
+
+        // Save as PPM
+        emit_line("void save_ppm(const Image& img, const std::string& path) {");
+        indent();
+        emit_line("std::ofstream f(path, std::ios::binary);");
+        emit_line("f << \"P6\\n\" << img.width << \" \" << img.height << \"\\n255\\n\";");
+        emit_line("f.write(reinterpret_cast<const char*>(img.pixels.data()), img.pixels.size());");
+        dedent(); emit_line("}");
+
+        // Load PPM
+        emit_line("Image load_ppm(const std::string& path) {");
+        indent();
+        emit_line("Image img; std::ifstream f(path, std::ios::binary); std::string magic; int maxval;");
+        emit_line("f >> magic >> img.width >> img.height >> maxval; f.get();");
+        emit_line("img.pixels.resize(img.width*img.height*3);");
+        emit_line("f.read(reinterpret_cast<char*>(img.pixels.data()), img.pixels.size());");
+        emit_line("return img;");
+        dedent(); emit_line("}");
+
+        // Resize (nearest neighbor)
+        emit_line("Image resize(const Image& src, int new_w, int new_h) {");
+        indent();
+        emit_line("Image dst = create(new_w, new_h);");
+        emit_line("for(int y=0;y<new_h;y++) for(int x=0;x<new_w;x++){");
+        indent();
+        emit_line("int sx=x*src.width/new_w, sy=y*src.height/new_h;");
+        emit_line("dst.set_pixel(x,y,src.get_r(sx,sy),src.get_g(sx,sy),src.get_b(sx,sy));");
+        dedent(); emit_line("}");
+        emit_line("return dst;");
+        dedent(); emit_line("}");
+
+        // Grayscale
+        emit_line("Image grayscale(const Image& src) {");
+        indent();
+        emit_line("Image dst = create(src.width, src.height);");
+        emit_line("for(int y=0;y<src.height;y++) for(int x=0;x<src.width;x++){");
+        indent();
+        emit_line("unsigned char g = (unsigned char)(0.299*src.get_r(x,y)+0.587*src.get_g(x,y)+0.114*src.get_b(x,y));");
+        emit_line("dst.set_pixel(x,y,g,g,g);");
+        dedent(); emit_line("}");
+        emit_line("return dst;");
+        dedent(); emit_line("}");
+
+        // Crop
+        emit_line("Image crop(const Image& src, int x, int y, int w, int h) {");
+        indent();
+        emit_line("Image dst = create(w, h);");
+        emit_line("for(int dy=0;dy<h;dy++) for(int dx=0;dx<w;dx++){");
+        indent();
+        emit_line("int sx=x+dx, sy=y+dy;");
+        emit_line("if(sx>=0&&sx<src.width&&sy>=0&&sy<src.height) dst.set_pixel(dx,dy,src.get_r(sx,sy),src.get_g(sx,sy),src.get_b(sx,sy));");
+        dedent(); emit_line("}");
+        emit_line("return dst;");
+        dedent(); emit_line("}");
+
+        // Flip horizontal
+        emit_line("Image flip_h(const Image& src) {");
+        indent();
+        emit_line("Image dst = create(src.width, src.height);");
+        emit_line("for(int y=0;y<src.height;y++) for(int x=0;x<src.width;x++) dst.set_pixel(src.width-1-x,y,src.get_r(x,y),src.get_g(x,y),src.get_b(x,y));");
+        emit_line("return dst;");
+        dedent(); emit_line("}");
+
+        // Brightness
+        emit_line("Image brightness(const Image& src, double factor) {");
+        indent();
+        emit_line("Image dst = create(src.width, src.height);");
+        emit_line("for(int y=0;y<src.height;y++) for(int x=0;x<src.width;x++){");
+        indent();
+        emit_line("auto clamp=[](int v)->unsigned char{return v<0?0:v>255?255:(unsigned char)v;};");
+        emit_line("dst.set_pixel(x,y,clamp((int)(src.get_r(x,y)*factor)),clamp((int)(src.get_g(x,y)*factor)),clamp((int)(src.get_b(x,y)*factor)));");
+        dedent(); emit_line("}");
+        emit_line("return dst;");
+        dedent(); emit_line("}");
+
+        // Draw rectangle
+        emit_line("void draw_rect(Image& img, int x, int y, int w, int h, unsigned char r, unsigned char g, unsigned char b) {");
+        indent();
+        emit_line("for(int dx=0;dx<w;dx++){img.set_pixel(x+dx,y,r,g,b);img.set_pixel(x+dx,y+h-1,r,g,b);}");
+        emit_line("for(int dy=0;dy<h;dy++){img.set_pixel(x,y+dy,r,g,b);img.set_pixel(x+w-1,y+dy,r,g,b);}");
+        dedent(); emit_line("}");
+
+        dedent();
+        emit_line("} // namespace pyro_img");
+        emit_line("");
+    } else if (stmt.module == "cloud") {
+        emit_line("namespace pyro_cloud {");
+        indent();
+        emit_line("struct Config {");
+        indent();
+        emit_line("std::unordered_map<std::string, std::string> values;");
+        emit_line("void set(const std::string& k, const std::string& v) { values[k] = v; }");
+        emit_line("std::string get(const std::string& k, const std::string& def = \"\") const { auto it = values.find(k); return it != values.end() ? it->second : def; }");
+        dedent();
+        emit_line("};");
+        emit_line("std::string env(const std::string& key, const std::string& def = \"\") {");
+        indent();
+        emit_line("const char* v = std::getenv(key.c_str()); return v ? std::string(v) : def;");
+        dedent();
+        emit_line("}");
+        emit_line("Config config() { return Config{}; }");
+        dedent();
+        emit_line("} // namespace pyro_cloud");
+        emit_line("");
+    } else if (stmt.module == "ui") {
+        emit_line("namespace pyro_ui {");
+        indent();
+        emit_line("void alert(const std::string& msg) { std::cout << \"[UI Alert] \" << msg << std::endl; }");
+        emit_line("std::string prompt(const std::string& msg) {");
+        indent();
+        emit_line("std::cout << msg << \": \"; std::string input; std::getline(std::cin, input); return input;");
+        dedent();
+        emit_line("}");
+        emit_line("void info(const std::string& msg) { std::cout << \"[UI] \" << msg << std::endl; }");
+        dedent();
+        emit_line("} // namespace pyro_ui");
+        emit_line("");
+    } else if (stmt.module == "auth") {
+        emit_line("namespace pyro_auth {");
+        indent();
+        emit_line("static std::string base64_encode(const std::string& in) {");
+        indent();
+        emit_line("static const char* chars = \"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/\";");
+        emit_line("std::string out;");
+        emit_line("int val = 0, valb = -6;");
+        emit_line("for (unsigned char c : in) { val = (val << 8) + c; valb += 8; while (valb >= 0) { out.push_back(chars[(val >> valb) & 0x3F]); valb -= 6; } }");
+        emit_line("if (valb > -6) out.push_back(chars[((val << 8) >> (valb + 8)) & 0x3F]);");
+        emit_line("while (out.size() % 4) out.push_back('=');");
+        emit_line("return out;");
+        dedent();
+        emit_line("}");
+        emit_line("static std::string base64_decode(const std::string& in) {");
+        indent();
+        emit_line("static const std::string chars = \"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/\";");
+        emit_line("std::string out;");
+        emit_line("int val = 0, valb = -8;");
+        emit_line("for (unsigned char c : in) { if (c == '=') break; auto p = chars.find(c); if (p == std::string::npos) continue; val = (val << 6) + (int)p; valb += 6; if (valb >= 0) { out.push_back(char((val >> valb) & 0xFF)); valb -= 8; } }");
+        emit_line("return out;");
+        dedent();
+        emit_line("}");
+        emit_line("static std::string hmac_sign(const std::string& data, const std::string& secret) {");
+        indent();
+        emit_line("std::hash<std::string> h;");
+        emit_line("auto hash = h(secret + data);");
+        emit_line("std::ostringstream ss; ss << std::hex << hash; return ss.str();");
+        dedent();
+        emit_line("}");
+        emit_line("std::string jwt_sign(const std::string& payload, const std::string& secret) {");
+        indent();
+        emit_line("std::string header = base64_encode(\"{\\\"alg\\\":\\\"HS256\\\",\\\"typ\\\":\\\"JWT\\\"}\");");
+        emit_line("std::string body = base64_encode(payload);");
+        emit_line("std::string sig = hmac_sign(header + \".\" + body, secret);");
+        emit_line("return header + \".\" + body + \".\" + sig;");
+        dedent();
+        emit_line("}");
+        emit_line("bool jwt_verify(const std::string& token, const std::string& secret) {");
+        indent();
+        emit_line("auto dot1 = token.find('.'); if (dot1 == std::string::npos) return false;");
+        emit_line("auto dot2 = token.find('.', dot1 + 1); if (dot2 == std::string::npos) return false;");
+        emit_line("std::string header_body = token.substr(0, dot2);");
+        emit_line("std::string sig = token.substr(dot2 + 1);");
+        emit_line("return hmac_sign(header_body, secret) == sig;");
+        dedent();
+        emit_line("}");
+        emit_line("std::string jwt_payload(const std::string& token) {");
+        indent();
+        emit_line("auto dot1 = token.find('.'); auto dot2 = token.find('.', dot1 + 1);");
+        emit_line("return base64_decode(token.substr(dot1 + 1, dot2 - dot1 - 1));");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("} // namespace pyro_auth");
+        emit_line("");
+    } else if (stmt.module == "viz") {
+        emit_line("namespace pyro_viz {");
+        indent();
+
+        // SVG helpers
+        emit_line("std::string svg_header(int w, int h) { return \"<svg xmlns='http://www.w3.org/2000/svg' width='\" + std::to_string(w) + \"' height='\" + std::to_string(h) + \"'>\"; }");
+        emit_line("std::string svg_footer() { return \"</svg>\"; }");
+        emit_line("std::string svg_rect(int x, int y, int w, int h, const std::string& fill) { return \"<rect x='\" + std::to_string(x) + \"' y='\" + std::to_string(y) + \"' width='\" + std::to_string(w) + \"' height='\" + std::to_string(h) + \"' fill='\" + fill + \"'/>\"; }");
+        emit_line("std::string svg_text(int x, int y, const std::string& text, int size=12) { return \"<text x='\" + std::to_string(x) + \"' y='\" + std::to_string(y) + \"' font-size='\" + std::to_string(size) + \"'>\" + text + \"</text>\"; }");
+        emit_line("std::string svg_line(int x1, int y1, int x2, int y2, const std::string& stroke=\"black\", int width=1) { return \"<line x1='\" + std::to_string(x1) + \"' y1='\" + std::to_string(y1) + \"' x2='\" + std::to_string(x2) + \"' y2='\" + std::to_string(y2) + \"' stroke='\" + stroke + \"' stroke-width='\" + std::to_string(width) + \"'/>\"; }");
+        emit_line("std::string svg_circle(int cx, int cy, int r, const std::string& fill) { return \"<circle cx='\" + std::to_string(cx) + \"' cy='\" + std::to_string(cy) + \"' r='\" + std::to_string(r) + \"' fill='\" + fill + \"'/>\"; }");
+        emit_line("");
+
+        // Color palette
+        emit_line("static const std::vector<std::string> palette = {\"#3498db\",\"#e74c3c\",\"#2ecc71\",\"#f1c40f\",\"#9b59b6\",\"#e67e22\",\"#1abc9c\",\"#34495e\"};");
+        emit_line("");
+
+        // Bar chart
+        emit_line("std::string bar_chart(const std::vector<std::string>& labels, const std::vector<double>& values, const std::string& title=\"\", int width=600, int height=400) {");
+        indent();
+        emit_line("double max_val = *std::max_element(values.begin(), values.end());");
+        emit_line("int margin = 60, bar_area_w = width - 2*margin, bar_area_h = height - 2*margin;");
+        emit_line("int bar_w = bar_area_w / (int)values.size() - 4;");
+        emit_line("std::string svg = svg_header(width, height);");
+        emit_line("svg += \"<rect width='100%' height='100%' fill='white'/>\";");
+        emit_line("if (!title.empty()) svg += svg_text(width/2 - (int)title.size()*4, 25, title, 16);");
+        emit_line("// Axes");
+        emit_line("svg += svg_line(margin, margin, margin, height-margin);");
+        emit_line("svg += svg_line(margin, height-margin, width-margin, height-margin);");
+        emit_line("// Bars");
+        emit_line("for (size_t i = 0; i < values.size(); i++) {");
+        indent();
+        emit_line("int bh = (int)(values[i]/max_val * bar_area_h);");
+        emit_line("int bx = margin + (int)i * (bar_w + 4) + 2;");
+        emit_line("int by = height - margin - bh;");
+        emit_line("svg += svg_rect(bx, by, bar_w, bh, palette[i % palette.size()]);");
+        emit_line("if (i < labels.size()) svg += svg_text(bx, height-margin+15, labels[i], 10);");
+        dedent();
+        emit_line("}");
+        emit_line("svg += svg_footer();");
+        emit_line("return svg;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Line chart
+        emit_line("std::string line_chart(const std::vector<double>& x, const std::vector<double>& y, const std::string& title=\"\", int width=600, int height=400) {");
+        indent();
+        emit_line("double xmin=x[0],xmax=x[0],ymin=y[0],ymax=y[0];");
+        emit_line("for(auto v:x){xmin=std::min(xmin,v);xmax=std::max(xmax,v);}");
+        emit_line("for(auto v:y){ymin=std::min(ymin,v);ymax=std::max(ymax,v);}");
+        emit_line("int m=60; std::string svg=svg_header(width,height);");
+        emit_line("svg+=\"<rect width='100%' height='100%' fill='white'/>\";");
+        emit_line("if(!title.empty())svg+=svg_text(width/2-(int)title.size()*4,25,title,16);");
+        emit_line("svg+=svg_line(m,m,m,height-m); svg+=svg_line(m,height-m,width-m,height-m);");
+        emit_line("std::string points;");
+        emit_line("for(size_t i=0;i<x.size()&&i<y.size();i++){");
+        indent();
+        emit_line("int px=m+(int)((x[i]-xmin)/(xmax-xmin)*(width-2*m));");
+        emit_line("int py=height-m-(int)((y[i]-ymin)/(ymax-ymin)*(height-2*m));");
+        emit_line("if(i>0)points+=\" \"; points+=std::to_string(px)+\",\"+std::to_string(py);");
+        emit_line("svg+=svg_circle(px,py,3,palette[0]);");
+        dedent();
+        emit_line("}");
+        emit_line("svg+=\"<polyline points='\"+points+\"' fill='none' stroke='\"+palette[0]+\"' stroke-width='2'/>\";");
+        emit_line("svg+=svg_footer(); return svg;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Scatter plot
+        emit_line("std::string scatter(const std::vector<double>& x, const std::vector<double>& y, const std::string& title=\"\", int width=600, int height=400) {");
+        indent();
+        emit_line("double xmin=x[0],xmax=x[0],ymin=y[0],ymax=y[0];");
+        emit_line("for(auto v:x){xmin=std::min(xmin,v);xmax=std::max(xmax,v);}");
+        emit_line("for(auto v:y){ymin=std::min(ymin,v);ymax=std::max(ymax,v);}");
+        emit_line("int m=60; std::string svg=svg_header(width,height);");
+        emit_line("svg+=\"<rect width='100%' height='100%' fill='white'/>\";");
+        emit_line("if(!title.empty())svg+=svg_text(width/2-(int)title.size()*4,25,title,16);");
+        emit_line("svg+=svg_line(m,m,m,height-m); svg+=svg_line(m,height-m,width-m,height-m);");
+        emit_line("for(size_t i=0;i<x.size()&&i<y.size();i++){");
+        indent();
+        emit_line("int px=m+(int)((x[i]-xmin)/(xmax-xmin)*(width-2*m));");
+        emit_line("int py=height-m-(int)((y[i]-ymin)/(ymax-ymin)*(height-2*m));");
+        emit_line("svg+=svg_circle(px,py,5,palette[i%palette.size()]);");
+        dedent();
+        emit_line("}");
+        emit_line("svg+=svg_footer(); return svg;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Pie chart
+        emit_line("std::string pie_chart(const std::vector<std::string>& labels, const std::vector<double>& values, const std::string& title=\"\", int width=400, int height=400) {");
+        indent();
+        emit_line("double total=0; for(auto v:values) total+=v;");
+        emit_line("int cx=width/2, cy=height/2, r=std::min(width,height)/2-40;");
+        emit_line("std::string svg=svg_header(width,height);");
+        emit_line("svg+=\"<rect width='100%' height='100%' fill='white'/>\";");
+        emit_line("if(!title.empty())svg+=svg_text(width/2-(int)title.size()*4,20,title,16);");
+        emit_line("double angle=0;");
+        emit_line("for(size_t i=0;i<values.size();i++){");
+        indent();
+        emit_line("double slice=values[i]/total*2*3.14159265;");
+        emit_line("double x1=cx+r*std::cos(angle), y1=cy+r*std::sin(angle);");
+        emit_line("angle+=slice;");
+        emit_line("double x2=cx+r*std::cos(angle), y2=cy+r*std::sin(angle);");
+        emit_line("int large=slice>3.14159?1:0;");
+        emit_line("svg+=\"<path d='M\"+std::to_string(cx)+\",\"+std::to_string(cy)+\" L\"+std::to_string((int)x1)+\",\"+std::to_string((int)y1)+\" A\"+std::to_string(r)+\",\"+std::to_string(r)+\" 0 \"+std::to_string(large)+\",1 \"+std::to_string((int)x2)+\",\"+std::to_string((int)y2)+\" Z' fill='\"+palette[i%palette.size()]+\"'/>\";");
+        dedent();
+        emit_line("}");
+        emit_line("// Legend");
+        emit_line("for(size_t i=0;i<labels.size();i++){");
+        indent();
+        emit_line("int ly=height-30-(int)(labels.size()-i)*18;");
+        emit_line("svg+=svg_rect(width-120,ly,12,12,palette[i%palette.size()]);");
+        emit_line("svg+=svg_text(width-100,ly+11,labels[i],11);");
+        dedent();
+        emit_line("}");
+        emit_line("svg+=svg_footer(); return svg;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Save to file
+        emit_line("void save(const std::string& path, const std::string& svg) {");
+        indent();
+        emit_line("std::ofstream f(path); f << svg; f.close();");
+        dedent();
+        emit_line("}");
+
+        dedent();
+        emit_line("} // namespace pyro_viz");
+        emit_line("");
+    } else if (stmt.module == "os") {
+        emit_line("namespace pyro_os {");
+        indent();
+        emit_line("std::string env(const std::string& name) { auto* v = std::getenv(name.c_str()); return v ? v : \"\"; }");
+        emit_line("void setenv(const std::string& name, const std::string& val) { ::setenv(name.c_str(), val.c_str(), 1); }");
+        emit_line("std::string platform() { ");
+        emit_line("#ifdef __linux__"); emit_line("return \"linux\";");
+        emit_line("#elif __APPLE__"); emit_line("return \"macos\";");
+        emit_line("#elif _WIN32"); emit_line("return \"windows\";");
+        emit_line("#else"); emit_line("return \"unknown\";");
+        emit_line("#endif"); emit_line("}");
+        emit_line("int64_t pid() { return getpid(); }");
+        emit_line("std::string cwd() { return std::filesystem::current_path().string(); }");
+        emit_line("int64_t cpus() { return std::thread::hardware_concurrency(); }");
+        dedent(); emit_line("} // namespace pyro_os"); emit_line("");
+    } else if (stmt.module == "sys") {
+        emit_line("namespace pyro_sys {");
+        indent();
+        emit_line("std::string version() { return \"Pyro 1.0.0\"; }");
+        emit_line("void exit(int code = 0) { std::exit(code); }");
+        emit_line("std::string platform() { return pyro_os::platform(); }");
+        dedent(); emit_line("}"); emit_line("");
+    } else if (stmt.module == "re") {
+        emit_line("namespace pyro_re {");
+        indent();
+        emit_line("bool match(const std::string& pattern, const std::string& str) { return std::regex_match(str, std::regex(pattern)); }");
+        emit_line("bool search(const std::string& pattern, const std::string& str) { return std::regex_search(str, std::regex(pattern)); }");
+        emit_line("std::string replace(const std::string& pattern, const std::string& str, const std::string& rep) { return std::regex_replace(str, std::regex(pattern), rep); }");
+        emit_line("std::vector<std::string> findall(const std::string& pattern, const std::string& str) {");
+        indent();
+        emit_line("std::vector<std::string> r; std::regex re(pattern); std::sregex_iterator it(str.begin(), str.end(), re), end;");
+        emit_line("for (; it != end; ++it) r.push_back((*it)[0].str()); return r;");
+        dedent(); emit_line("}");
+        emit_line("std::vector<std::string> split(const std::string& pattern, const std::string& str) {");
+        indent();
+        emit_line("std::vector<std::string> r; std::regex re(pattern); std::sregex_token_iterator it(str.begin(), str.end(), re, -1), end;");
+        emit_line("for (; it != end; ++it) r.push_back(*it); return r;");
+        dedent(); emit_line("}");
+        dedent(); emit_line("}"); emit_line("");
+    } else if (stmt.module == "path") {
+        emit_line("namespace pyro_path {");
+        emit_line("std::string join(const std::string& a, const std::string& b) { return (std::filesystem::path(a) / b).string(); }");
+        emit_line("std::string dirname(const std::string& p) { return std::filesystem::path(p).parent_path().string(); }");
+        emit_line("std::string basename(const std::string& p) { return std::filesystem::path(p).filename().string(); }");
+        emit_line("std::string extension(const std::string& p) { return std::filesystem::path(p).extension().string(); }");
+        emit_line("bool exists(const std::string& p) { return std::filesystem::exists(p); }");
+        emit_line("bool is_file(const std::string& p) { return std::filesystem::is_regular_file(p); }");
+        emit_line("bool is_dir(const std::string& p) { return std::filesystem::is_directory(p); }");
+        emit_line("std::string absolute(const std::string& p) { return std::filesystem::absolute(p).string(); }");
+        emit_line("}"); emit_line("");
+    } else if (stmt.module == "subprocess") {
+        emit_line("namespace pyro_subprocess {");
+        indent();
+        emit_line("struct Result { std::string output; int code; };");
+        emit_line("Result run(const std::string& cmd) {");
+        indent();
+        emit_line("std::string result; char buf[256];");
+        emit_line("FILE* pipe = popen(cmd.c_str(), \"r\"); if (!pipe) return {\"\", -1};");
+        emit_line("while (fgets(buf, sizeof(buf), pipe)) result += buf;");
+        emit_line("int code = pclose(pipe); return {result, WEXITSTATUS(code)};");
+        dedent(); emit_line("}");
+        emit_line("std::string exec(const std::string& cmd) { return run(cmd).output; }");
+        emit_line("int shell(const std::string& cmd) { return std::system(cmd.c_str()); }");
+        dedent(); emit_line("}"); emit_line("");
+    } else if (stmt.module == "text") {
+        emit_line("namespace pyro_text {");
+        emit_line("std::string capitalize(const std::string& s) { if (s.empty()) return s; std::string r = s; r[0] = toupper(r[0]); return r; }");
+        emit_line("std::string title(const std::string& s) { std::string r = s; bool cap = true; for (auto& c : r) { if (cap && isalpha(c)) { c = toupper(c); cap = false; } else if (c == ' ') cap = true; } return r; }");
+        emit_line("std::string center(const std::string& s, int w, char fill = ' ') { if ((int)s.size() >= w) return s; int pad = w - s.size(); int left = pad/2; return std::string(left, fill) + s + std::string(pad - left, fill); }");
+        emit_line("std::string ljust(const std::string& s, int w, char fill = ' ') { return s.size() >= (size_t)w ? s : s + std::string(w - s.size(), fill); }");
+        emit_line("std::string rjust(const std::string& s, int w, char fill = ' ') { return s.size() >= (size_t)w ? s : std::string(w - s.size(), fill) + s; }");
+        emit_line("std::string indent_text(const std::string& s, const std::string& prefix) { std::string r; std::istringstream ss(s); std::string line; while (std::getline(ss, line)) { if (!r.empty()) r += \"\\n\"; r += prefix + line; } return r; }");
+        emit_line("std::string wrap(const std::string& s, int width) { std::string r; int col = 0; for (auto& c : s) { r += c; col++; if (col >= width && c == ' ') { r += \"\\n\"; col = 0; } } return r; }");
+        emit_line("}"); emit_line("");
+    } else if (stmt.module == "random") {
+        emit_line("namespace pyro_random {");
+        emit_line("static std::mt19937 _gen(std::random_device{}());");
+        emit_line("double random() { return std::uniform_real_distribution<>(0.0, 1.0)(_gen); }");
+        emit_line("int64_t randint(int64_t a, int64_t b) { return std::uniform_int_distribution<int64_t>(a, b)(_gen); }");
+        emit_line("double uniform(double a, double b) { return std::uniform_real_distribution<>(a, b)(_gen); }");
+        emit_line("void seed(int64_t s) { _gen.seed(s); }");
+        emit_line("template<typename T> T choice(const std::vector<T>& v) { return v[randint(0, v.size()-1)]; }");
+        emit_line("template<typename T> std::vector<T> sample(const std::vector<T>& v, int n) { auto c = v; std::shuffle(c.begin(), c.end(), _gen); c.resize(std::min(n, (int)c.size())); return c; }");
+        emit_line("template<typename T> void shuffle(std::vector<T>& v) { std::shuffle(v.begin(), v.end(), _gen); }");
+        emit_line("}"); emit_line("");
+    } else if (stmt.module == "uuid") {
+        emit_line("namespace pyro_uuid {");
+        indent();
+        emit_line("std::string v4() {");
+        indent();
+        emit_line("static std::mt19937_64 gen(std::random_device{}());");
+        emit_line("std::uniform_int_distribution<uint64_t> dist;");
+        emit_line("uint64_t a = dist(gen), b = dist(gen);");
+        emit_line("unsigned char buf[16];");
+        emit_line("std::memcpy(buf, &a, 8); std::memcpy(buf+8, &b, 8);");
+        emit_line("buf[6] = (buf[6] & 0x0F) | 0x40; buf[8] = (buf[8] & 0x3F) | 0x80;");
+        emit_line("char out[37];");
+        emit_line("snprintf(out, sizeof(out), \"%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x\",");
+        emit_line("  buf[0],buf[1],buf[2],buf[3],buf[4],buf[5],buf[6],buf[7],");
+        emit_line("  buf[8],buf[9],buf[10],buf[11],buf[12],buf[13],buf[14],buf[15]);");
+        emit_line("return std::string(out);");
+        dedent();
+        emit_line("}");
+        emit_line("std::string nil_uuid() { return \"00000000-0000-0000-0000-000000000000\"; }");
+        emit_line("std::string from_string(const std::string& s) { return s; }");
+        dedent();
+        emit_line("} // namespace pyro_uuid");
+        emit_line("");
+    } else if (stmt.module == "base64") {
+        emit_line("namespace pyro_base64 {");
+        indent();
+        emit_line("static const std::string chars = \"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/\";");
+        emit_line("std::string encode(const std::string& in) {");
+        indent();
+        emit_line("std::string out; int val = 0, bits = -6; const unsigned int mask = 0x3F;");
+        emit_line("for (unsigned char c : in) { val = (val << 8) + c; bits += 8; while (bits >= 0) { out.push_back(chars[(val >> bits) & mask]); bits -= 6; } }");
+        emit_line("if (bits > -6) out.push_back(chars[((val << 8) >> (bits + 8)) & mask]);");
+        emit_line("while (out.size() % 4) out.push_back('='); return out;");
+        dedent(); emit_line("}");
+        emit_line("std::string decode(const std::string& in) {");
+        indent();
+        emit_line("std::string out; int val = 0, bits = -8;");
+        emit_line("for (char c : in) { if (c == '=') break; auto p = chars.find(c); if (p == std::string::npos) continue; val = (val << 6) + (int)p; bits += 6; if (bits >= 0) { out.push_back(char((val >> bits) & 0xFF)); bits -= 8; } }");
+        emit_line("return out;");
+        dedent(); emit_line("}");
+        dedent(); emit_line("}"); emit_line("");
+    } else if (stmt.module == "csv") {
+        emit_line("namespace pyro_csv {");
+        indent();
+        emit_line("std::vector<std::vector<std::string>> read(const std::string& path) {");
+        indent();
+        emit_line("std::vector<std::vector<std::string>> result; std::ifstream f(path); std::string line;");
+        emit_line("while (std::getline(f, line)) { std::vector<std::string> row; std::istringstream ss(line); std::string cell;");
+        emit_line("while (std::getline(ss, cell, ',')) { while (!cell.empty() && cell[0] == ' ') cell.erase(0,1); row.push_back(cell); } result.push_back(row); } return result;");
+        dedent(); emit_line("}");
+        emit_line("std::vector<std::vector<std::string>> parse(const std::string& str) {");
+        indent();
+        emit_line("std::vector<std::vector<std::string>> result; std::istringstream ss(str); std::string line;");
+        emit_line("while (std::getline(ss, line)) { std::vector<std::string> row; std::istringstream ls(line); std::string cell;");
+        emit_line("while (std::getline(ls, cell, ',')) row.push_back(cell); result.push_back(row); } return result;");
+        dedent(); emit_line("}");
+        emit_line("std::string stringify(const std::vector<std::vector<std::string>>& data) { std::string r; for (const auto& row : data) { for (size_t i = 0; i < row.size(); i++) { if (i) r += ','; r += row[i]; } r += '\\n'; } return r; }");
+        emit_line("void write(const std::string& path, const std::vector<std::vector<std::string>>& data) {");
+        indent();
+        emit_line("std::ofstream f(path); for (auto& row : data) { for (size_t i = 0; i < row.size(); i++) { if (i) f << \",\"; f << row[i]; } f << \"\\n\"; }");
+        dedent(); emit_line("}");
+        dedent(); emit_line("}"); emit_line("");
+    } else if (stmt.module == "url") {
+        emit_line("namespace pyro_url {");
+        indent();
+        emit_line("struct Url { std::string scheme, host, path, query, fragment; int port = 0; };");
+        emit_line("Url parse(const std::string& s) {");
+        indent();
+        emit_line("Url u; size_t pos = 0;");
+        emit_line("auto schp = s.find(\"://\"); if (schp != std::string::npos) { u.scheme = s.substr(0, schp); pos = schp + 3; }");
+        emit_line("auto pathp = s.find('/', pos); if (pathp == std::string::npos) pathp = s.size();");
+        emit_line("auto hostp = s.substr(pos, pathp - pos); auto cp = hostp.find(':'); if (cp != std::string::npos) { u.host = hostp.substr(0,cp); u.port = std::stoi(hostp.substr(cp+1)); } else u.host = hostp;");
+        emit_line("if (pathp < s.size()) u.path = s.substr(pathp);");
+        emit_line("auto qp = u.path.find('?'); if (qp != std::string::npos) { u.query = u.path.substr(qp+1); u.path = u.path.substr(0,qp); }");
+        emit_line("return u;");
+        dedent(); emit_line("}");
+        emit_line("std::string encode(const std::string& s) { std::ostringstream ss; for (char c : s) { if (isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~') ss << c; else ss << '%' << std::hex << std::uppercase << (int)(unsigned char)c; } return ss.str(); }");
+        emit_line("std::string decode(const std::string& s) { std::string r; for (size_t i = 0; i < s.size(); i++) { if (s[i] == '%' && i+2 < s.size()) { r += (char)std::stoi(s.substr(i+1,2), nullptr, 16); i += 2; } else if (s[i] == '+') r += ' '; else r += s[i]; } return r; }");
+        dedent(); emit_line("}"); emit_line("");
+    } else if (stmt.module == "color") {
+        emit_line("namespace pyro_color {");
+        emit_line("std::string red(const std::string& s) { return \"\\033[31m\" + s + \"\\033[0m\"; }");
+        emit_line("std::string green(const std::string& s) { return \"\\033[32m\" + s + \"\\033[0m\"; }");
+        emit_line("std::string yellow(const std::string& s) { return \"\\033[33m\" + s + \"\\033[0m\"; }");
+        emit_line("std::string blue(const std::string& s) { return \"\\033[34m\" + s + \"\\033[0m\"; }");
+        emit_line("std::string magenta(const std::string& s) { return \"\\033[35m\" + s + \"\\033[0m\"; }");
+        emit_line("std::string cyan(const std::string& s) { return \"\\033[36m\" + s + \"\\033[0m\"; }");
+        emit_line("std::string bold(const std::string& s) { return \"\\033[1m\" + s + \"\\033[0m\"; }");
+        emit_line("std::string dim(const std::string& s) { return \"\\033[2m\" + s + \"\\033[0m\"; }");
+        emit_line("std::string underline(const std::string& s) { return \"\\033[4m\" + s + \"\\033[0m\"; }");
+        emit_line("std::string bg_red(const std::string& s) { return \"\\033[41m\" + s + \"\\033[0m\"; }");
+        emit_line("std::string bg_green(const std::string& s) { return \"\\033[42m\" + s + \"\\033[0m\"; }");
+        emit_line("}"); emit_line("");
+    } else if (stmt.module == "table") {
+        emit_line("namespace pyro_table {");
+        indent();
+        emit_line("std::string create(const std::vector<std::string>& headers, const std::vector<std::vector<std::string>>& rows) {");
+        indent();
+        emit_line("std::vector<size_t> widths(headers.size(), 0);");
+        emit_line("for (size_t i = 0; i < headers.size(); i++) widths[i] = headers[i].size();");
+        emit_line("for (auto& row : rows) for (size_t i = 0; i < row.size() && i < widths.size(); i++) widths[i] = std::max(widths[i], row[i].size());");
+        emit_line("std::ostringstream ss; std::string sep = \"+\";");
+        emit_line("for (auto w : widths) sep += std::string(w + 2, '-') + \"+\";");
+        emit_line("ss << sep << \"\\n| \";");
+        emit_line("for (size_t i = 0; i < headers.size(); i++) { ss << headers[i]; ss << std::string(widths[i] - headers[i].size(), ' ') << \" | \"; }");
+        emit_line("ss << \"\\n\" << sep;");
+        emit_line("for (auto& row : rows) { ss << \"\\n| \"; for (size_t i = 0; i < row.size(); i++) { ss << row[i] << std::string(widths[i] - row[i].size(), ' ') << \" | \"; } }");
+        emit_line("ss << \"\\n\" << sep; return ss.str();");
+        dedent(); emit_line("}");
+        dedent(); emit_line("}"); emit_line("");
+    } else if (stmt.module == "progress") {
+        emit_line("namespace pyro_progress {");
+        emit_line("std::string bar(int current, int total, int width = 40) {");
+        indent();
+        emit_line("double pct = (double)current / total; int filled = (int)(pct * width);");
+        emit_line("return \"[\" + std::string(filled, '#') + std::string(width - filled, '-') + \"] \" + std::to_string((int)(pct * 100)) + \"%\";");
+        dedent(); emit_line("}");
+        emit_line("std::string percent(int current, int total) { return std::to_string((int)((double)current / total * 100)) + \"%\"; }");
+        emit_line("}"); emit_line("");
+    } else if (stmt.module == "cli") {
+        emit_line("namespace pyro_cli {");
+        indent();
+        emit_line("struct Args { std::unordered_map<std::string, std::string> flags; std::vector<std::string> positional; };");
+        emit_line("Args parse(int argc, char** argv) {");
+        indent();
+        emit_line("Args a; for (int i = 1; i < argc; i++) { std::string s(argv[i]);");
+        emit_line("if (s.substr(0,2) == \"--\") { auto eq = s.find('='); if (eq != std::string::npos) a.flags[s.substr(2,eq-2)] = s.substr(eq+1); else if (i+1 < argc && argv[i+1][0] != '-') a.flags[s.substr(2)] = argv[++i]; else a.flags[s.substr(2)] = \"true\"; }");
+        emit_line("else if (s[0] == '-') { a.flags[s.substr(1)] = (i+1 < argc) ? argv[++i] : \"true\"; }");
+        emit_line("else a.positional.push_back(s); } return a;");
+        dedent(); emit_line("}");
+        dedent(); emit_line("}"); emit_line("");
+    } else if (stmt.module == "env") {
+        emit_line("namespace pyro_env {");
+        emit_line("std::string get(const std::string& name, const std::string& def = \"\") { auto* v = std::getenv(name.c_str()); return v ? v : def; }");
+        emit_line("void set(const std::string& name, const std::string& val) { ::setenv(name.c_str(), val.c_str(), 1); }");
+        emit_line("void unset(const std::string& name) { ::unsetenv(name.c_str()); }");
+        emit_line("bool has(const std::string& name) { return std::getenv(name.c_str()) != nullptr; }");
+        emit_line("}"); emit_line("");
+    } else if (stmt.module == "fs") {
+        emit_line("namespace pyro_fs {");
+        emit_line("std::string read(const std::string& p) { std::ifstream f(p); std::stringstream ss; ss << f.rdbuf(); return ss.str(); }");
+        emit_line("void write(const std::string& p, const std::string& d) { std::ofstream f(p); f << d; }");
+        emit_line("void append(const std::string& p, const std::string& d) { std::ofstream f(p, std::ios::app); f << d; }");
+        emit_line("void copy(const std::string& src, const std::string& dst) { std::filesystem::copy(src, dst, std::filesystem::copy_options::overwrite_existing); }");
+        emit_line("void move(const std::string& src, const std::string& dst) { std::filesystem::rename(src, dst); }");
+        emit_line("void remove(const std::string& p) { std::filesystem::remove_all(p); }");
+        emit_line("void mkdir(const std::string& p) { std::filesystem::create_directories(p); }");
+        emit_line("std::vector<std::string> list(const std::string& p) { std::vector<std::string> r; for (auto& e : std::filesystem::directory_iterator(p)) r.push_back(e.path().string()); return r; }");
+        emit_line("int64_t size(const std::string& p) { return std::filesystem::file_size(p); }");
+        emit_line("bool exists(const std::string& p) { return std::filesystem::exists(p); }");
+        emit_line("bool is_file(const std::string& p) { return std::filesystem::is_regular_file(p); }");
+        emit_line("bool is_dir(const std::string& p) { return std::filesystem::is_directory(p); }");
+        emit_line("}"); emit_line("");
+    } else if (stmt.module == "encoding") {
+        emit_line("namespace pyro_encoding {");
+        emit_line("std::string hex_encode(const std::string& s) { std::ostringstream ss; for (unsigned char c : s) ss << std::hex << std::setw(2) << std::setfill('0') << (int)c; return ss.str(); }");
+        emit_line("std::string hex_decode(const std::string& s) { std::string r; for (size_t i = 0; i + 1 < s.size(); i += 2) r += (char)std::stoi(s.substr(i, 2), nullptr, 16); return r; }");
+        emit_line("std::string utf8(const std::string& s) { return s; }");
+        emit_line("}"); emit_line("");
+    } else if (stmt.module == "mime") {
+        emit_line("namespace pyro_mime {");
+        indent();
+        emit_line("std::string type_for(const std::string& filename) {");
+        indent();
+        emit_line("static const std::unordered_map<std::string, std::string> types = {");
+        emit_line("  {\".html\", \"text/html\"}, {\".css\", \"text/css\"}, {\".js\", \"application/javascript\"},");
+        emit_line("  {\".json\", \"application/json\"}, {\".xml\", \"application/xml\"}, {\".txt\", \"text/plain\"},");
+        emit_line("  {\".png\", \"image/png\"}, {\".jpg\", \"image/jpeg\"}, {\".jpeg\", \"image/jpeg\"},");
+        emit_line("  {\".gif\", \"image/gif\"}, {\".svg\", \"image/svg+xml\"}, {\".pdf\", \"application/pdf\"},");
+        emit_line("  {\".zip\", \"application/zip\"}, {\".gz\", \"application/gzip\"}, {\".mp3\", \"audio/mpeg\"},");
+        emit_line("  {\".mp4\", \"video/mp4\"}, {\".wav\", \"audio/wav\"}, {\".csv\", \"text/csv\"},");
+        emit_line("};");
+        emit_line("auto ext = std::filesystem::path(filename).extension().string();");
+        emit_line("auto it = types.find(ext); return it != types.end() ? it->second : \"application/octet-stream\";");
+        dedent(); emit_line("}");
+        dedent(); emit_line("}"); emit_line("");
+    } else if (stmt.module == "template") {
+        emit_line("namespace pyro_template {");
+        indent();
+        emit_line("std::string render(const std::string& tmpl, const std::unordered_map<std::string, std::string>& vars) {");
+        indent();
+        emit_line("std::string result = tmpl;");
+        emit_line("for (auto& [key, val] : vars) { std::string tag = \"{{\" + key + \"}}\"; size_t pos; while ((pos = result.find(tag)) != std::string::npos) result.replace(pos, tag.size(), val); }");
+        emit_line("return result;");
+        dedent(); emit_line("}");
+        dedent(); emit_line("}"); emit_line("");
+    } else if (stmt.module == "markdown") {
+        emit_line("namespace pyro_markdown {");
+        indent();
+        emit_line("std::string heading(const std::string& t, int64_t l) {");
+        indent();
+        emit_line("std::string tag = \"h\" + std::to_string(l);");
+        emit_line("return \"<\" + tag + \">\" + t + \"</\" + tag + \">\";");
+        dedent(); emit_line("}");
+        emit_line("std::string bold(const std::string& t) { return \"<strong>\" + t + \"</strong>\"; }");
+        emit_line("std::string italic(const std::string& t) { return \"<em>\" + t + \"</em>\"; }");
+        emit_line("std::string link(const std::string& t, const std::string& u) { return \"<a href='\" + u + \"'>\" + t + \"</a>\"; }");
+        emit_line("std::string code(const std::string& t) { return \"<code>\" + t + \"</code>\"; }");
+        emit_line("std::string md_list(const std::vector<std::string>& items) {");
+        indent();
+        emit_line("std::string r = \"<ul>\\n\"; for (const auto& i : items) r += \"<li>\" + i + \"</li>\\n\"; return r + \"</ul>\";");
+        dedent(); emit_line("}");
+        emit_line("std::string to_html(const std::string& md) {");
+        indent();
+        emit_line("std::string html; std::istringstream ss(md); std::string line;");
+        emit_line("while (std::getline(ss, line)) {");
+        indent();
+        emit_line("if (line.size()>=4 && line.substr(0,4) == \"### \") html += heading(line.substr(4), 3);");
+        emit_line("else if (line.size()>=3 && line.substr(0,3) == \"## \") html += heading(line.substr(3), 2);");
+        emit_line("else if (line.size()>=2 && line.substr(0,2) == \"# \") html += heading(line.substr(2), 1);");
+        emit_line("else if (line.size()>=2 && line.substr(0,2) == \"- \") html += \"<li>\" + line.substr(2) + \"</li>\\n\";");
+        emit_line("else if (line.empty()) html += \"<br>\\n\";");
+        emit_line("else html += \"<p>\" + line + \"</p>\\n\";");
+        dedent(); emit_line("}");
+        emit_line("return html;");
+        dedent(); emit_line("}");
+        dedent(); emit_line("}"); emit_line("");
+    } else if (stmt.module == "config") {
+        emit_line("namespace pyro_config {");
+        indent();
+        emit_line("std::unordered_map<std::string, std::string> load(const std::string& path) {");
+        indent();
+        emit_line("std::unordered_map<std::string, std::string> cfg; std::ifstream f(path); std::string line;");
+        emit_line("while (std::getline(f, line)) {");
+        indent();
+        emit_line("if (line.empty() || line[0] == '#' || line[0] == ';' || line[0] == '[') continue;");
+        emit_line("auto eq = line.find('='); if (eq == std::string::npos) eq = line.find(':');");
+        emit_line("if (eq != std::string::npos) { auto key = line.substr(0, eq); auto val = line.substr(eq+1);");
+        emit_line("while (!key.empty() && key.back() == ' ') key.pop_back(); while (!val.empty() && val[0] == ' ') val.erase(0,1);");
+        emit_line("cfg[key] = val; }");
+        dedent(); emit_line("}");
+        emit_line("return cfg;");
+        dedent(); emit_line("}");
+        dedent(); emit_line("}"); emit_line("");
+    } else if (stmt.module == "decimal") {
+        emit_line("namespace pyro_decimal {");
+        indent();
+        emit_line("struct Decimal {");
+        indent();
+        emit_line("std::string value;");
+        emit_line("Decimal(const std::string& v = \"0\") : value(v) {}");
+        emit_line("Decimal(double v) : value(std::to_string(v)) {}");
+        emit_line("double to_double() const { return std::stod(value); }");
+        emit_line("std::string str() const { return value; }");
+        dedent(); emit_line("};");
+        emit_line("Decimal from_string(const std::string& s) { return Decimal(s); }");
+        emit_line("Decimal add(const Decimal& a, const Decimal& b) { return Decimal(std::to_string(a.to_double() + b.to_double())); }");
+        emit_line("Decimal sub(const Decimal& a, const Decimal& b) { return Decimal(std::to_string(a.to_double() - b.to_double())); }");
+        emit_line("Decimal mul(const Decimal& a, const Decimal& b) { return Decimal(std::to_string(a.to_double() * b.to_double())); }");
+        emit_line("Decimal div(const Decimal& a, const Decimal& b) { return Decimal(std::to_string(a.to_double() / b.to_double())); }");
+        dedent(); emit_line("}"); emit_line("");
+    } else if (stmt.module == "diff") {
+        emit_line("namespace pyro_diff {");
+        indent();
+        emit_line("int64_t edit_distance(const std::string& a, const std::string& b) {");
+        indent();
+        emit_line("int m = a.size(), n = b.size();");
+        emit_line("std::vector<std::vector<int>> dp(m+1, std::vector<int>(n+1));");
+        emit_line("for (int i = 0; i <= m; i++) dp[i][0] = i;");
+        emit_line("for (int j = 0; j <= n; j++) dp[0][j] = j;");
+        emit_line("for (int i = 1; i <= m; i++) for (int j = 1; j <= n; j++) {");
+        emit_line("  if (a[i-1] == b[j-1]) dp[i][j] = dp[i-1][j-1];");
+        emit_line("  else dp[i][j] = 1 + std::min({dp[i-1][j], dp[i][j-1], dp[i-1][j-1]}); }");
+        emit_line("return dp[m][n];");
+        dedent(); emit_line("}");
+        dedent(); emit_line("}"); emit_line("");
+    } else if (stmt.module == "pprint") {
+        emit_line("namespace pyro_pprint {");
+        indent();
+        emit_line("template<typename T> std::string format(const T& val, int indent_val = 0) {");
+        indent();
+        emit_line("std::ostringstream ss; ss << std::string(indent_val, ' ') << val; return ss.str();");
+        dedent(); emit_line("}");
+        emit_line("template<typename T> std::string format(const std::vector<T>& v, int indent_val = 0) {");
+        indent();
+        emit_line("std::ostringstream ss; std::string pad(indent_val, ' '); ss << pad << \"[\\n\";");
+        emit_line("for (auto& e : v) ss << pad << \"  \" << e << \",\\n\"; ss << pad << \"]\"; return ss.str();");
+        dedent(); emit_line("}");
+        dedent(); emit_line("}"); emit_line("");
+    } else if (stmt.module == "collections") {
+        emit_line("namespace pyro_collections {");
+        indent();
+        emit_line("template<typename T> struct Counter {");
+        indent();
+        emit_line("std::unordered_map<T, int64_t> counts;");
+        emit_line("void add(const T& item) { counts[item]++; }");
+        emit_line("int64_t get(const T& item) { return counts.count(item) ? counts[item] : 0; }");
+        emit_line("std::vector<std::pair<T, int64_t>> most_common(int n = -1) {");
+        emit_line("  std::vector<std::pair<T, int64_t>> v(counts.begin(), counts.end());");
+        emit_line("  std::sort(v.begin(), v.end(), [](auto& a, auto& b) { return a.second > b.second; });");
+        emit_line("  if (n > 0 && n < (int)v.size()) v.resize(n); return v; }");
+        dedent(); emit_line("};");
+        emit_line("template<typename T> struct Stack {");
+        indent();
+        emit_line("std::vector<T> data;");
+        emit_line("void push(const T& v) { data.push_back(v); }");
+        emit_line("T pop() { T v = data.back(); data.pop_back(); return v; }");
+        emit_line("T peek() { return data.back(); }");
+        emit_line("bool empty() { return data.empty(); }");
+        emit_line("int64_t size() { return data.size(); }");
+        dedent(); emit_line("};");
+        emit_line("template<typename T> struct Deque {");
+        indent();
+        emit_line("std::deque<T> data;");
+        emit_line("void push_front(const T& v) { data.push_front(v); }");
+        emit_line("void push_back(const T& v) { data.push_back(v); }");
+        emit_line("T pop_front() { T v = data.front(); data.pop_front(); return v; }");
+        emit_line("T pop_back() { T v = data.back(); data.pop_back(); return v; }");
+        emit_line("bool empty() { return data.empty(); }");
+        emit_line("int64_t size() { return data.size(); }");
+        dedent(); emit_line("};");
+        dedent(); emit_line("}"); emit_line("");
+    } else if (stmt.module == "itertools") {
+        emit_line("namespace pyro_itertools {");
+        indent();
+        emit_line("std::vector<int64_t> range_step(int64_t start, int64_t end, int64_t step) {");
+        emit_line("  std::vector<int64_t> r; for (int64_t i = start; step > 0 ? i < end : i > end; i += step) r.push_back(i); return r; }");
+        emit_line("template<typename T> std::vector<std::pair<int64_t, T>> enumerate(const std::vector<T>& v, int64_t start = 0) {");
+        emit_line("  std::vector<std::pair<int64_t, T>> r; for (size_t i = 0; i < v.size(); i++) r.push_back({start + (int64_t)i, v[i]}); return r; }");
+        emit_line("template<typename A, typename B> std::vector<std::pair<A, B>> zip(const std::vector<A>& a, const std::vector<B>& b) {");
+        emit_line("  std::vector<std::pair<A, B>> r; for (size_t i = 0; i < std::min(a.size(), b.size()); i++) r.push_back({a[i], b[i]}); return r; }");
+        emit_line("template<typename T> std::vector<T> chain(const std::vector<T>& a, const std::vector<T>& b) {");
+        emit_line("  std::vector<T> r = a; r.insert(r.end(), b.begin(), b.end()); return r; }");
+        emit_line("template<typename T> std::vector<T> repeat_n(const T& val, int64_t n) { return std::vector<T>(n, val); }");
+        emit_line("template<typename T> std::vector<T> take(const std::vector<T>& v, int n) {");
+        emit_line("  return std::vector<T>(v.begin(), v.begin() + std::min(n, (int)v.size())); }");
+        emit_line("template<typename T> std::vector<T> skip(const std::vector<T>& v, int n) {");
+        emit_line("  return n >= (int)v.size() ? std::vector<T>{} : std::vector<T>(v.begin() + n, v.end()); }");
+        emit_line("template<typename T> std::vector<T> flatten(const std::vector<std::vector<T>>& v) {");
+        emit_line("  std::vector<T> r; for (auto& inner : v) r.insert(r.end(), inner.begin(), inner.end()); return r; }");
+        emit_line("template<typename T> std::vector<T> cycle(const std::vector<T>& v, int64_t n) { std::vector<T> r; for (int64_t i = 0; i < n; i++) r.push_back(v[i % v.size()]); return r; }");
+        dedent(); emit_line("}"); emit_line("");
+    } else if (stmt.module == "functools") {
+        emit_line("namespace pyro_functools {");
+        indent();
+        emit_line("template<typename T> T identity(const T& v) { return v; }");
+        emit_line("template<typename F, typename G> auto compose(F f, G g) { return [=](auto x) { return f(g(x)); }; }");
+        dedent(); emit_line("}"); emit_line("");
+    } else if (stmt.module == "copy") {
+        emit_line("namespace pyro_copy {");
+        indent();
+        emit_line("template<typename T> T deep_copy(const T& obj) { return T(obj); }");
+        emit_line("template<typename T> T shallow_copy(const T& obj) { return obj; }");
+        dedent();
+        emit_line("} // namespace pyro_copy");
+        emit_line("");
+    } else if (stmt.module == "xml") {
+        emit_line("namespace pyro_xml {");
+        indent();
+        emit_line("struct XmlNode {");
+        indent();
+        emit_line("std::string tag, text;");
+        emit_line("std::unordered_map<std::string, std::string> attrs;");
+        emit_line("std::vector<XmlNode> children;");
+        emit_line("friend std::ostream& operator<<(std::ostream& os, const XmlNode& n) { return os << \"<\" << n.tag << \">\" << n.text << \"</\" << n.tag << \">\"; }");
+        dedent();
+        emit_line("};");
+        emit_line("XmlNode parse(const std::string& str) {");
+        indent();
+        emit_line("XmlNode root; root.tag = \"root\"; size_t pos = 0;");
+        emit_line("while (pos < str.size()) {");
+        indent();
+        emit_line("auto lt = str.find('<', pos); if (lt == std::string::npos) break;");
+        emit_line("auto gt = str.find('>', lt); if (gt == std::string::npos) break;");
+        emit_line("std::string tag = str.substr(lt+1, gt-lt-1);");
+        emit_line("if (!tag.empty() && tag[0] != '/') {");
+        indent();
+        emit_line("XmlNode child; child.tag = tag;");
+        emit_line("auto cl = str.find(\"</\" + tag + \">\", gt);");
+        emit_line("if (cl != std::string::npos) child.text = str.substr(gt+1, cl-gt-1);");
+        emit_line("root.children.push_back(child);");
+        emit_line("pos = cl != std::string::npos ? cl + tag.size() + 3 : gt + 1;");
+        dedent();
+        emit_line("} else pos = gt + 1;");
+        dedent();
+        emit_line("}");
+        emit_line("return root;");
+        dedent();
+        emit_line("}");
+        emit_line("std::string stringify(const XmlNode& node) { std::string r = \"<\" + node.tag + \">\" + node.text; for (const auto& c : node.children) r += stringify(c); return r + \"</\" + node.tag + \">\"; }");
+        emit_line("XmlNode find(const XmlNode& node, const std::string& tag) { for (const auto& c : node.children) if (c.tag == tag) return c; return XmlNode{}; }");
+        emit_line("std::string attr(const XmlNode& node, const std::string& name) { auto it = node.attrs.find(name); return it != node.attrs.end() ? it->second : \"\"; }");
+        dedent();
+        emit_line("} // namespace pyro_xml");
+        emit_line("");
+    } else if (stmt.module == "yaml") {
+        emit_line("namespace pyro_yaml {");
+        indent();
+        emit_line("std::unordered_map<std::string, std::string> parse(const std::string& str) {");
+        indent();
+        emit_line("std::unordered_map<std::string, std::string> m; std::istringstream ss(str); std::string line;");
+        emit_line("while (std::getline(ss, line)) { auto c = line.find(':'); if (c != std::string::npos) { auto k = line.substr(0,c); auto v = line.substr(c+1); k.erase(0,k.find_first_not_of(\" \\t\")); k.erase(k.find_last_not_of(\" \\t\")+1); v.erase(0,v.find_first_not_of(\" \\t\")); v.erase(v.find_last_not_of(\" \\t\")+1); m[k]=v; } }");
+        emit_line("return m;");
+        dedent();
+        emit_line("}");
+        emit_line("std::string stringify(const std::unordered_map<std::string, std::string>& m) { std::string r; for (const auto& [k,v] : m) r += k + \": \" + v + \"\\n\"; return r; }");
+        dedent();
+        emit_line("} // namespace pyro_yaml");
+        emit_line("");
+    } else if (stmt.module == "toml") {
+        emit_line("namespace pyro_toml {");
+        indent();
+        emit_line("std::unordered_map<std::string, std::string> parse(const std::string& str) {");
+        indent();
+        emit_line("std::unordered_map<std::string, std::string> m; std::string section; std::istringstream ss(str); std::string line;");
+        emit_line("while (std::getline(ss, line)) { line.erase(0, line.find_first_not_of(\" \\t\")); if (line.empty()||line[0]=='#') continue; if (line[0]=='[') { section=line.substr(1,line.find(']')-1)+\".\"; continue; } auto eq=line.find('='); if (eq!=std::string::npos) { auto k=line.substr(0,eq); auto v=line.substr(eq+1); k.erase(k.find_last_not_of(\" \\t\")+1); v.erase(0,v.find_first_not_of(\" \\t\")); if(!v.empty()&&v.front()=='\"'&&v.back()=='\"') v=v.substr(1,v.size()-2); m[section+k]=v; } }");
+        emit_line("return m;");
+        dedent();
+        emit_line("}");
+        emit_line("std::string stringify(const std::unordered_map<std::string, std::string>& m) { std::string r; for (const auto& [k,v] : m) r += k + \" = \\\"\" + v + \"\\\"\\n\"; return r; }");
+        dedent();
+        emit_line("} // namespace pyro_toml");
+        emit_line("");
+    } else if (stmt.module == "ini") {
+        emit_line("namespace pyro_ini {");
+        indent();
+        emit_line("std::unordered_map<std::string, std::string> parse(const std::string& str) {");
+        indent();
+        emit_line("std::unordered_map<std::string, std::string> m; std::string section; std::istringstream ss(str); std::string line;");
+        emit_line("while (std::getline(ss, line)) { line.erase(0, line.find_first_not_of(\" \\t\")); if (line.empty()||line[0]==';'||line[0]=='#') continue; if (line[0]=='[') { section=line.substr(1,line.find(']')-1)+\".\"; continue; } auto eq=line.find('='); if (eq!=std::string::npos) { auto k=line.substr(0,eq); auto v=line.substr(eq+1); k.erase(k.find_last_not_of(\" \\t\")+1); v.erase(0,v.find_first_not_of(\" \\t\")); m[section+k]=v; } }");
+        emit_line("return m;");
+        dedent();
+        emit_line("}");
+        emit_line("std::string stringify(const std::unordered_map<std::string, std::string>& m) { std::string r; for (const auto& [k,v] : m) r += k + \" = \" + v + \"\\n\"; return r; }");
+        emit_line("std::string get(const std::unordered_map<std::string, std::string>& m, const std::string& sect, const std::string& key) { auto it = m.find(sect+\".\"+key); return it != m.end() ? it->second : \"\"; }");
+        dedent();
+        emit_line("} // namespace pyro_ini");
+        emit_line("");
+    } else if (stmt.module == "sort") {
+        emit_line("namespace pyro_sort {");
+        indent();
+        emit_line("template<typename T> std::vector<T> bubble(std::vector<T> v) { for (size_t i = 0; i < v.size(); i++) for (size_t j = 0; j+1 < v.size()-i; j++) if (v[j]>v[j+1]) std::swap(v[j],v[j+1]); return v; }");
+        emit_line("template<typename T> std::vector<T> insertion(std::vector<T> v) { for (size_t i = 1; i < v.size(); i++) { T key = v[i]; int64_t j = i-1; while (j>=0 && v[j]>key) { v[j+1]=v[j]; j--; } v[j+1]=key; } return v; }");
+        emit_line("template<typename T> std::vector<T> merge_sort(std::vector<T> v) {");
+        indent();
+        emit_line("if (v.size()<=1) return v; auto mid = v.begin()+v.size()/2;");
+        emit_line("auto left = merge_sort(std::vector<T>(v.begin(), mid));");
+        emit_line("auto right = merge_sort(std::vector<T>(mid, v.end()));");
+        emit_line("std::vector<T> r; size_t i=0,j=0;");
+        emit_line("while (i<left.size()&&j<right.size()) { if (left[i]<=right[j]) r.push_back(left[i++]); else r.push_back(right[j++]); }");
+        emit_line("while (i<left.size()) r.push_back(left[i++]); while (j<right.size()) r.push_back(right[j++]); return r;");
+        dedent();
+        emit_line("}");
+        emit_line("template<typename T> std::vector<T> quick_sort(std::vector<T> v) { if (v.size()<=1) return v; T p=v[v.size()/2]; std::vector<T> lo,eq,hi; for(auto& x:v){if(x<p)lo.push_back(x);else if(x==p)eq.push_back(x);else hi.push_back(x);} auto r=quick_sort(lo); r.insert(r.end(),eq.begin(),eq.end()); auto h=quick_sort(hi); r.insert(r.end(),h.begin(),h.end()); return r; }");
+        emit_line("template<typename T> bool is_sorted(const std::vector<T>& v) { for (size_t i=1; i<v.size(); i++) if (v[i]<v[i-1]) return false; return true; }");
+        emit_line("template<typename T> int64_t binary_search(const std::vector<T>& v, const T& val) { int64_t lo=0, hi=(int64_t)v.size()-1; while(lo<=hi){int64_t mid=(lo+hi)/2; if(v[mid]==val) return mid; if(v[mid]<val) lo=mid+1; else hi=mid-1;} return -1; }");
+        dedent();
+        emit_line("} // namespace pyro_sort");
+        emit_line("");
+    } else if (stmt.module == "search") {
+        emit_line("namespace pyro_search {");
+        indent();
+        emit_line("template<typename T> int64_t linear(const std::vector<T>& v, const T& val) { for (size_t i=0; i<v.size(); i++) if (v[i]==val) return i; return -1; }");
+        emit_line("template<typename T> int64_t binary(const std::vector<T>& v, const T& val) { int64_t lo=0, hi=(int64_t)v.size()-1; while(lo<=hi){int64_t mid=(lo+hi)/2; if(v[mid]==val) return mid; if(v[mid]<val) lo=mid+1; else hi=mid-1;} return -1; }");
+        emit_line("template<typename T> bool contains(const std::vector<T>& v, const T& val) { return linear(v,val)>=0; }");
+        emit_line("template<typename T> int64_t index_of(const std::vector<T>& v, const T& val) { return linear(v,val); }");
+        emit_line("template<typename T> int64_t count(const std::vector<T>& v, const T& val) { int64_t c=0; for(const auto& x:v) if(x==val) c++; return c; }");
+        dedent();
+        emit_line("} // namespace pyro_search");
+        emit_line("");
+    } else if (stmt.module == "graph") {
+        emit_line("namespace pyro_graph {");
+        indent();
+        emit_line("struct Graph {");
+        indent();
+        emit_line("std::unordered_map<std::string, std::vector<std::string>> adj;");
+        emit_line("void add_node(const std::string& n) { if (!adj.count(n)) adj[n]={}; }");
+        emit_line("void add_edge(const std::string& from, const std::string& to) { adj[from].push_back(to); }");
+        emit_line("std::vector<std::string> bfs(const std::string& start) {");
+        indent();
+        emit_line("std::vector<std::string> result; std::queue<std::string> q; std::unordered_map<std::string,bool> visited;");
+        emit_line("q.push(start); visited[start]=true;");
+        emit_line("while(!q.empty()){auto n=q.front();q.pop();result.push_back(n); for(const auto& nb:adj[n]) if(!visited[nb]){visited[nb]=true;q.push(nb);}}");
+        emit_line("return result;");
+        dedent();
+        emit_line("}");
+        emit_line("std::vector<std::string> dfs(const std::string& start) {");
+        indent();
+        emit_line("std::vector<std::string> result,stk={start}; std::unordered_map<std::string,bool> visited;");
+        emit_line("while(!stk.empty()){auto n=stk.back();stk.pop_back(); if(visited[n])continue; visited[n]=true; result.push_back(n); auto& nbs=adj[n]; for(auto it=nbs.rbegin();it!=nbs.rend();++it) if(!visited[*it]) stk.push_back(*it);}");
+        emit_line("return result;");
+        dedent();
+        emit_line("}");
+        emit_line("friend std::ostream& operator<<(std::ostream& os, const Graph& g) { return os << \"Graph(\" << g.adj.size() << \" nodes)\"; }");
+        dedent();
+        emit_line("};");
+        emit_line("Graph create() { return Graph{}; }");
+        dedent();
+        emit_line("} // namespace pyro_graph");
+        emit_line("");
+    } else if (stmt.module == "matrix") {
+        emit_line("namespace pyro_matrix {");
+        indent();
+        emit_line("struct Matrix {");
+        indent();
+        emit_line("std::vector<std::vector<double>> data;");
+        emit_line("int64_t rows() const { return data.size(); }");
+        emit_line("int64_t cols() const { return data.empty()?0:data[0].size(); }");
+        emit_line("Matrix add(const Matrix& o) const { Matrix r=*this; for(size_t i=0;i<data.size();i++) for(size_t j=0;j<data[i].size();j++) r.data[i][j]+=o.data[i][j]; return r; }");
+        emit_line("Matrix multiply(const Matrix& o) const { Matrix r; r.data.resize(rows(),std::vector<double>(o.cols(),0)); for(int64_t i=0;i<rows();i++) for(int64_t j=0;j<o.cols();j++) for(int64_t k=0;k<cols();k++) r.data[i][j]+=data[i][k]*o.data[k][j]; return r; }");
+        emit_line("Matrix transpose() const { Matrix r; r.data.resize(cols(),std::vector<double>(rows())); for(int64_t i=0;i<rows();i++) for(int64_t j=0;j<cols();j++) r.data[j][i]=data[i][j]; return r; }");
+        emit_line("friend std::ostream& operator<<(std::ostream& os, const Matrix& m) { return os << \"Matrix(\" << m.rows() << \"x\" << m.cols() << \")\"; }");
+        dedent();
+        emit_line("};");
+        emit_line("Matrix identity(int64_t n) { Matrix m; m.data.resize(n,std::vector<double>(n,0)); for(int64_t i=0;i<n;i++) m.data[i][i]=1; return m; }");
+        emit_line("Matrix zeros(int64_t r, int64_t c) { Matrix m; m.data.resize(r,std::vector<double>(c,0)); return m; }");
+        emit_line("double dot_product(const std::vector<double>& a, const std::vector<double>& b) { double s=0; for(size_t i=0;i<std::min(a.size(),b.size());i++) s+=a[i]*b[i]; return s; }");
+        dedent();
+        emit_line("} // namespace pyro_matrix");
+        emit_line("");
+    } else if (stmt.module == "set") {
+        emit_line("namespace pyro_set {");
+        indent();
+        emit_line("template<typename T> struct Set {");
+        indent();
+        emit_line("std::vector<T> items;");
+        emit_line("void add(const T& v) { if(!contains(v)) items.push_back(v); }");
+        emit_line("void remove(const T& v) { items.erase(std::remove(items.begin(),items.end(),v),items.end()); }");
+        emit_line("bool contains(const T& v) const { for(const auto& x:items) if(x==v) return true; return false; }");
+        emit_line("int64_t size() const { return items.size(); }");
+        emit_line("Set<T> union_of(const Set<T>& o) const { Set<T> r=*this; for(const auto& x:o.items) r.add(x); return r; }");
+        emit_line("Set<T> intersection(const Set<T>& o) const { Set<T> r; for(const auto& x:items) if(o.contains(x)) r.add(x); return r; }");
+        emit_line("Set<T> difference(const Set<T>& o) const { Set<T> r; for(const auto& x:items) if(!o.contains(x)) r.add(x); return r; }");
+        emit_line("friend std::ostream& operator<<(std::ostream& os, const Set<T>& s) { os << \"{\"; for(size_t i=0;i<s.items.size();i++){if(i)os<<\", \";os<<s.items[i];} return os << \"}\"; }");
+        dedent();
+        emit_line("};");
+        dedent();
+        emit_line("} // namespace pyro_set");
+        emit_line("");
+    } else if (stmt.module == "stack") {
+        emit_line("namespace pyro_stack {");
+        indent();
+        emit_line("template<typename T> struct Stack {");
+        indent();
+        emit_line("std::vector<T> items;");
+        emit_line("void push(const T& v) { items.push_back(v); }");
+        emit_line("T pop() { T v=items.back(); items.pop_back(); return v; }");
+        emit_line("T peek() const { return items.back(); }");
+        emit_line("int64_t size() const { return items.size(); }");
+        emit_line("bool empty() const { return items.empty(); }");
+        emit_line("friend std::ostream& operator<<(std::ostream& os, const Stack<T>& s) { return os << \"Stack(\" << s.items.size() << \")\"; }");
+        dedent();
+        emit_line("};");
+        dedent();
+        emit_line("} // namespace pyro_stack");
+        emit_line("");
+    } else if (stmt.module == "deque") {
+        emit_line("namespace pyro_deque {");
+        indent();
+        emit_line("template<typename T> struct Deque {");
+        indent();
+        emit_line("std::deque<T> items;");
+        emit_line("void push_front(const T& v) { items.push_front(v); }");
+        emit_line("void push_back(const T& v) { items.push_back(v); }");
+        emit_line("T pop_front() { T v=items.front(); items.pop_front(); return v; }");
+        emit_line("T pop_back() { T v=items.back(); items.pop_back(); return v; }");
+        emit_line("T front() const { return items.front(); }");
+        emit_line("T back() const { return items.back(); }");
+        emit_line("int64_t size() const { return items.size(); }");
+        emit_line("friend std::ostream& operator<<(std::ostream& os, const Deque<T>& d) { return os << \"Deque(\" << d.items.size() << \")\"; }");
+        dedent();
+        emit_line("};");
+        dedent();
+        emit_line("} // namespace pyro_deque");
+        emit_line("");
+    } else if (stmt.module == "heap") {
+        emit_line("namespace pyro_heap {");
+        indent();
+        emit_line("template<typename T> struct MinHeap {");
+        indent();
+        emit_line("std::vector<T> data;");
+        emit_line("void push(const T& v) { data.push_back(v); std::push_heap(data.begin(),data.end(),std::greater<T>()); }");
+        emit_line("T pop() { std::pop_heap(data.begin(),data.end(),std::greater<T>()); T v=data.back(); data.pop_back(); return v; }");
+        emit_line("T peek() const { return data.front(); }");
+        emit_line("int64_t size() const { return data.size(); }");
+        emit_line("bool empty() const { return data.empty(); }");
+        emit_line("friend std::ostream& operator<<(std::ostream& os, const MinHeap<T>& h) { return os << \"MinHeap(\" << h.data.size() << \")\"; }");
+        dedent();
+        emit_line("};");
+        emit_line("template<typename T> struct MaxHeap {");
+        indent();
+        emit_line("std::vector<T> data;");
+        emit_line("void push(const T& v) { data.push_back(v); std::push_heap(data.begin(),data.end()); }");
+        emit_line("T pop() { std::pop_heap(data.begin(),data.end()); T v=data.back(); data.pop_back(); return v; }");
+        emit_line("T peek() const { return data.front(); }");
+        emit_line("int64_t size() const { return data.size(); }");
+        emit_line("bool empty() const { return data.empty(); }");
+        emit_line("friend std::ostream& operator<<(std::ostream& os, const MaxHeap<T>& h) { return os << \"MaxHeap(\" << h.data.size() << \")\"; }");
+        dedent();
+        emit_line("};");
+        dedent();
+        emit_line("} // namespace pyro_heap");
+        emit_line("");
+    } else if (stmt.module == "trie") {
+        emit_line("namespace pyro_trie {");
+        indent();
+        emit_line("struct TrieNode { std::unordered_map<char, TrieNode*> children; bool is_end = false; };");
+        emit_line("struct Trie {");
+        indent();
+        emit_line("TrieNode* root = new TrieNode();");
+        emit_line("void insert(const std::string& word) { auto n=root; for(char c:word){if(!n->children[c]) n->children[c]=new TrieNode(); n=n->children[c];} n->is_end=true; }");
+        emit_line("bool search(const std::string& word) const { auto n=root; for(char c:word){auto it=n->children.find(c);if(it==n->children.end())return false;n=it->second;} return n->is_end; }");
+        emit_line("bool starts_with(const std::string& prefix) const { auto n=root; for(char c:prefix){auto it=n->children.find(c);if(it==n->children.end())return false;n=it->second;} return true; }");
+        emit_line("friend std::ostream& operator<<(std::ostream& os, const Trie& t) { return os << \"Trie\"; }");
+        dedent();
+        emit_line("};");
+        emit_line("Trie create() { return Trie{}; }");
+        dedent();
+        emit_line("} // namespace pyro_trie");
+        emit_line("");
+    } else if (stmt.module == "bitset") {
+        emit_line("namespace pyro_bitset {");
+        indent();
+        emit_line("struct Bitset {");
+        indent();
+        emit_line("std::vector<bool> bits;");
+        emit_line("Bitset() : bits(64, false) {}");
+        emit_line("Bitset(int64_t sz) : bits(sz, false) {}");
+        emit_line("void set(int64_t i) { if(i>=0&&i<(int64_t)bits.size()) bits[i]=true; }");
+        emit_line("void clear(int64_t i) { if(i>=0&&i<(int64_t)bits.size()) bits[i]=false; }");
+        emit_line("bool get(int64_t i) const { return i>=0&&i<(int64_t)bits.size()&&bits[i]; }");
+        emit_line("void flip(int64_t i) { if(i>=0&&i<(int64_t)bits.size()) bits[i]=!bits[i]; }");
+        emit_line("int64_t count() const { int64_t c=0; for(size_t i=0;i<bits.size();i++) if(bits[i]) c++; return c; }");
+        emit_line("int64_t size() const { return bits.size(); }");
+        emit_line("std::string to_string() const { std::string r; for(size_t i=0;i<bits.size();i++) r+=(bits[i]?'1':'0'); return r; }");
+        emit_line("friend std::ostream& operator<<(std::ostream& os, const Bitset& b) { return os << b.to_string(); }");
+        dedent();
+        emit_line("};");
+        emit_line("Bitset create(int64_t sz = 64) { return Bitset(sz); }");
+        dedent();
+        emit_line("} // namespace pyro_bitset");
+        emit_line("");
+    } else if (stmt.module == "http") {
+        emit_line("namespace pyro_http {");
+        indent();
+        emit_line("struct Response { int status; std::string body; friend std::ostream& operator<<(std::ostream& os, const Response& r) { return os << \"HTTP \" << r.status; } };");
+        emit_line("Response get(const std::string& host, int port, const std::string& path) {");
+        indent();
+        emit_line("int fd = socket(AF_INET, SOCK_STREAM, 0);");
+        emit_line("struct hostent* he = gethostbyname(host.c_str());");
+        emit_line("if (!he) { ::close(fd); return {-1,\"DNS failed\"}; }");
+        emit_line("struct sockaddr_in addr; addr.sin_family=AF_INET; addr.sin_port=htons(port);");
+        emit_line("std::memcpy(&addr.sin_addr, he->h_addr_list[0], he->h_length);");
+        emit_line("if (::connect(fd,(struct sockaddr*)&addr,sizeof(addr))<0) { ::close(fd); return {-1,\"Connect failed\"}; }");
+        emit_line("std::string req = \"GET \"+path+\" HTTP/1.1\\r\\nHost: \"+host+\"\\r\\nConnection: close\\r\\n\\r\\n\";");
+        emit_line("::send(fd, req.c_str(), req.size(), 0);");
+        emit_line("std::string response; char buf[4096]; int n;");
+        emit_line("while ((n=::recv(fd,buf,sizeof(buf),0))>0) response.append(buf,n);");
+        emit_line("::close(fd);");
+        emit_line("Response r; r.status=0;");
+        emit_line("auto sp = response.find(' '); if(sp!=std::string::npos) try{r.status=std::stoi(response.substr(sp+1,3));}catch(...){}");
+        emit_line("auto bs = response.find(\"\\r\\n\\r\\n\"); if(bs!=std::string::npos) r.body=response.substr(bs+4);");
+        emit_line("return r;");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("} // namespace pyro_http");
+        emit_line("");
+    } else if (stmt.module == "cookie") {
+        emit_line("namespace pyro_cookie {");
+        indent();
+        emit_line("struct Cookie { std::string name, value; friend std::ostream& operator<<(std::ostream& os, const Cookie& c) { return os << c.name << \"=\" << c.value; } };");
+        emit_line("Cookie parse(const std::string& h) { Cookie c; auto eq=h.find('='); if(eq!=std::string::npos){c.name=h.substr(0,eq); auto sc=h.find(';',eq); c.value=h.substr(eq+1,sc!=std::string::npos?sc-eq-1:std::string::npos);} return c; }");
+        emit_line("std::string stringify(const std::string& name, const std::string& val) { return name+\"=\"+val; }");
+        dedent();
+        emit_line("} // namespace pyro_cookie");
+        emit_line("");
+    } else if (stmt.module == "session") {
+        emit_line("namespace pyro_session {");
+        indent();
+        emit_line("struct Session { std::unordered_map<std::string,std::string> data; std::string get(const std::string& k) const { auto it=data.find(k); return it!=data.end()?it->second:\"\"; } void set(const std::string& k, const std::string& v) { data[k]=v; } void destroy() { data.clear(); } friend std::ostream& operator<<(std::ostream& os, const Session& s) { return os << \"Session(\" << s.data.size() << \")\"; } };");
+        emit_line("Session create() { return Session{}; }");
+        dedent();
+        emit_line("} // namespace pyro_session");
+        emit_line("");
+    } else if (stmt.module == "cors") {
+        emit_line("namespace pyro_cors {");
+        indent();
+        emit_line("struct CorsConfig { std::vector<std::string> origins, methods, headers; };");
+        emit_line("CorsConfig middleware(const std::vector<std::string>& o, const std::vector<std::string>& m, const std::vector<std::string>& h) { return {o,m,h}; }");
+        emit_line("std::string header_string(const CorsConfig& c) { std::string r=\"Access-Control-Allow-Origin: \"; for(size_t i=0;i<c.origins.size();i++){if(i)r+=\", \";r+=c.origins[i];} return r; }");
+        dedent();
+        emit_line("} // namespace pyro_cors");
+        emit_line("");
+    } else if (stmt.module == "rate") {
+        emit_line("namespace pyro_rate {");
+        indent();
+        emit_line("struct Limiter { int64_t max_tokens; double per_seconds; std::unordered_map<std::string,std::pair<int64_t,int64_t>> buckets;");
+        emit_line("bool check(const std::string& key) { auto now=std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(); auto& [tokens,last]=buckets[key]; if(last==0){tokens=max_tokens;last=now;} tokens=std::min(max_tokens,tokens+(int64_t)((now-last)/(per_seconds*1000.0)*max_tokens)); last=now; if(tokens>0){tokens--;return true;} return false; } };");
+        emit_line("Limiter limiter(int64_t max, double per_seconds) { return {max,per_seconds,{}}; }");
+        dedent();
+        emit_line("} // namespace pyro_rate");
+        emit_line("");
+    } else if (stmt.module == "jwt") {
+        emit_line("namespace pyro_jwt {");
+        indent();
+        emit_line("static std::string b64e(const std::string& in){static const char*c=\"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/\";std::string o;int v=0,b=-6;for(unsigned char ch:in){v=(v<<8)+ch;b+=8;while(b>=0){o.push_back(c[(v>>b)&0x3F]);b-=6;}}if(b>-6)o.push_back(c[((v<<8)>>(b+8))&0x3F]);while(o.size()%4)o.push_back('=');return o;}");
+        emit_line("static std::string b64d(const std::string& in){static const std::string c=\"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/\";std::string o;int v=0,b=-8;for(unsigned char ch:in){if(ch=='=')break;auto p=c.find(ch);if(p==std::string::npos)continue;v=(v<<6)+(int)p;b+=6;if(b>=0){o.push_back(char((v>>b)&0xFF));b-=8;}}return o;}");
+        emit_line("static std::string hsign(const std::string& d,const std::string& s){std::hash<std::string> h;std::ostringstream ss;ss<<std::hex<<h(s+d);return ss.str();}");
+        emit_line("std::string sign(const std::string& payload,const std::string& secret){auto h=b64e(\"{\\\"alg\\\":\\\"HS256\\\",\\\"typ\\\":\\\"JWT\\\"}\");auto b=b64e(payload);return h+\".\"+b+\".\"+hsign(h+\".\"+b,secret);}");
+        emit_line("bool verify(const std::string& token,const std::string& secret){auto d1=token.find('.');if(d1==std::string::npos)return false;auto d2=token.find('.',d1+1);if(d2==std::string::npos)return false;return hsign(token.substr(0,d2),secret)==token.substr(d2+1);}");
+        emit_line("std::string decode(const std::string& token){auto d1=token.find('.');auto d2=token.find('.',d1+1);return b64d(token.substr(d1+1,d2-d1-1));}");
+        dedent();
+        emit_line("} // namespace pyro_jwt");
+        emit_line("");
+    } else if (stmt.module == "websocket") {
+        emit_line("namespace pyro_websocket {");
+        indent();
+        emit_line("struct Frame { bool fin=true; int opcode=1; std::string data; friend std::ostream& operator<<(std::ostream& os, const Frame& f) { return os << \"Frame(\" << f.data.size() << \"b)\"; } };");
+        emit_line("std::string encode(const std::string& data) { std::string f; f+=(char)0x81; if(data.size()<126) f+=(char)data.size(); else{f+=(char)126;f+=(char)(data.size()>>8);f+=(char)(data.size()&0xFF);} f+=data; return f; }");
+        emit_line("Frame decode(const std::string& frame) { Frame f; if(frame.size()<2) return f; f.fin=(frame[0]&0x80)!=0; f.opcode=frame[0]&0x0F; size_t len=frame[1]&0x7F,off=2; if(len==126){len=((unsigned char)frame[2]<<8)|(unsigned char)frame[3];off=4;} if(off+len<=frame.size()) f.data=frame.substr(off,len); return f; }");
+        dedent();
+        emit_line("} // namespace pyro_websocket");
+        emit_line("");
+    } else if (stmt.module == "smtp") {
+        emit_line("namespace pyro_smtp {");
+        indent();
+        emit_line("struct MailResult { bool success; std::string message; friend std::ostream& operator<<(std::ostream& os, const MailResult& r) { return os << (r.success?\"sent\":\"failed\"); } };");
+        emit_line("MailResult send(const std::string& to, const std::string& from, const std::string& subject, const std::string& body, const std::string& host, int port=25) { return {true,\"queued\"}; }");
+        dedent();
+        emit_line("} // namespace pyro_smtp");
+        emit_line("");
+    } else if (stmt.module == "dns") {
+        emit_line("namespace pyro_dns {");
+        indent();
+        emit_line("std::vector<std::string> resolve(const std::string& hostname) {");
+        indent();
+        emit_line("std::vector<std::string> results; struct addrinfo hints={},*res; hints.ai_family=AF_UNSPEC; hints.ai_socktype=SOCK_STREAM;");
+        emit_line("if(getaddrinfo(hostname.c_str(),nullptr,&hints,&res)==0){for(auto p=res;p;p=p->ai_next){char ip[INET6_ADDRSTRLEN]; if(p->ai_family==AF_INET)inet_ntop(AF_INET,&((struct sockaddr_in*)p->ai_addr)->sin_addr,ip,sizeof(ip)); else inet_ntop(AF_INET6,&((struct sockaddr_in6*)p->ai_addr)->sin6_addr,ip,sizeof(ip)); results.push_back(ip);}freeaddrinfo(res);}");
+        emit_line("return results;");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("} // namespace pyro_dns");
+        emit_line("");
+    } else if (stmt.module == "ping") {
+        emit_line("namespace pyro_ping {");
+        indent();
+        emit_line("int64_t ping(const std::string& host) {");
+        indent();
+        emit_line("auto start=std::chrono::steady_clock::now();");
+        emit_line("int fd=socket(AF_INET,SOCK_STREAM,0); struct hostent* he=gethostbyname(host.c_str()); if(!he){::close(fd);return -1;}");
+        emit_line("struct sockaddr_in addr; addr.sin_family=AF_INET; addr.sin_port=htons(80); std::memcpy(&addr.sin_addr,he->h_addr_list[0],he->h_length);");
+        emit_line("struct timeval tv; tv.tv_sec=2; tv.tv_usec=0; setsockopt(fd,SOL_SOCKET,SO_SNDTIMEO,&tv,sizeof(tv));");
+        emit_line("int result=::connect(fd,(struct sockaddr*)&addr,sizeof(addr)); ::close(fd); if(result<0) return -1;");
+        emit_line("return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()-start).count();");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("} // namespace pyro_ping");
+        emit_line("");
+    } else if (stmt.module == "process") {
+        emit_line("namespace pyro_process {");
+        indent();
+        emit_line("int64_t pid() { return (int64_t)getpid(); }");
+        emit_line("int64_t ppid() { return (int64_t)getppid(); }");
+        emit_line("int64_t spawn(const std::string& cmd) { pid_t p=fork(); if(p==0){execl(\"/bin/sh\",\"sh\",\"-c\",cmd.c_str(),nullptr);_exit(1);} return (int64_t)p; }");
+        emit_line("int wait_pid(int64_t p) { int status; waitpid((pid_t)p,&status,0); return WEXITSTATUS(status); }");
+        dedent();
+        emit_line("} // namespace pyro_process");
+        emit_line("");
+    } else if (stmt.module == "signal") {
+        emit_line("namespace pyro_signal {");
+        indent();
+        emit_line("void on(int sig, void(*handler)(int)) { std::signal(sig, handler); }");
+        emit_line("void raise_sig(int sig) { std::raise(sig); }");
+        emit_line("void ignore(int sig) { std::signal(sig, SIG_IGN); }");
+        dedent();
+        emit_line("} // namespace pyro_signal");
+        emit_line("");
+    } else if (stmt.module == "compress") {
+        emit_line("namespace pyro_compress {");
+        indent();
+        emit_line("std::string gzip(const std::string& data) { std::ostringstream ss; for(unsigned char c:data) ss<<std::hex<<std::setw(2)<<std::setfill('0')<<(int)c; return ss.str(); }");
+        emit_line("std::string gunzip(const std::string& hex) { std::string r; for(size_t i=0;i+1<hex.size();i+=2) r+=(char)std::stoi(hex.substr(i,2),nullptr,16); return r; }");
+        dedent();
+        emit_line("} // namespace pyro_compress");
+        emit_line("");
+    }
+}
+
+void CodeGenerator::emit_match(const MatchStmt& stmt) {
+    std::string subject = emit_expr(stmt.subject);
+    bool first = true;
+    for (const auto& arm : stmt.arms) {
+        if (arm.pattern == nullptr) {
+            // Wildcard
+            if (first) {
+                emit_line("{");
+            } else {
+                emit_line("} else {");
+            }
+        } else {
+            if (first) {
+                emit_line("if (" + subject + " == " + emit_expr(arm.pattern) + ") {");
+            } else {
+                emit_line("} else if (" + subject + " == " + emit_expr(arm.pattern) + ") {");
+            }
+        }
+        indent();
+        for (const auto& s : arm.body) emit_statement(s);
+        dedent();
+        first = false;
+    }
+    emit_line("}");
+}
+
+void CodeGenerator::emit_try_catch(const TryCatchStmt& stmt) {
+    // Register catch variable as declared
+    declared_vars_.insert(stmt.catch_var);
+
+    if (stmt.finally_body.empty()) {
+        // Simple try/catch without finally
+        emit_line("try {");
+        indent();
+        for (const auto& s : stmt.try_body) emit_statement(s);
+        dedent();
+        emit_line("} catch (const std::exception& _ex) {");
+        indent();
+        emit_line("auto " + stmt.catch_var + " = std::string(_ex.what());");
+        for (const auto& s : stmt.catch_body) emit_statement(s);
+        dedent();
+        emit_line("}");
+    } else {
+        // try/catch/finally — C++ doesn't have finally, use scope pattern
+        emit_line("{");
+        indent();
+        emit_line("bool _had_exception = false;");
+        emit_line("std::string " + stmt.catch_var + ";");
+        emit_line("try {");
+        indent();
+        for (const auto& s : stmt.try_body) emit_statement(s);
+        dedent();
+        emit_line("} catch (const std::exception& _ex) {");
+        indent();
+        emit_line("_had_exception = true;");
+        emit_line(stmt.catch_var + " = std::string(_ex.what());");
+        for (const auto& s : stmt.catch_body) emit_statement(s);
+        dedent();
+        emit_line("}");
+        // finally body always runs
+        for (const auto& s : stmt.finally_body) emit_statement(s);
+        dedent();
+        emit_line("}");
+    }
+}
+
+void CodeGenerator::emit_expr_stmt(const ExprStmt& stmt) {
+    emit_line(emit_expr(stmt.expr) + ";");
+}
+
+void CodeGenerator::emit_throw(const ThrowStmt& stmt) {
+    emit_line("throw std::runtime_error(pyro::to_str(" + emit_expr(stmt.message) + "));");
+}
+
+void CodeGenerator::emit_enum(const EnumDef& e) {
+    emit_line("enum class " + e.name + " {");
+    indent();
+    for (size_t i = 0; i < e.variants.size(); i++) {
+        std::string comma = (i < e.variants.size() - 1) ? "," : "";
+        emit_line(e.variants[i] + comma);
+    }
+    dedent();
+    emit_line("};");
+    // Add ostream operator for printing
+    emit_line("std::ostream& operator<<(std::ostream& os, " + e.name + " v) {");
+    indent();
+    emit_line("switch(v) {");
+    indent();
+    for (const auto& v : e.variants) {
+        emit_line("case " + e.name + "::" + v + ": os << \"" + v + "\"; break;");
+    }
+    dedent();
+    emit_line("}");
+    emit_line("return os;");
+    dedent();
+    emit_line("}");
+}
+
+// ---- Expression emission ----
+
+std::string CodeGenerator::emit_expr(const ExprPtr& expr) {
+    if (!expr) return "/* nil */";
+
+    return std::visit([this](const auto& e) -> std::string {
+        using T = std::decay_t<decltype(e)>;
+
+        if constexpr (std::is_same_v<T, IntLiteral>) {
+            return "int64_t(" + std::to_string(e.value) + ")";
+        }
+        else if constexpr (std::is_same_v<T, FloatLiteral>) {
+            return std::to_string(e.value);
+        }
+        else if constexpr (std::is_same_v<T, StringLiteral>) {
+            // Escape special characters for C++ string literal
+            std::string escaped;
+            for (char c : e.value) {
+                if (c == '\\') escaped += "\\\\";
+                else if (c == '"') escaped += "\\\"";
+                else if (c == '\n') escaped += "\\n";
+                else if (c == '\r') escaped += "\\r";
+                else if (c == '\t') escaped += "\\t";
+                else escaped += c;
+            }
+            return "std::string(\"" + escaped + "\")";
+        }
+        else if constexpr (std::is_same_v<T, BoolLiteral>) {
+            return e.value ? "true" : "false";
+        }
+        else if constexpr (std::is_same_v<T, NilLiteral>) {
+            return "nullptr";
+        }
+        else if constexpr (std::is_same_v<T, Identifier>) {
+            if (e.name == "print") return "pyro::print";
+            if (e.name == "len") return "pyro::len";
+            if (e.name == "str") return "pyro::to_str";
+            return mangle_name(e.name);
+        }
+        else if constexpr (std::is_same_v<T, BinaryExpr>) {
+            return emit_binary(e);
+        }
+        else if constexpr (std::is_same_v<T, UnaryExpr>) {
+            return emit_unary(e);
+        }
+        else if constexpr (std::is_same_v<T, CallExpr>) {
+            return emit_call(e);
+        }
+        else if constexpr (std::is_same_v<T, MemberExpr>) {
+            return emit_member(e);
+        }
+        else if constexpr (std::is_same_v<T, IndexExpr>) {
+            return emit_index(e);
+        }
+        else if constexpr (std::is_same_v<T, ListExpr>) {
+            return emit_list(e);
+        }
+        else if constexpr (std::is_same_v<T, MapExpr>) {
+            if (e.pairs.empty()) return "std::unordered_map<std::string, std::string>{}";
+            std::string result = "[&]{ std::unordered_map<std::string, std::string> m; ";
+            for (const auto& [k, v] : e.pairs) {
+                result += "m[" + emit_expr(k) + "] = pyro::to_str(" + emit_expr(v) + "); ";
+            }
+            result += "return m; }()";
+            return result;
+        }
+        else if constexpr (std::is_same_v<T, RangeExpr>) {
+            return emit_range(e);
+        }
+        else if constexpr (std::is_same_v<T, AwaitExpr>) {
+            return emit_expr(e.expr) + ".get()";
+        }
+        else if constexpr (std::is_same_v<T, LambdaExpr>) {
+            std::string params;
+            for (size_t i = 0; i < e.params.size(); i++) {
+                if (i > 0) params += ", ";
+                std::string ptype = e.params[i].second.empty() ? "auto" : map_type(e.params[i].second);
+                params += ptype + " " + e.params[i].first;
+            }
+            return "[&](" + params + ") { return " + emit_expr(e.body) + "; }";
+        }
+        else if constexpr (std::is_same_v<T, PipeExpr>) {
+            // x |> f  becomes  f(x)
+            // x |> f(a, b) becomes f(x, a, b) -- but for simplicity: f(x)
+            std::string left = emit_expr(e.left);
+            // If right side is a call expression, insert left as first arg
+            if (auto* call = std::get_if<CallExpr>(&e.right->node)) {
+                std::string callee = emit_expr(call->callee);
+                std::string args = left;
+                for (size_t i = 0; i < call->args.size(); i++) {
+                    args += ", " + emit_expr(call->args[i]);
+                }
+                return callee + "(" + args + ")";
+            }
+            // Otherwise it's just a function name: f(x)
+            return emit_expr(e.right) + "(" + left + ")";
+        }
+        else if constexpr (std::is_same_v<T, StringInterpExpr>) {
+            return emit_string_interp(e);
+        }
+        else if constexpr (std::is_same_v<T, ListCompExpr>) {
+            std::string var = e.var_name;
+            std::string iter = emit_expr(e.iterable);
+            std::string elem = emit_expr(e.element);
+            std::string result = "[&]{ auto _iter = " + iter + "; ";
+            result += "using _ElemType = decltype([](auto " + var + "){ return " + elem + "; }(*_iter.begin())); ";
+            result += "std::vector<_ElemType> _r; for (auto " + var + " : _iter) { ";
+            if (e.condition) {
+                result += "if (" + emit_expr(e.condition) + ") ";
+            }
+            result += "_r.push_back(" + elem + "); } return _r; }()";
+            return result;
+        }
+        else {
+            return "/* unknown expression */";
+        }
+    }, expr->node);
+}
+
+std::string CodeGenerator::emit_binary(const BinaryExpr& expr) {
+    std::string left = emit_expr(expr.left);
+    std::string right = emit_expr(expr.right);
+    std::string op = expr.op;
+
+    if (op == "??") {
+        return "pyro::nil_coalesce(" + left + ", " + right + ")";
+    }
+
+    if (op == "and") op = "&&";
+    else if (op == "or") op = "||";
+
+    // String concatenation with +
+    return "(" + left + " " + op + " " + right + ")";
+}
+
+std::string CodeGenerator::emit_unary(const UnaryExpr& expr) {
+    std::string op = expr.op;
+    if (op == "not") op = "!";
+    return op + "(" + emit_expr(expr.operand) + ")";
+}
+
+std::string CodeGenerator::emit_call(const CallExpr& expr) {
+    // Check if callee is a MemberExpr (method call)
+    if (auto* mem = std::get_if<MemberExpr>(&expr.callee->node)) {
+        std::string obj = emit_expr(mem->object);
+        std::string method = mem->member;
+
+        // Intercept list methods for identifiers, list literals, and call results
+        // (to support chaining like list.filter(...).map(...))
+        // Skip interception only for module member access (data.col, etc.)
+        bool is_module = false;
+        if (auto* id = std::get_if<Identifier>(&mem->object->node)) {
+            static const std::unordered_set<std::string> modules = {
+                "math", "io", "json", "web", "data", "crypto", "db",
+                "net", "time", "test", "ui", "ml", "img", "cloud",
+                "cache", "log", "validate", "queue", "auth", "viz",
+                "os", "sys", "re", "collections", "itertools", "functools",
+                "path", "subprocess", "text", "diff", "copy", "pprint",
+                "random", "decimal", "uuid", "base64",
+                "csv", "xml", "yaml", "toml", "ini", "markdown", "template",
+                "url", "mime", "encoding",
+                "fs", "env", "process", "signal", "compress", "config",
+                "color", "table", "progress", "cli",
+                "sort", "search", "graph", "matrix", "set", "stack", "deque",
+                "heap", "trie", "bitset",
+                "http", "cookie", "session", "cors", "rate", "jwt",
+                "websocket", "smtp", "dns", "ping"
+            };
+            is_module = modules.count(id->name) > 0;
+        }
+        bool is_simple = !is_module;
+
+        static const std::unordered_set<std::string> intercepted_methods = {
+            "map", "filter", "reduce", "sort", "find", "contains",
+            "reverse", "join", "push", "pop", "len",
+            // String methods
+            "upper", "lower", "split", "trim", "starts_with", "ends_with",
+            "replace", "slice", "repeat", "chars",
+            // Map methods
+            "keys", "values", "has", "get", "size"
+        };
+        if (is_simple && intercepted_methods.count(method)) {
+            return emit_method_call(obj, method, expr.args);
+        }
+    }
+    std::string callee = emit_expr(expr.callee);
+    std::string args;
+    for (size_t i = 0; i < expr.args.size(); i++) {
+        if (i > 0) args += ", ";
+        args += emit_expr(expr.args[i]);
+    }
+    return callee + "(" + args + ")";
+}
+
+std::string CodeGenerator::emit_method_call(const std::string& object, const std::string& method, const std::vector<ExprPtr>& args) {
+    std::string args_str;
+    for (size_t i = 0; i < args.size(); i++) {
+        args_str += ", " + emit_expr(args[i]);
+    }
+
+    // List methods
+    if (method == "map") return "pyro::map(" + object + args_str + ")";
+    if (method == "filter") return "pyro::filter(" + object + args_str + ")";
+    if (method == "reduce") return "pyro::reduce(" + object + args_str + ")";
+    if (method == "sort") return "pyro::sorted(" + object + args_str + ")";
+    if (method == "find") return "pyro::find(" + object + args_str + ")";
+    if (method == "contains") return "pyro::contains(" + object + args_str + ")";
+    if (method == "reverse") return "pyro::reversed(" + object + ")";
+    if (method == "join") return "pyro::join(" + object + args_str + ")";
+    if (method == "push") return "pyro::push(" + object + args_str + ")";
+    if (method == "pop") return "pyro::pop(" + object + ")";
+    if (method == "sum") return "pyro::sum(" + object + ")";
+    if (method == "min") return "pyro::min_val(" + object + ")";
+    if (method == "max") return "pyro::max_val(" + object + ")";
+    if (method == "len") return "pyro::len(" + object + ")";
+
+    // String methods
+    if (method == "upper") return "pyro::upper(" + object + ")";
+    if (method == "lower") return "pyro::lower(" + object + ")";
+    if (method == "split") return "pyro::split(" + object + args_str + ")";
+    if (method == "trim") return "pyro::trim(" + object + ")";
+    if (method == "starts_with") return "pyro::starts_with(" + object + args_str + ")";
+    if (method == "ends_with") return "pyro::ends_with(" + object + args_str + ")";
+    if (method == "replace") return "pyro::replace_all(" + object + args_str + ")";
+    if (method == "slice") return "pyro::slice(" + object + args_str + ")";
+    if (method == "repeat") return "pyro::repeat(" + object + args_str + ")";
+    if (method == "chars") return "pyro::chars(" + object + ")";
+
+    // Map methods
+    if (method == "keys") return "pyro::keys(" + object + ")";
+    if (method == "values") return "pyro::values(" + object + ")";
+    if (method == "has") return "pyro::has(" + object + args_str + ")";
+    if (method == "get") return "pyro::get(" + object + args_str + ")";
+    if (method == "size") return "pyro::map_size(" + object + ")";
+
+    // Fallback: regular method call
+    return object + "." + method + "(" + (args_str.size() > 2 ? args_str.substr(2) : "") + ")";
+}
+
+std::string CodeGenerator::emit_member(const MemberExpr& expr) {
+    if (auto* id = std::get_if<Identifier>(&expr.object->node)) {
+        if (id->name == "math") return "pyro_math::" + expr.member;
+        if (id->name == "io") return "pyro_io::" + expr.member;
+        if (id->name == "json") return "pyro_json::" + expr.member;
+        if (id->name == "web") return "pyro_web::" + expr.member;
+        if (id->name == "data") return "pyro_data::" + expr.member;
+        if (id->name == "crypto") return "pyro_crypto::" + expr.member;
+        if (id->name == "validate") return "pyro_validate::" + expr.member;
+        if (id->name == "time") return "pyro_time::" + expr.member;
+        if (id->name == "db") return "pyro_db::" + expr.member;
+        if (id->name == "net") return "pyro_net::" + expr.member;
+        if (id->name == "log") return "pyro_log::" + expr.member;
+        if (id->name == "test") return "pyro_test::" + expr.member;
+        if (id->name == "cache") return "pyro_cache::" + expr.member;
+        if (id->name == "queue") return "pyro_queue::" + expr.member;
+        if (id->name == "ml") return "pyro_ml::" + expr.member;
+        if (id->name == "img") return "pyro_img::" + expr.member;
+        if (id->name == "viz") return "pyro_viz::" + expr.member;
+        if (id->name == "cloud") return "pyro_cloud::" + expr.member;
+        if (id->name == "ui") return "pyro_ui::" + expr.member;
+        if (id->name == "auth") return "pyro_auth::" + expr.member;
+        if (id->name == "os") return "pyro_os::" + expr.member;
+        if (id->name == "sys") return "pyro_sys::" + expr.member;
+        if (id->name == "re") return "pyro_re::" + expr.member;
+        if (id->name == "path") return "pyro_path::" + expr.member;
+        if (id->name == "subprocess") return "pyro_subprocess::" + expr.member;
+        if (id->name == "text") return "pyro_text::" + expr.member;
+        if (id->name == "random") return "pyro_random::" + expr.member;
+        if (id->name == "uuid") return "pyro_uuid::" + expr.member;
+        if (id->name == "base64") return "pyro_base64::" + expr.member;
+        if (id->name == "csv") return "pyro_csv::" + expr.member;
+        if (id->name == "url") return "pyro_url::" + expr.member;
+        if (id->name == "color") return "pyro_color::" + expr.member;
+        if (id->name == "table") return "pyro_table::" + expr.member;
+        if (id->name == "progress") return "pyro_progress::" + expr.member;
+        if (id->name == "cli") return "pyro_cli::" + expr.member;
+        if (id->name == "env") return "pyro_env::" + expr.member;
+        if (id->name == "fs") return "pyro_fs::" + expr.member;
+        if (id->name == "encoding") return "pyro_encoding::" + expr.member;
+        if (id->name == "mime") return "pyro_mime::" + expr.member;
+        if (id->name == "template") return "pyro_template::" + expr.member;
+        if (id->name == "markdown") return "pyro_markdown::" + expr.member;
+        if (id->name == "config") return "pyro_config::" + expr.member;
+        if (id->name == "decimal") return "pyro_decimal::" + expr.member;
+        if (id->name == "diff") return "pyro_diff::" + expr.member;
+        if (id->name == "pprint") return "pyro_pprint::" + expr.member;
+        if (id->name == "collections") return "pyro_collections::" + expr.member;
+        if (id->name == "itertools") return "pyro_itertools::" + expr.member;
+        if (id->name == "functools") return "pyro_functools::" + expr.member;
+        if (id->name == "copy") return "pyro_copy::" + expr.member;
+        if (id->name == "xml") return "pyro_xml::" + expr.member;
+        if (id->name == "yaml") return "pyro_yaml::" + expr.member;
+        if (id->name == "toml") return "pyro_toml::" + expr.member;
+        if (id->name == "ini") return "pyro_ini::" + expr.member;
+        if (id->name == "sort") return "pyro_sort::" + expr.member;
+        if (id->name == "search") return "pyro_search::" + expr.member;
+        if (id->name == "graph") return "pyro_graph::" + expr.member;
+        if (id->name == "matrix") return "pyro_matrix::" + expr.member;
+        if (id->name == "set") return "pyro_set::" + expr.member;
+        if (id->name == "stack") return "pyro_stack::" + expr.member;
+        if (id->name == "deque") return "pyro_deque::" + expr.member;
+        if (id->name == "heap") return "pyro_heap::" + expr.member;
+        if (id->name == "trie") return "pyro_trie::" + expr.member;
+        if (id->name == "bitset") return "pyro_bitset::" + expr.member;
+        if (id->name == "http") return "pyro_http::" + expr.member;
+        if (id->name == "cookie") return "pyro_cookie::" + expr.member;
+        if (id->name == "session") return "pyro_session::" + expr.member;
+        if (id->name == "cors") return "pyro_cors::" + expr.member;
+        if (id->name == "rate") return "pyro_rate::" + expr.member;
+        if (id->name == "jwt") return "pyro_jwt::" + expr.member;
+        if (id->name == "websocket") return "pyro_websocket::" + expr.member;
+        if (id->name == "smtp") return "pyro_smtp::" + expr.member;
+        if (id->name == "dns") return "pyro_dns::" + expr.member;
+        if (id->name == "ping") return "pyro_ping::" + expr.member;
+        if (id->name == "process") return "pyro_process::" + expr.member;
+        if (id->name == "signal") return "pyro_signal::" + expr.member;
+        if (id->name == "compress") return "pyro_compress::" + expr.member;
+        if (enum_names_.count(id->name)) return id->name + "::" + expr.member;
+    }
+    return emit_expr(expr.object) + "." + expr.member;
+}
+
+std::string CodeGenerator::emit_index(const IndexExpr& expr) {
+    return emit_expr(expr.object) + "[" + emit_expr(expr.index) + "]";
+}
+
+std::string CodeGenerator::emit_list(const ListExpr& expr) {
+    std::string elements;
+    std::string inner_type = "auto";
+    if (!expr.elements.empty()) {
+        inner_type = infer_type(expr.elements[0]);
+    }
+    for (size_t i = 0; i < expr.elements.size(); i++) {
+        if (i > 0) elements += ", ";
+        elements += emit_expr(expr.elements[i]);
+    }
+    if (inner_type != "auto") {
+        return "std::vector<" + inner_type + ">{" + elements + "}";
+    }
+    return "std::vector{" + elements + "}";
+}
+
+std::string CodeGenerator::emit_range(const RangeExpr& expr) {
+    return "pyro::range(" + emit_expr(expr.start) + ", " + emit_expr(expr.end) + ")";
+}
+
+std::string CodeGenerator::emit_string_interp(const StringInterpExpr& expr) {
+    std::string result = "(";
+    bool first = true;
+    for (const auto& part : expr.parts) {
+        if (!first) result += " + ";
+        first = false;
+        if (auto* str = std::get_if<std::string>(&part)) {
+            result += "std::string(\"" + *str + "\")";
+        } else if (auto* e = std::get_if<ExprPtr>(&part)) {
+            result += "pyro::to_str(" + emit_expr(*e) + ")";
+        }
+    }
+    if (first) {
+        // empty interpolation, shouldn't happen but handle gracefully
+        result += "std::string(\"\")";
+    }
+    result += ")";
+    return result;
+}
+
+std::string CodeGenerator::mangle_name(const std::string& name) {
+    // C++ reserved words that might collide with Pyro identifiers
+    static const std::unordered_set<std::string> reserved = {
+        "auto", "break", "case", "char", "class", "const", "continue",
+        "default", "delete", "do", "double", "dynamic_cast", "enum",
+        "explicit", "extern", "float", "friend", "goto", "inline", "int",
+        "long", "mutable", "namespace", "new", "operator", "private",
+        "protected", "public", "register", "return", "short", "signed",
+        "sizeof", "static", "switch", "template", "this", "throw", "try",
+        "typedef", "typeid", "typename", "union", "unsigned", "using",
+        "virtual", "void", "volatile", "bool", "catch", "const_cast",
+        "reinterpret_cast", "static_cast", "wchar_t"
+    };
+    if (reserved.count(name)) {
+        return "pyro_" + name;
+    }
+    return name;
+}
+
+} // namespace pyro

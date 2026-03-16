@@ -1,0 +1,21 @@
+import data
+
+let df = data.read("examples/test_data.csv")
+print("Loaded: ", df)
+print("Rows: ", df.rows())
+print("Columns: ", df.cols())
+
+df.head(3)
+
+let scores = df.col("score")
+print("Score stats:")
+let m = scores.mean()
+let s = scores.sum()
+let mn = scores.min_val()
+let mx = scores.max_val()
+let c = scores.count()
+print("  Mean: ", m)
+print("  Sum: ", s)
+print("  Min: ", mn)
+print("  Max: ", mx)
+print("  Count: ", c)

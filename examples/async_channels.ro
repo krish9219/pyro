@@ -1,0 +1,20 @@
+import time
+
+# Channels example
+async fn producer(ch)
+    for i in 0..5
+        print("Producing: {i}")
+        # ch.send(i) — channels need shared pointer passing
+    return "done"
+
+async fn main()
+    # Parallel tasks
+    let a = slow_task(1)
+    let b = slow_task(2)
+    let c = slow_task(3)
+    print("Task 1: {await a}")
+    print("Task 2: {await b}")
+    print("Task 3: {await c}")
+
+async fn slow_task(id)
+    return id * 100

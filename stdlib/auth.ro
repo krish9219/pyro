@@ -1,0 +1,290 @@
+# ============================================================================
+# Pyro Built-in Library: auth
+# Created by Aravind Pilla
+# Authentication: OAuth2, JWT, API keys, sessions, 2FA, RBAC
+# ============================================================================
+
+import auth
+
+# ── Password Authentication ────────────────────────────────────────────────
+
+# auth.hash_password(password, config)
+# Hashes a password using Argon2id (secure default)
+# config: { algorithm, rounds }
+# algorithm: "argon2" (default), "bcrypt", "scrypt"
+# Example: let hash = auth.hash_password("my_secret_password")
+
+# auth.verify_password(password, hash)
+# Verifies a password against a stored hash
+# Returns true if valid
+# Example: auth.verify_password("my_secret_password", stored_hash) -> true
+
+# auth.password_strength(password)
+# Evaluates password strength
+# Returns { score, feedback, crack_time }
+# score: 0 (very weak) to 4 (very strong)
+# Example:
+#   let result = auth.password_strength("P@ssw0rd123!")
+#   # result.score -> 3
+#   # result.feedback -> ["Consider adding more unique characters"]
+#   # result.crack_time -> "centuries"
+
+# auth.generate_password(length, config)
+# Generates a random secure password
+# config: { uppercase, lowercase, digits, symbols, exclude_ambiguous }
+# Example: auth.generate_password(16, { symbols: true }) -> "kX9#mP2$vL7@nQ4!"
+
+# ── JWT (JSON Web Tokens) ──────────────────────────────────────────────────
+
+# auth.jwt_sign(payload, secret, config)
+# Creates a signed JWT token
+# config: { algorithm, expires_in, issuer, audience, subject }
+# algorithm: "HS256" (default), "HS384", "HS512", "RS256", "RS384", "RS512", "ES256"
+# expires_in: duration string ("1h", "7d", "30m")
+# Example:
+#   let token = auth.jwt_sign(
+#     { user_id: 42, role: "admin" },
+#     env("JWT_SECRET"),
+#     { algorithm: "HS256", expires_in: "24h", issuer: "myapp" }
+#   )
+
+# auth.jwt_verify(token, secret, config)
+# Verifies and decodes a JWT
+# config: { algorithms, issuer, audience, clock_tolerance }
+# Returns the decoded payload or raises an error
+# Example:
+#   let payload = auth.jwt_verify(token, env("JWT_SECRET"), {
+#     algorithms: ["HS256"],
+#     issuer: "myapp"
+#   })
+#   # payload.user_id -> 42
+
+# auth.jwt_decode(token)
+# Decodes without verifying (inspection only, not for security decisions)
+# Returns { header, payload }
+# Example: let parts = auth.jwt_decode(token)
+
+# auth.jwt_refresh(token, secret, config)
+# Creates a new token from an existing valid token with a fresh expiry
+# config: { extends_in }
+# Example: let new_token = auth.jwt_refresh(old_token, secret, { expires_in: "24h" })
+
+# ── OAuth2 ──────────────────────────────────────────────────────────────────
+
+# auth.oauth2(provider, config)
+# Creates an OAuth2 client for a provider
+# Built-in providers: "google", "github", "facebook", "twitter", "apple", "microsoft", "discord"
+# config: { client_id, client_secret, redirect_uri, scopes }
+# Example:
+#   let google = auth.oauth2("google", {
+#     client_id: env("GOOGLE_CLIENT_ID"),
+#     client_secret: env("GOOGLE_CLIENT_SECRET"),
+#     redirect_uri: "https://myapp.com/auth/callback",
+#     scopes: ["openid", "email", "profile"]
+#   })
+
+# provider.authorize_url(state)
+# Returns the URL to redirect the user to for authorization
+# state: random string for CSRF protection
+# Example: let url = google.authorize_url(crypto.random_hex(16))
+
+# provider.exchange(code)
+# Exchanges an authorization code for tokens
+# Returns { access_token, refresh_token, expires_in, id_token }
+# Example: let tokens = await google.exchange(req.query.code)
+
+# provider.user_info(access_token)
+# Fetches the authenticated user's profile
+# Returns { id, email, name, avatar, raw }
+# Example: let user = await google.user_info(tokens.access_token)
+
+# provider.refresh(refresh_token)
+# Refreshes an expired access token
+# Returns { access_token, expires_in }
+# Example: let new_tokens = await google.refresh(stored_refresh_token)
+
+# auth.oauth2_custom(config)
+# Creates an OAuth2 client for any provider
+# config: { authorize_url, token_url, user_info_url, client_id, client_secret, redirect_uri, scopes }
+# Example:
+#   let custom = auth.oauth2_custom({
+#     authorize_url: "https://auth.example.com/authorize",
+#     token_url: "https://auth.example.com/token",
+#     user_info_url: "https://auth.example.com/userinfo",
+#     client_id: "my_client",
+#     client_secret: "my_secret",
+#     redirect_uri: "https://myapp.com/callback"
+#   })
+
+# ── API Key Authentication ─────────────────────────────────────────────────
+
+# auth.api_key_generate(config)
+# Generates a secure API key
+# config: { prefix, length }
+# Example: let key = auth.api_key_generate({ prefix: "pyro_", length: 32 })
+# -> "pyro_sk_a3f1b2c4d5e6f7g8h9i0j1k2l3m4n5o6"
+
+# auth.api_key_hash(key)
+# Hashes an API key for storage (never store raw keys)
+# Example: let hash = auth.api_key_hash(key)
+
+# auth.api_key_verify(key, hash)
+# Verifies an API key against its stored hash
+# Example: auth.api_key_verify(provided_key, stored_hash) -> true
+
+# auth.api_key_middleware(config)
+# Middleware that validates API keys from requests
+# config: { header, query_param, lookup }
+# lookup: function that receives the key and returns the associated user/nil
+# Example:
+#   app.use(auth.api_key_middleware({
+#     header: "X-API-Key",
+#     lookup: fn(key)
+#       let hash = auth.api_key_hash(key)
+#       return db.query_one("SELECT * FROM api_keys WHERE hash = $1", [hash])
+#     )
+#   }))
+
+# ── Session Management ─────────────────────────────────────────────────────
+
+# auth.session(config)
+# Creates a session manager
+# config: { store, secret, max_age, cookie_name, secure, http_only, same_site }
+# store: "memory" (default), "redis", or a db connection
+# max_age: session lifetime in seconds (default 86400 = 24h)
+# Example:
+#   let sessions = auth.session({
+#     store: "redis",
+#     secret: env("SESSION_SECRET"),
+#     max_age: 86400,
+#     secure: true,
+#     http_only: true,
+#     same_site: "strict"
+#   })
+
+# sessions.middleware()
+# Returns middleware that attaches session to requests
+# Example: app.use(sessions.middleware())
+
+# req.session.get(key)          -> Get session value
+# req.session.set(key, value)   -> Set session value
+# req.session.delete(key)       -> Remove session value
+# req.session.destroy()         -> Destroy entire session
+# req.session.regenerate()      -> Create new session ID (prevents fixation)
+# req.session.id                -> Current session ID
+
+# ── Two-Factor Authentication (2FA) ────────────────────────────────────────
+
+# auth.totp_generate(config)
+# Generates a TOTP (Time-based One-Time Password) secret
+# config: { issuer, account, digits, period, algorithm }
+# digits: 6 (default) or 8
+# period: time step in seconds (default 30)
+# Returns { secret, uri, qr_code }
+# Example:
+#   let totp = auth.totp_generate({
+#     issuer: "MyApp",
+#     account: "alice@example.com"
+#   })
+#   # totp.secret -> "JBSWY3DPEHPK3PXP"
+#   # totp.uri -> "otpauth://totp/MyApp:alice@example.com?secret=..."
+#   # totp.qr_code -> base64 PNG of QR code
+
+# auth.totp_verify(secret, code, config)
+# Verifies a TOTP code
+# config: { window }
+# window: number of time steps to allow (default 1, for clock skew)
+# Example: auth.totp_verify(stored_secret, "123456") -> true
+
+# auth.hotp_generate(secret, counter)
+# Generates an HMAC-based One-Time Password
+# Example: let code = auth.hotp_generate(secret, counter)
+
+# auth.hotp_verify(secret, code, counter, window)
+# Verifies an HOTP code
+
+# auth.recovery_codes(count, length)
+# Generates backup recovery codes
+# count: number of codes (default 10)
+# length: characters per code (default 8)
+# Example: let codes = auth.recovery_codes(10, 8)
+# -> ["a3f1-b2c4", "d5e6-f7g8", ...]
+
+# ── Role-Based Access Control (RBAC) ──────────────────────────────────────
+
+# auth.rbac()
+# Creates an RBAC authorization system
+# Example:
+#   let acl = auth.rbac()
+
+# acl.define_role(name, permissions)
+# Defines a role with permissions
+# Example:
+#   acl.define_role("admin", ["users:read", "users:write", "users:delete", "settings:*"])
+#   acl.define_role("editor", ["posts:read", "posts:write", "posts:delete"])
+#   acl.define_role("viewer", ["posts:read", "users:read"])
+
+# acl.define_role(name, config)
+# Defines a role that inherits from other roles
+# Example: acl.define_role("superadmin", { inherits: ["admin"], permissions: ["system:*"] })
+
+# acl.assign(user_id, roles)
+# Assigns roles to a user
+# Example: acl.assign("user:42", ["editor", "viewer"])
+
+# acl.revoke(user_id, roles)
+# Revokes roles from a user
+# Example: acl.revoke("user:42", ["editor"])
+
+# acl.can(user_id, permission)
+# Checks if a user has a specific permission
+# Example: acl.can("user:42", "posts:write") -> true
+
+# acl.roles(user_id)
+# Returns a list of roles assigned to a user
+# Example: acl.roles("user:42") -> ["editor", "viewer"]
+
+# acl.middleware(permission)
+# Returns middleware that checks permission before allowing access
+# Example:
+#   app.delete("/api/users/:id",
+#     acl.middleware("users:delete"),
+#     fn(req, res) delete_user(req.params.id)
+#   )
+
+# ── Auth Middleware Helpers ─────────────────────────────────────────────────
+
+# auth.bearer_token(req)
+# Extracts bearer token from Authorization header
+# Example: let token = auth.bearer_token(req)
+
+# auth.basic_auth(req)
+# Extracts Basic Auth credentials from Authorization header
+# Returns { username, password } or nil
+# Example: let creds = auth.basic_auth(req)
+
+# auth.require_auth(config)
+# Middleware that ensures request is authenticated
+# config: { type, on_unauthorized }
+# type: "jwt", "session", "api_key", "basic"
+# Example:
+#   app.use("/api", auth.require_auth({
+#     type: "jwt",
+#     secret: env("JWT_SECRET"),
+#     on_unauthorized: fn(req, res)
+#       res.status(401).json({ error: "Unauthorized" })
+#   }))
+
+# ── CSRF Protection ────────────────────────────────────────────────────────
+
+# auth.csrf(config)
+# Creates CSRF protection middleware
+# config: { secret, cookie_name, header_name, methods }
+# methods: HTTP methods to protect (default ["POST", "PUT", "PATCH", "DELETE"])
+# Example:
+#   let csrf = auth.csrf({ secret: env("CSRF_SECRET") })
+#   app.use(csrf.middleware())
+#   # In templates, include csrf.token(req) in forms
+
+# csrf.middleware()          -> CSRF validation middleware
+# csrf.token(req)            -> Generate a CSRF token for a request

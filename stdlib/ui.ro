@@ -1,0 +1,335 @@
+# ============================================================================
+# Pyro Built-in Library: ui
+# Created by Aravind Pilla
+# GUI/Desktop apps: windows, widgets, layouts, events, dialogs
+# ============================================================================
+
+import ui
+
+# ── Application & Windows ──────────────────────────────────────────────────
+
+# ui.app(config)
+# Creates a GUI application
+# config: { title, width, height, resizable, icon, theme }
+# Example:
+#   let app = ui.app({
+#     title: "My Pyro App",
+#     width: 800,
+#     height: 600,
+#     theme: "dark"
+#   })
+
+# app.run()
+# Starts the application event loop (blocking)
+# Example: app.run()
+
+# app.quit()
+# Closes the application
+
+# ui.window(config)
+# Creates a new window
+# config: { title, width, height, x, y, resizable, minimizable, maximizable, fullscreen }
+# Example: let win = ui.window({ title: "Settings", width: 400, height: 300 })
+
+# win.show()              -> Show the window
+# win.hide()              -> Hide the window
+# win.close()             -> Close the window
+# win.minimize()          -> Minimize the window
+# win.maximize()          -> Maximize the window
+# win.restore()           -> Restore from minimized/maximized
+# win.center()            -> Center on screen
+# win.set_title(text)     -> Change window title
+# win.set_size(w, h)      -> Resize the window
+# win.set_position(x, y)  -> Move the window
+# win.is_visible          -> true if window is visible
+# win.is_fullscreen       -> true if fullscreen
+
+# ── Layout ──────────────────────────────────────────────────────────────────
+
+# ui.column(children, config)
+# Vertical layout container
+# config: { gap, padding, align, justify, scroll }
+# align: "start", "center", "end", "stretch"
+# Example:
+#   let layout = ui.column([
+#     ui.label("Name:"),
+#     ui.text_input({ placeholder: "Enter name" }),
+#     ui.button("Submit", fn() save())
+#   ], { gap: 10, padding: 20 })
+
+# ui.row(children, config)
+# Horizontal layout container
+# config: { gap, padding, align, justify, wrap }
+# Example: let toolbar = ui.row([btn1, btn2, btn3], { gap: 5 })
+
+# ui.grid(children, config)
+# Grid layout
+# config: { cols, rows, gap, col_gap, row_gap }
+# Example: let grid = ui.grid(cards, { cols: 3, gap: 10 })
+
+# ui.stack(children)
+# Overlapping stack layout (like z-index layers)
+# Example: let overlay = ui.stack([background, content, popup])
+
+# ui.spacer()
+# Flexible space that fills available room
+# Example: let toolbar = ui.row([logo, ui.spacer(), menu_btn])
+
+# ui.scroll(child, config)
+# Scrollable container
+# config: { direction, show_scrollbar }
+# direction: "vertical" (default), "horizontal", "both"
+
+# ui.tabs(tabs, config)
+# Tabbed container
+# tabs: list of { label, content }
+# Example:
+#   ui.tabs([
+#     { label: "General", content: general_panel },
+#     { label: "Advanced", content: advanced_panel }
+#   ])
+
+# ui.split(left, right, config)
+# Split pane with draggable divider
+# config: { direction, ratio, min_size }
+# Example: ui.split(sidebar, main_content, { direction: "horizontal", ratio: 0.3 })
+
+# ── Widgets ─────────────────────────────────────────────────────────────────
+
+# ui.label(text, config)
+# Static text label
+# config: { font_size, color, bold, italic, selectable }
+# Example: ui.label("Hello World", { font_size: 24, bold: true })
+
+# ui.button(text, on_click, config)
+# Clickable button
+# config: { icon, variant, disabled, tooltip }
+# variant: "primary", "secondary", "danger", "outline", "ghost"
+# Example: ui.button("Save", fn() save_data(), { variant: "primary" })
+
+# ui.text_input(config)
+# Single-line text input
+# config: { placeholder, value, on_change, on_submit, password, max_length, disabled }
+# Example:
+#   let input = ui.text_input({
+#     placeholder: "Search...",
+#     on_change: fn(val) filter_list(val)
+#   })
+
+# ui.text_area(config)
+# Multi-line text input
+# config: { placeholder, value, rows, on_change, max_length }
+# Example: ui.text_area({ rows: 5, placeholder: "Enter description" })
+
+# ui.checkbox(label, checked, on_change)
+# Checkbox with label
+# Example: ui.checkbox("Remember me", false, fn(val) set_remember(val))
+
+# ui.radio(options, selected, on_change)
+# Radio button group
+# options: list of { label, value }
+# Example: ui.radio([{ label: "Small", value: "s" }, { label: "Large", value: "l" }], "s", fn(v) set_size(v))
+
+# ui.toggle(label, value, on_change)
+# Toggle switch
+# Example: ui.toggle("Dark mode", false, fn(v) set_theme(v))
+
+# ui.slider(config)
+# Numeric slider
+# config: { min, max, step, value, on_change, label, show_value }
+# Example: ui.slider({ min: 0, max: 100, value: 50, on_change: fn(v) set_volume(v) })
+
+# ui.dropdown(options, selected, on_change, config)
+# Dropdown select menu
+# config: { placeholder, searchable, multi }
+# Example: ui.dropdown(["Red", "Green", "Blue"], "Red", fn(v) set_color(v))
+
+# ui.number_input(config)
+# Numeric input with increment/decrement
+# config: { min, max, step, value, on_change }
+# Example: ui.number_input({ min: 1, max: 100, step: 1, value: 1 })
+
+# ui.date_picker(config)
+# Date picker widget
+# config: { value, min_date, max_date, on_change, format }
+# Example: ui.date_picker({ on_change: fn(d) set_date(d) })
+
+# ui.color_picker(value, on_change)
+# Color selection widget
+# Example: ui.color_picker("#ff0000", fn(c) set_color(c))
+
+# ui.progress(value, config)
+# Progress bar
+# config: { max, label, color, indeterminate }
+# Example: ui.progress(75, { max: 100, label: "75%" })
+
+# ui.spinner(config)
+# Loading spinner
+# config: { size, color }
+# Example: ui.spinner({ size: 24 })
+
+# ui.image(src, config)
+# Image display
+# config: { width, height, fit, alt }
+# fit: "cover", "contain", "fill", "none"
+# Example: ui.image("logo.png", { width: 200, fit: "contain" })
+
+# ui.icon(name, config)
+# Built-in icon
+# config: { size, color }
+# Example: ui.icon("settings", { size: 20 })
+
+# ui.separator()
+# Horizontal or vertical line separator
+# Example: ui.column([section1, ui.separator(), section2])
+
+# ui.badge(text, config)
+# Small badge/tag widget
+# config: { color, variant }
+# Example: ui.badge("New", { color: "green" })
+
+# ── Lists & Tables ─────────────────────────────────────────────────────────
+
+# ui.list(items, render_fn, config)
+# Scrollable list with custom rendering
+# config: { selectable, on_select, virtualized }
+# Example:
+#   ui.list(users, fn(user)
+#     return ui.row([ui.label(user.name), ui.label(user.email)])
+#   , { selectable: true, on_select: fn(u) show_user(u) })
+
+# ui.table(data, columns, config)
+# Data table
+# columns: list of { key, label, width, sortable }
+# config: { selectable, on_select, paginate, page_size }
+# Example:
+#   ui.table(users, [
+#     { key: "name", label: "Name", sortable: true },
+#     { key: "email", label: "Email" },
+#     { key: "role", label: "Role", width: 100 }
+#   ], { paginate: true, page_size: 20 })
+
+# ui.tree(data, config)
+# Tree view for hierarchical data
+# data: list of { label, children, icon, expanded }
+# config: { on_select, on_expand }
+
+# ── Dialogs & Popups ───────────────────────────────────────────────────────
+
+# ui.alert(message, config)
+# Shows an alert dialog
+# config: { title, ok_text }
+# Example: ui.alert("File saved successfully", { title: "Success" })
+
+# ui.confirm(message, config)
+# Shows a confirmation dialog, returns true/false
+# config: { title, ok_text, cancel_text }
+# Example:
+#   let yes = await ui.confirm("Delete this item?", { title: "Confirm Delete" })
+
+# ui.prompt(message, config)
+# Shows an input dialog, returns the entered string or nil
+# config: { title, default_value, placeholder }
+# Example: let name = await ui.prompt("Enter your name:")
+
+# ui.file_open(config)
+# Opens a file picker dialog, returns file path or nil
+# config: { title, filters, multi }
+# filters: list of { name, extensions }
+# Example:
+#   let path = await ui.file_open({
+#     title: "Open Image",
+#     filters: [{ name: "Images", extensions: ["png", "jpg", "gif"] }]
+#   })
+
+# ui.file_save(config)
+# Opens a save file dialog
+# config: { title, default_name, filters }
+# Example: let path = await ui.file_save({ default_name: "report.csv" })
+
+# ui.dir_picker(config)
+# Opens a directory picker dialog
+# Example: let dir = await ui.dir_picker({ title: "Select Output Folder" })
+
+# ui.toast(message, config)
+# Shows a temporary notification
+# config: { duration, type, position }
+# type: "info", "success", "warning", "error"
+# position: "top", "bottom", "top-right", "bottom-right"
+# Example: ui.toast("Changes saved", { type: "success", duration: 3000 })
+
+# ui.notification(config)
+# Shows a system notification
+# config: { title, body, icon }
+# Example: ui.notification({ title: "Download Complete", body: "file.zip is ready" })
+
+# ── Events ──────────────────────────────────────────────────────────────────
+
+# widget.on(event, handler)
+# Attaches an event handler to any widget
+# Events: "click", "double_click", "hover", "focus", "blur",
+#          "key_down", "key_up", "key_press", "mouse_enter", "mouse_leave"
+# Example: label.on("click", fn() open_link())
+
+# ui.hotkey(keys, handler)
+# Registers a global keyboard shortcut
+# Example: ui.hotkey("ctrl+s", fn() save())
+# Example: ui.hotkey("cmd+shift+p", fn() show_palette())
+
+# ── State Management ───────────────────────────────────────────────────────
+
+# ui.state(initial_value)
+# Creates a reactive state variable that auto-updates bound widgets
+# Example:
+#   let count = ui.state(0)
+#   let btn = ui.button("Click: " + count.get(), fn()
+#     count.set(count.get() + 1)
+#   )
+#   count.on_change(fn(val) btn.set_text("Click: " + val))
+
+# state.get()              -> Get current value
+# state.set(value)         -> Set new value
+# state.on_change(handler) -> Called when value changes
+
+# ── Theming ─────────────────────────────────────────────────────────────────
+
+# ui.theme(name)
+# Sets the application theme
+# Built-in: "light", "dark", "system"
+# Example: ui.theme("dark")
+
+# ui.custom_theme(config)
+# Creates a custom theme
+# config: { primary, secondary, background, surface, text, error, font, border_radius }
+# Example:
+#   ui.custom_theme({
+#     primary: "#6200ee",
+#     background: "#121212",
+#     text: "#ffffff",
+#     font: "Inter"
+#   })
+
+# ── Menu & System Tray ─────────────────────────────────────────────────────
+
+# ui.menu(items)
+# Creates an application menu bar
+# items: list of { label, submenu }
+# submenu: list of { label, action, shortcut, separator }
+# Example:
+#   ui.menu([
+#     { label: "File", submenu: [
+#       { label: "Open", action: fn() open_file(), shortcut: "ctrl+o" },
+#       { separator: true },
+#       { label: "Quit", action: fn() app.quit(), shortcut: "ctrl+q" }
+#     ]}
+#   ])
+
+# ui.tray(config)
+# Creates a system tray icon
+# config: { icon, tooltip, menu }
+# Example:
+#   ui.tray({
+#     icon: "icon.png",
+#     tooltip: "My App",
+#     menu: [{ label: "Show", action: fn() win.show() }, { label: "Quit", action: fn() app.quit() }]
+#   })

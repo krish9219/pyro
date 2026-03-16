@@ -1,0 +1,111 @@
+# Phase 4 Showcase - Language Features & Error Handling
+# Pyro Programming Language
+
+# ===== 1. Optional Type Annotations =====
+# Types are optional - beginners skip them, pros add them
+
+# Without types (dynamic, works like before)
+fn add(a, b)
+    return a + b
+
+# With types (explicit, self-documenting)
+fn multiply(a: int, b: int)
+    return a * b
+
+# Mix and match
+fn greet(name: str, times)
+    for i in 0..times
+        print("Hello, {name}!")
+
+print("=== Type Annotations ===")
+print("add(3, 4) = {add(3, 4)}")
+print("multiply(5, 6) = {multiply(5, 6)}")
+
+# ===== 2. String Methods =====
+print("")
+print("=== String Methods ===")
+
+let text = "hello world"
+print("upper: {text.upper()}")
+print("lower: {text.upper().lower()}")
+print("trim: {text.trim()}")
+print("starts_with 'hello': {text.starts_with(\"hello\")}")
+print("ends_with 'world': {text.ends_with(\"world\")}")
+print("replace: {text.replace(\"world\", \"Pyro\")}")
+print("slice(0,5): {text.slice(0, 5)}")
+print("repeat(2): {text.repeat(2)}")
+
+let csv = "apple,banana,cherry"
+let fruits = csv.split(",")
+print("split: ", fruits)
+
+let letters = "abc".chars()
+print("chars: ", letters)
+
+# ===== 3. Map/Dict Methods =====
+print("")
+print("=== Map Methods ===")
+
+let config = {"host": "localhost", "port": "8080", "debug": "true"}
+print("keys: ", config.keys())
+print("values: ", config.values())
+print("has 'host': ", config.has("host"))
+print("has 'missing': ", config.has("missing"))
+print("get with default: ", config.get("timeout", "30"))
+
+# ===== 4. Result Type (ok/err) =====
+print("")
+print("=== Result Type ===")
+
+fn divide(a: int, b: int)
+    if b == 0
+        return err("Division by zero")
+    return ok(a / b)
+
+let good = divide(10, 2)
+let bad = divide(10, 0)
+print("10 / 2 = {good}")
+print("10 / 0 = {bad}")
+
+fn safe_parse(s: str)
+    try
+        return ok(s)
+    catch e
+        return err(e)
+
+# ===== 5. Nil Coalescing ?? =====
+print("")
+print("=== Nil Coalescing ?? ===")
+
+let name = "" ?? "Anonymous"
+print("empty ?? 'Anonymous' = {name}")
+
+let provided = "Alice" ?? "Anonymous"
+print("'Alice' ?? 'Anonymous' = {provided}")
+
+# ===== 6. Typed Lambda =====
+print("")
+print("=== Typed Lambda ===")
+let square = fn(x: int) = x * x
+print("square(7) = {square(7)}")
+
+let nums = [1, 2, 3, 4, 5]
+let doubled = nums.map(fn(x: int) = x * 2)
+print("doubled: ", doubled)
+
+# ===== 7. Error Handling with try/catch =====
+print("")
+print("=== Error Handling ===")
+
+fn risky_operation()
+    let items = [1, 2, 3]
+    return items[0]
+
+try
+    let result = risky_operation()
+    print("Operation succeeded: {result}")
+catch err
+    print("Caught error: {err}")
+
+print("")
+print("Phase 4 complete!")

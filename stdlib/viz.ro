@@ -1,0 +1,264 @@
+# ============================================================================
+# Pyro Built-in Library: viz
+# Created by Aravind Pilla
+# Visualization: charts, dashboards, interactive plots, 3D, export
+# ============================================================================
+
+import viz
+
+# ── Basic Charts ────────────────────────────────────────────────────────────
+
+# viz.line(data, config)
+# Creates a line chart
+# data: { x: [...], y: [...] } or list of series
+# config: { title, xlabel, ylabel, width, height, colors, legend }
+# Example:
+#   let chart = viz.line(
+#     { x: months, y: revenue },
+#     { title: "Monthly Revenue", xlabel: "Month", ylabel: "USD" }
+#   )
+
+# viz.bar(data, config)
+# Creates a bar chart
+# Example:
+#   viz.bar(
+#     { labels: ["Q1","Q2","Q3","Q4"], values: [100, 150, 130, 180] },
+#     { title: "Quarterly Sales", color: "#3498db" }
+#   )
+
+# viz.scatter(data, config)
+# Creates a scatter plot
+# data: { x: [...], y: [...], size: [...], color: [...] }
+# Example:
+#   viz.scatter(
+#     { x: ages, y: incomes, size: experience },
+#     { title: "Age vs Income", opacity: 0.7 }
+#   )
+
+# viz.pie(data, config)
+# Creates a pie chart
+# data: { labels: [...], values: [...] }
+# Example: viz.pie({ labels: categories, values: counts }, { title: "Market Share" })
+
+# viz.donut(data, config)
+# Creates a donut chart (pie with hole)
+# Example: viz.donut({ labels: types, values: amounts }, { hole_size: 0.4 })
+
+# viz.histogram(data, config)
+# Creates a histogram
+# data: list of values
+# config: { bins, title, xlabel, ylabel, density }
+# Example: viz.histogram(scores, { bins: 20, title: "Score Distribution" })
+
+# viz.box(data, config)
+# Creates a box plot
+# data: dict of label -> values list
+# Example: viz.box({ "A": scores_a, "B": scores_b }, { title: "Comparison" })
+
+# viz.violin(data, config)
+# Creates a violin plot
+# Example: viz.violin({ "Group1": vals1, "Group2": vals2 }, { title: "Distribution" })
+
+# viz.area(data, config)
+# Creates an area chart (filled line chart)
+# Example: viz.area({ x: dates, y: values }, { stacked: true })
+
+# viz.heatmap(matrix, config)
+# Creates a heatmap from a 2D matrix or DataFrame
+# config: { title, xlabel, ylabel, colormap, annotate }
+# Example: viz.heatmap(corr_matrix, { colormap: "viridis", annotate: true })
+
+# viz.bubble(data, config)
+# Creates a bubble chart
+# data: { x: [...], y: [...], size: [...], label: [...] }
+# Example: viz.bubble({ x: gdp, y: life_exp, size: population, label: countries })
+
+# ── Statistical Charts ──────────────────────────────────────────────────────
+
+# viz.pair_plot(df, columns, config)
+# Creates a pair plot matrix of scatter plots for each column pair
+# Example: viz.pair_plot(df, ["age", "income", "score"], { hue: "gender" })
+
+# viz.qq_plot(data, config)
+# Quantile-quantile plot to check normality
+# Example: viz.qq_plot(residuals, { title: "Q-Q Plot" })
+
+# viz.error_bar(data, config)
+# Bar chart with error bars
+# data: { labels, values, errors }
+# Example: viz.error_bar({ labels: groups, values: means, errors: stdevs })
+
+# viz.funnel(data, config)
+# Creates a funnel chart (for conversion pipelines)
+# data: { stages: [...], values: [...] }
+# Example: viz.funnel({ stages: ["Visit","Cart","Purchase"], values: [1000,300,50] })
+
+# viz.waterfall(data, config)
+# Waterfall chart showing cumulative effect of values
+# Example: viz.waterfall({ labels: items, values: deltas }, { title: "P&L Breakdown" })
+
+# ── Multi-Series & Combined ────────────────────────────────────────────────
+
+# viz.multi_line(series_list, config)
+# Plots multiple line series on one chart
+# series_list: list of { name, x, y }
+# Example:
+#   viz.multi_line([
+#     { name: "Product A", x: months, y: sales_a },
+#     { name: "Product B", x: months, y: sales_b }
+#   ], { title: "Sales Comparison", legend: true })
+
+# viz.stacked_bar(data, config)
+# Stacked bar chart
+# data: { labels, series: [{ name, values }] }
+
+# viz.grouped_bar(data, config)
+# Grouped bar chart with bars side by side
+
+# viz.subplot(rows, cols, charts)
+# Creates a grid of subplots
+# Example: viz.subplot(2, 2, [chart1, chart2, chart3, chart4])
+
+# viz.overlay(charts, config)
+# Overlays multiple chart types on one plot
+# Example: viz.overlay([line_chart, scatter_chart], { title: "Combined" })
+
+# ── Interactive Features ────────────────────────────────────────────────────
+
+# chart.interactive()
+# Makes a chart interactive with zoom, pan, hover tooltips
+# Example: viz.line(data, config).interactive()
+
+# chart.on("click", handler)
+# Adds click event handler to chart elements
+# Example: chart.on("click", fn(point) print(point.x, point.y))
+
+# chart.on("hover", handler)    -> Hover event
+# chart.on("select", handler)   -> Selection event
+
+# chart.tooltip(fn)
+# Custom tooltip formatter
+# Example: chart.tooltip(fn(d) return d.name + ": $" + d.value)
+
+# chart.zoom(enabled)           -> Enable/disable zoom
+# chart.pan(enabled)            -> Enable/disable panning
+# chart.crosshair(enabled)      -> Show crosshair on hover
+
+# viz.slider(label, min, max, default, on_change)
+# Creates an interactive slider that updates charts
+# Example: viz.slider("Year", 2000, 2025, 2020, fn(val) update_chart(val))
+
+# viz.dropdown(label, options, default, on_change)
+# Creates a dropdown selector for filtering
+# Example: viz.dropdown("Region", regions, "All", fn(val) filter_data(val))
+
+# ── 3D Charts ──────────────────────────────────────────────────────────────
+
+# viz.scatter3d(data, config)
+# 3D scatter plot
+# data: { x: [...], y: [...], z: [...] }
+# Example: viz.scatter3d({ x: xs, y: ys, z: zs }, { title: "3D Scatter" })
+
+# viz.surface3d(matrix, config)
+# 3D surface plot from a 2D matrix
+# Example: viz.surface3d(elevation_data, { colormap: "terrain" })
+
+# viz.line3d(data, config)
+# 3D line plot
+# Example: viz.line3d({ x: xs, y: ys, z: zs }, { title: "3D Trajectory" })
+
+# viz.bar3d(data, config)
+# 3D bar chart
+# Example: viz.bar3d({ x: xs, y: ys, z: heights }, { title: "3D Bars" })
+
+# ── Maps & Geo ──────────────────────────────────────────────────────────────
+
+# viz.map(data, config)
+# Creates a geographic map visualization
+# data: list of { lat, lon, value, label }
+# config: { center, zoom, tile, marker_size }
+# Example: viz.map(locations, { center: [40.7, -74.0], zoom: 10 })
+
+# viz.choropleth(geo_data, values, config)
+# Color-coded geographic regions
+# Example: viz.choropleth("world.json", country_gdp, { colormap: "blues" })
+
+# viz.heatmap_geo(points, config)
+# Geographic heatmap from lat/lon points
+# Example: viz.heatmap_geo(earthquake_data, { radius: 20 })
+
+# ── Dashboards ──────────────────────────────────────────────────────────────
+
+# viz.dashboard(config)
+# Creates a dashboard layout
+# Example:
+#   let dash = viz.dashboard({ title: "Sales Dashboard", cols: 3 })
+#   dash.add(line_chart, { row: 0, col: 0, colspan: 2 })
+#   dash.add(pie_chart, { row: 0, col: 2 })
+#   dash.add(table_widget, { row: 1, col: 0, colspan: 3 })
+#   dash.serve(8080)
+
+# dash.add(widget, layout)      -> Add a widget to the dashboard
+# dash.serve(port)              -> Serve dashboard as web page
+# dash.refresh(interval_ms)    -> Auto-refresh interval
+# dash.add_filter(name, opts)  -> Add global filter to dashboard
+
+# viz.kpi(label, value, config)
+# KPI card widget for dashboards
+# config: { prefix, suffix, delta, delta_color }
+# Example: viz.kpi("Revenue", 1250000, { prefix: "$", delta: "+12%" })
+
+# viz.table(df, config)
+# Renders a DataFrame as an interactive table
+# config: { sortable, searchable, paginate, page_size }
+# Example: viz.table(df, { sortable: true, paginate: true, page_size: 25 })
+
+# ── Animation ───────────────────────────────────────────────────────────────
+
+# viz.animate(frames, config)
+# Creates an animated chart from a list of data frames
+# config: { duration, loop, transition }
+# Example:
+#   let frames = years |> map(fn(y) return { x: countries, y: get_gdp(y), title: y })
+#   viz.animate(frames, { duration: 500, loop: true })
+
+# chart.transition(duration)
+# Animates transitions between data updates
+# Example: chart.transition(300)
+
+# ── Export & Rendering ──────────────────────────────────────────────────────
+
+# chart.show()
+# Displays the chart in the default viewer
+# Example: chart.show()
+
+# chart.save(path, config)
+# Saves chart to file
+# Supported formats: "png", "svg", "pdf", "html", "jpg"
+# config: { width, height, dpi, background }
+# Example: chart.save("report.png", { width: 1200, height: 800, dpi: 150 })
+
+# chart.to_html()
+# Returns the chart as an HTML string
+# Example: let html = chart.to_html()
+
+# chart.to_base64(format)
+# Returns chart as base64-encoded image string
+# Example: let img = chart.to_base64("png")
+
+# ── Themes & Styling ───────────────────────────────────────────────────────
+
+# viz.theme(name)
+# Sets the global chart theme
+# Built-in: "default", "dark", "minimal", "seaborn", "ggplot", "fivethirtyeight"
+# Example: viz.theme("dark")
+
+# viz.palette(name)
+# Sets the global color palette
+# Built-in: "category10", "pastel", "bold", "muted", "warm", "cool"
+# Example: viz.palette("pastel")
+
+# chart.style(config)
+# Applies custom styles to a chart
+# config: { font, font_size, grid, background, border }
+# Example: chart.style({ font: "monospace", grid: true, background: "#1a1a2e" })

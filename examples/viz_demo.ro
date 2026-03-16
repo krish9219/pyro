@@ -1,0 +1,16 @@
+import viz
+
+# Generate a bar chart
+let labels = ["Jan", "Feb", "Mar", "Apr", "May"]
+let values = [120.0, 180.0, 150.0, 220.0, 195.0]
+let svg = viz.bar_chart(labels, values, "Monthly Sales")
+viz.save("/tmp/pyro_chart.svg", svg)
+print("Bar chart saved to /tmp/pyro_chart.svg")
+print("SVG length: ", svg.len())
+
+# Generate a pie chart
+let categories = ["Engineering", "Marketing", "Sales"]
+let budgets = [50.0, 30.0, 20.0]
+let pie = viz.pie_chart(categories, budgets, "Budget")
+viz.save("/tmp/pyro_pie.svg", pie)
+print("Pie chart saved to /tmp/pyro_pie.svg")

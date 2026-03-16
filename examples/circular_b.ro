@@ -1,0 +1,4 @@
+# circular_b.ro - tests cycle detection
+import circular_a
+
+fn from_b() = 2

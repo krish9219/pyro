@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Install — Pyro Programming Language</title>
+  <meta name="description" content="Install the Pyro programming language on Linux, macOS, or Windows. Quick install, build from source, and verification steps.">
+  <base href="/pyro-lang/">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔥</text></svg>">
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar" role="navigation" aria-label="Main navigation">
+  <div class="container">
+    <a href="index.html" class="nav-brand text-gradient">Pyro<span>lang</span></a>
+    <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="docs.html">Docs</a>
+      <a href="examples.html">Examples</a>
+      <a href="install.html" class="active">Install</a>
+      <a href="https://github.com/krish9219/pyro" class="btn btn-sm btn-outline">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<main style="padding-top: calc(var(--nav-height) + 48px); padding-bottom: 80px;">
+  <div class="container" style="max-width: 860px;">
+    <div class="section-header">
+      <h1>Install <span class="text-gradient">Pyro</span></h1>
+      <p>Get Pyro running on your machine in under a minute.</p>
+    </div>
+
+    <!-- Quick Install -->
+    <section style="padding: 0 0 48px;">
+      <h2 style="font-size: 1.5rem; margin-bottom: 24px;">Quick Install</h2>
+      <div class="tab-container">
+        <div class="tabs" data-tabs>
+          <button class="tab-btn active" data-tab="qi-linux">Linux</button>
+          <button class="tab-btn" data-tab="qi-macos">macOS</button>
+          <button class="tab-btn" data-tab="qi-windows">Windows</button>
+        </div>
+        <div class="tab-body">
+          <div class="tab-content active" data-tab-content="qi-linux">
+            <div class="install-cmd">
+              <code>curl -fsSL https://aravindlabs.tech/pyro-lang/install.sh | bash</code>
+              <button class="copy-inline">Copy</button>
+            </div>
+          </div>
+          <div class="tab-content" data-tab-content="qi-macos">
+            <div class="install-cmd">
+              <code>brew install aravindlabs/tap/pyro</code>
+              <button class="copy-inline">Copy</button>
+            </div>
+          </div>
+          <div class="tab-content" data-tab-content="qi-windows">
+            <div class="install-cmd">
+              <code>winget install AravindLabs.Pyro</code>
+              <button class="copy-inline">Copy</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Detailed Linux -->
+    <section style="padding: 0 0 48px;">
+      <h2 id="linux" style="font-size: 1.5rem; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border);">Linux</h2>
+
+      <h3 style="font-size: 1.1rem; margin: 24px 0 12px;">Prerequisites</h3>
+      <ul style="list-style: disc; padding-left: 24px; margin-bottom: 16px;">
+        <li style="margin-bottom: 6px; color: var(--text-secondary);">GCC 11+ or Clang 14+</li>
+        <li style="margin-bottom: 6px; color: var(--text-secondary);">CMake 3.20+</li>
+        <li style="margin-bottom: 6px; color: var(--text-secondary);">OpenSSL 1.1+ development headers</li>
+        <li style="margin-bottom: 6px; color: var(--text-secondary);">Git</li>
+      </ul>
+
+      <h3 style="font-size: 1.1rem; margin: 24px 0 12px;">Install prerequisites (Ubuntu / Debian)</h3>
+      <pre><button class="copy-btn">Copy</button><code>sudo apt update
+sudo apt install -y build-essential cmake libssl-dev git</code></pre>
+
+      <h3 style="font-size: 1.1rem; margin: 24px 0 12px;">Install prerequisites (Fedora / RHEL)</h3>
+      <pre><button class="copy-btn">Copy</button><code>sudo dnf install -y gcc gcc-c++ cmake openssl-devel git</code></pre>
+
+      <h3 style="font-size: 1.1rem; margin: 24px 0 12px;">Install prerequisites (Arch)</h3>
+      <pre><button class="copy-btn">Copy</button><code>sudo pacman -S base-devel cmake openssl git</code></pre>
+
+      <h3 style="font-size: 1.1rem; margin: 24px 0 12px;">Quick install via script</h3>
+      <pre><button class="copy-btn">Copy</button><code>curl -fsSL https://aravindlabs.tech/pyro-lang/install.sh | bash</code></pre>
+      <p style="color: var(--text-secondary); margin: 12px 0;">This downloads the latest binary, installs it to <code>~/.pyro/bin/</code>, and adds it to your PATH.</p>
+
+      <h3 style="font-size: 1.1rem; margin: 24px 0 12px;">Build from source</h3>
+      <pre><button class="copy-btn">Copy</button><code>git clone https://github.com/krish9219/pyro.git
+cd pyro
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+make -j$(nproc)
+sudo make install</code></pre>
+
+      <h3 style="font-size: 1.1rem; margin: 24px 0 12px;">Verify installation</h3>
+      <pre><button class="copy-btn">Copy</button><code>pyro --version
+<span class="cm"># Pyro 1.0.0 (linux-x86_64, built from 7,045 lines of C++)</span>
+
+pyro run -e 'print("Hello from Pyro!")'
+<span class="cm"># Hello from Pyro!</span></code></pre>
+    </section>
+
+    <!-- Detailed macOS -->
+    <section style="padding: 0 0 48px;">
+      <h2 id="macos" style="font-size: 1.5rem; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border);">macOS</h2>
+
+      <h3 style="font-size: 1.1rem; margin: 24px 0 12px;">Prerequisites</h3>
+      <ul style="list-style: disc; padding-left: 24px; margin-bottom: 16px;">
+        <li style="margin-bottom: 6px; color: var(--text-secondary);">Xcode Command Line Tools</li>
+        <li style="margin-bottom: 6px; color: var(--text-secondary);">Homebrew (recommended)</li>
+      </ul>
+
+      <h3 style="font-size: 1.1rem; margin: 24px 0 12px;">Install via Homebrew (recommended)</h3>
+      <pre><button class="copy-btn">Copy</button><code>brew tap aravindlabs/tap
+brew install pyro</code></pre>
+
+      <h3 style="font-size: 1.1rem; margin: 24px 0 12px;">Build from source</h3>
+      <pre><button class="copy-btn">Copy</button><code><span class="cm"># Install Xcode CLI tools</span>
+xcode-select --install
+
+<span class="cm"># Install dependencies</span>
+brew install cmake openssl
+
+<span class="cm"># Clone and build</span>
+git clone https://github.com/krish9219/pyro.git
+cd pyro
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release \
+         -DOPENSSL_ROOT_DIR=$(brew --prefix openssl)
+make -j$(sysctl -n hw.ncpu)
+sudo make install</code></pre>
+
+      <h3 style="font-size: 1.1rem; margin: 24px 0 12px;">Verify installation</h3>
+      <pre><button class="copy-btn">Copy</button><code>pyro --version
+<span class="cm"># Pyro 1.0.0 (darwin-arm64, built from 7,045 lines of C++)</span>
+
+pyro run -e 'print("Hello from Pyro!")'</code></pre>
+    </section>
+
+    <!-- Detailed Windows -->
+    <section style="padding: 0 0 48px;">
+      <h2 id="windows" style="font-size: 1.5rem; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border);">Windows</h2>
+
+      <h3 style="font-size: 1.1rem; margin: 24px 0 12px;">Prerequisites</h3>
+      <ul style="list-style: disc; padding-left: 24px; margin-bottom: 16px;">
+        <li style="margin-bottom: 6px; color: var(--text-secondary);">Windows 10 version 1809 or later</li>
+        <li style="margin-bottom: 6px; color: var(--text-secondary);">Visual Studio 2022 with C++ workload (for building from source)</li>
+      </ul>
+
+      <h3 style="font-size: 1.1rem; margin: 24px 0 12px;">Install via winget</h3>
+      <pre><button class="copy-btn">Copy</button><code>winget install AravindLabs.Pyro</code></pre>
+
+      <h3 style="font-size: 1.1rem; margin: 24px 0 12px;">Install via Scoop</h3>
+      <pre><button class="copy-btn">Copy</button><code>scoop bucket add aravindlabs https://github.com/aravindpilla/scoop-bucket
+scoop install pyro</code></pre>
+
+      <h3 style="font-size: 1.1rem; margin: 24px 0 12px;">Install via MSI</h3>
+      <p style="color: var(--text-secondary); margin-bottom: 16px;">Download the latest MSI installer from the <a href="https://github.com/krish9219/pyro/releases">GitHub Releases</a> page and run it. The installer adds Pyro to your system PATH automatically.</p>
+
+      <h3 style="font-size: 1.1rem; margin: 24px 0 12px;">Build from source (PowerShell)</h3>
+      <pre><button class="copy-btn">Copy</button><code>git clone https://github.com/krish9219/pyro.git
+cd pyro
+mkdir build; cd build
+cmake .. -G "Visual Studio 17 2022" -DCMAKE_BUILD_TYPE=Release
+cmake --build . --config Release
+cmake --install . --config Release</code></pre>
+
+      <h3 style="font-size: 1.1rem; margin: 24px 0 12px;">Verify installation</h3>
+      <pre><button class="copy-btn">Copy</button><code>pyro --version
+<span class="cm"># Pyro 1.0.0 (windows-x86_64, built from 7,045 lines of C++)</span>
+
+pyro run -e "print('Hello from Pyro!')"</code></pre>
+    </section>
+
+    <!-- Docker -->
+    <section style="padding: 0 0 48px;">
+      <h2 id="docker" style="font-size: 1.5rem; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border);">Docker</h2>
+      <pre><button class="copy-btn">Copy</button><code><span class="cm"># Pull the official image</span>
+docker pull aravindlabs/pyro:latest
+
+<span class="cm"># Run a Pyro script</span>
+docker run --rm -v $(pwd):/app aravindlabs/pyro:latest pyro run /app/main.pyro
+
+<span class="cm"># Interactive REPL</span>
+docker run --rm -it aravindlabs/pyro:latest pyro repl</code></pre>
+    </section>
+
+    <!-- Toolchain -->
+    <section style="padding: 0 0 48px;">
+      <h2 id="toolchain" style="font-size: 1.5rem; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border);">Included Toolchain</h2>
+      <p style="color: var(--text-secondary); margin-bottom: 20px;">Every Pyro installation includes the full toolchain:</p>
+
+      <table style="width:100%; border-collapse:collapse; margin-bottom: 24px;">
+        <thead>
+          <tr>
+            <th style="padding: 10px 14px; text-align: left; border: 1px solid var(--border); background: var(--bg-card); font-weight: 600; font-size: .9rem;">Command</th>
+            <th style="padding: 10px 14px; text-align: left; border: 1px solid var(--border); background: var(--bg-card); font-weight: 600; font-size: .9rem;">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="padding: 10px 14px; border: 1px solid var(--border); font-size: .9rem;"><code>pyro run &lt;file&gt;</code></td>
+            <td style="padding: 10px 14px; border: 1px solid var(--border); font-size: .9rem; color: var(--text-secondary);">Compile and run a Pyro source file</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 14px; border: 1px solid var(--border); font-size: .9rem;"><code>pyro build &lt;file&gt;</code></td>
+            <td style="padding: 10px 14px; border: 1px solid var(--border); font-size: .9rem; color: var(--text-secondary);">Compile to a native binary</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 14px; border: 1px solid var(--border); font-size: .9rem;"><code>pyro repl</code></td>
+            <td style="padding: 10px 14px; border: 1px solid var(--border); font-size: .9rem; color: var(--text-secondary);">Interactive Read-Eval-Print Loop</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 14px; border: 1px solid var(--border); font-size: .9rem;"><code>pyro fmt &lt;file&gt;</code></td>
+            <td style="padding: 10px 14px; border: 1px solid var(--border); font-size: .9rem; color: var(--text-secondary);">Format source code</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 14px; border: 1px solid var(--border); font-size: .9rem;"><code>pyro lsp</code></td>
+            <td style="padding: 10px 14px; border: 1px solid var(--border); font-size: .9rem; color: var(--text-secondary);">Start the Language Server Protocol server</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 14px; border: 1px solid var(--border); font-size: .9rem;"><code>pyro debug &lt;file&gt;</code></td>
+            <td style="padding: 10px 14px; border: 1px solid var(--border); font-size: .9rem; color: var(--text-secondary);">Run with the built-in debugger</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 14px; border: 1px solid var(--border); font-size: .9rem;"><code>pyro profile &lt;file&gt;</code></td>
+            <td style="padding: 10px 14px; border: 1px solid var(--border); font-size: .9rem; color: var(--text-secondary);">Run with the profiler attached</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 14px; border: 1px solid var(--border); font-size: .9rem;"><code>pyro test</code></td>
+            <td style="padding: 10px 14px; border: 1px solid var(--border); font-size: .9rem; color: var(--text-secondary);">Run test suites</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 14px; border: 1px solid var(--border); font-size: .9rem;"><code>pyro doc &lt;file&gt;</code></td>
+            <td style="padding: 10px 14px; border: 1px solid var(--border); font-size: .9rem; color: var(--text-secondary);">Generate documentation from source</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Editor Support -->
+    <section style="padding: 0 0 48px;">
+      <h2 id="editors" style="font-size: 1.5rem; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border);">Editor Support</h2>
+      <p style="color: var(--text-secondary); margin-bottom: 20px;">Pyro's built-in LSP server provides IDE features out of the box. Configure your editor:</p>
+
+      <h3 style="font-size: 1.1rem; margin: 24px 0 12px;">VS Code</h3>
+      <p style="color: var(--text-secondary); margin-bottom: 12px;">Install the <strong>Pyro Language</strong> extension from the VS Code marketplace, or:</p>
+      <pre><button class="copy-btn">Copy</button><code>code --install-extension aravindlabs.pyro-lang</code></pre>
+
+      <h3 style="font-size: 1.1rem; margin: 24px 0 12px;">Neovim (with nvim-lspconfig)</h3>
+      <pre><button class="copy-btn">Copy</button><code><span class="cm">-- In your Neovim config (init.lua)</span>
+require('lspconfig').pyro_lsp.setup {
+    cmd = { <span class="str">"pyro"</span>, <span class="str">"lsp"</span> },
+    filetypes = { <span class="str">"pyro"</span> },
+}</code></pre>
+
+      <h3 style="font-size: 1.1rem; margin: 24px 0 12px;">Vim (with ALE)</h3>
+      <pre><button class="copy-btn">Copy</button><code><span class="cm">" In your .vimrc</span>
+let g:ale_linters = {'pyro': ['pyro-lsp']}
+let g:ale_fixers  = {'pyro': ['pyro-fmt']}</code></pre>
+
+      <h3 style="font-size: 1.1rem; margin: 24px 0 12px;">Sublime Text</h3>
+      <p style="color: var(--text-secondary);">Install <strong>LSP</strong> and <strong>LSP-pyro</strong> packages via Package Control.</p>
+    </section>
+
+    <!-- Uninstall -->
+    <section style="padding: 0 0 24px;">
+      <h2 id="uninstall" style="font-size: 1.5rem; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border);">Uninstall</h2>
+      <h3 style="font-size: 1.1rem; margin: 24px 0 12px;">Linux (script install)</h3>
+      <pre><button class="copy-btn">Copy</button><code>rm -rf ~/.pyro
+<span class="cm"># Remove the PATH entry from ~/.bashrc or ~/.zshrc</span></code></pre>
+
+      <h3 style="font-size: 1.1rem; margin: 24px 0 12px;">macOS (Homebrew)</h3>
+      <pre><button class="copy-btn">Copy</button><code>brew uninstall pyro</code></pre>
+
+      <h3 style="font-size: 1.1rem; margin: 24px 0 12px;">Windows</h3>
+      <pre><button class="copy-btn">Copy</button><code>winget uninstall AravindLabs.Pyro</code></pre>
+    </section>
+
+    <div style="text-align: center; padding-top: 32px; border-top: 1px solid var(--border);">
+      <p style="color: var(--text-secondary); margin-bottom: 16px;">Ready to write your first program?</p>
+      <a href="docs.html#hello-world" class="btn btn-primary">Go to Tutorial</a>
+    </div>
+  </div>
+</main>
+
+<!-- Footer -->
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-bottom">
+      <p>&copy; 2024 Aravind Pilla. All rights reserved.</p>
+      <div class="built-badge">Built with Pyro</div>
+    </div>
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+</body>
+</html>

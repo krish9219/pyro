@@ -1,0 +1,229 @@
+# ============================================================================
+# Pyro Built-in Library: queue
+# Created by Aravind Pilla
+# Message queues: pub/sub, workers, job scheduling, dead letter, priority
+# ============================================================================
+
+import queue
+
+# ── In-Memory Queue ─────────────────────────────────────────────────────────
+
+# queue.create(config)
+# Creates an in-memory message queue
+# config: { max_size, overflow }
+# overflow: "drop_oldest" (default), "drop_newest", "block", "error"
+# Example: let q = queue.create({ max_size: 10000 })
+
+# q.push(message)
+# Adds a message to the queue
+# Example: q.push({ type: "order.created", data: order })
+
+# q.pop()
+# Removes and returns the next message (FIFO)
+# Returns nil if queue is empty
+# Example: let msg = q.pop()
+
+# q.peek()
+# Returns the next message without removing it
+# Example: let next = q.peek()
+
+# q.size()           -> Number of messages in the queue
+# q.is_empty()       -> true if queue has no messages
+# q.clear()          -> Removes all messages
+# q.drain()          -> Returns and removes all messages as a list
+
+# ── Priority Queue ──────────────────────────────────────────────────────────
+
+# queue.priority(config)
+# Creates a priority queue
+# config: { max_size, compare }
+# compare: custom comparison function (default: lower priority number = higher priority)
+# Example:
+#   let pq = queue.priority({ max_size: 5000 })
+#   pq.push({ task: "critical_fix", data: issue }, 1)     # high priority
+#   pq.push({ task: "cleanup", data: old_files }, 10)     # low priority
+
+# pq.push(message, priority)
+# Adds a message with a priority level
+# Example: pq.push(task, 5)
+
+# pq.pop()           -> Returns highest priority message
+# pq.peek()          -> Peek at highest priority message
+# pq.size()          -> Number of messages
+
+# ── Worker Pool ─────────────────────────────────────────────────────────────
+
+# queue.worker(queue_instance, handler, config)
+# Creates a worker that processes messages from a queue
+# config: { concurrency, retry, retry_delay, timeout, batch_size }
+# concurrency: number of concurrent workers (default 1)
+# retry: number of retry attempts on failure (default 0)
+# retry_delay: delay between retries in ms (default 1000)
+# timeout: max processing time per message in ms (default 30000)
+# Example:
+#   let worker = queue.worker(q, fn(msg)
+#     print("Processing:", msg.type)
+#     process_order(msg.data)
+#   , { concurrency: 5, retry: 3, retry_delay: 2000 })
+
+# worker.start()           -> Start processing
+# worker.stop()            -> Stop processing (finishes current jobs)
+# worker.pause()           -> Pause processing
+# worker.resume()          -> Resume processing
+# worker.stats()           -> Returns { processed, failed, active, pending, retries }
+
+# worker.on("completed", fn(msg, result))   -> After successful processing
+# worker.on("failed", fn(msg, error))       -> After all retries exhausted
+# worker.on("error", fn(error))             -> On worker error
+# worker.on("drained", fn())                -> When queue is empty
+
+# ── Pub/Sub ─────────────────────────────────────────────────────────────────
+
+# queue.pubsub(config)
+# Creates an in-memory pub/sub system
+# config: { history_size }
+# history_size: number of past messages to keep for late subscribers
+# Example: let ps = queue.pubsub({ history_size: 100 })
+
+# ps.publish(topic, message)
+# Publishes a message to a topic
+# Example: ps.publish("user.events", { action: "login", user_id: 42 })
+
+# ps.subscribe(topic, handler)
+# Subscribes to a topic
+# Returns an unsubscribe function
+# Example:
+#   let unsub = ps.subscribe("user.events", fn(msg)
+#     print("User event:", msg.action)
+#   )
+#   # later: unsub()
+
+# ps.subscribe_pattern(pattern, handler)
+# Subscribes using a glob pattern
+# Example:
+#   ps.subscribe_pattern("user.*", fn(topic, msg)
+#     print("Topic:", topic, "Message:", msg)
+#   )
+
+# ps.unsubscribe(topic, handler)
+# Removes a specific handler from a topic
+
+# ps.topics()
+# Lists all topics with active subscribers
+# Example: ps.topics() -> ["user.events", "order.events"]
+
+# ps.subscriber_count(topic)
+# Returns the number of subscribers for a topic
+# Example: ps.subscriber_count("user.events") -> 3
+
+# ── Job Scheduler ───────────────────────────────────────────────────────────
+
+# queue.scheduler(config)
+# Creates a job scheduler for delayed and recurring jobs
+# config: { store, poll_interval }
+# store: "memory" (default) or a db connection for persistence
+# Example: let scheduler = queue.scheduler({ store: "memory" })
+
+# scheduler.schedule(name, fn, config)
+# Schedules a job
+# config: { delay, cron, repeat, max_runs, timeout }
+# delay: run after this many milliseconds
+# cron: cron expression for recurring jobs
+# repeat: repeat interval in ms
+# max_runs: maximum number of executions
+# Example:
+#   scheduler.schedule("cleanup", fn()
+#     delete_old_records()
+#   , { cron: "0 2 * * *" })  # daily at 2 AM
+#
+#   scheduler.schedule("send_email", fn()
+#     send_welcome_email(user)
+#   , { delay: 60000 })  # after 1 minute
+
+# scheduler.cancel(name)
+# Cancels a scheduled job
+# Example: scheduler.cancel("cleanup")
+
+# scheduler.list()
+# Lists all scheduled jobs
+# Returns list of { name, next_run, last_run, status, run_count }
+
+# scheduler.start()        -> Start the scheduler
+# scheduler.stop()         -> Stop the scheduler
+# scheduler.pause(name)    -> Pause a specific job
+# scheduler.resume(name)   -> Resume a paused job
+
+# ── Dead Letter Queue ──────────────────────────────────────────────────────
+
+# queue.dead_letter(config)
+# Creates a dead letter queue for failed messages
+# config: { max_size, on_add }
+# Example:
+#   let dlq = queue.dead_letter({ max_size: 10000 })
+#
+#   let worker = queue.worker(main_q, handler, {
+#     retry: 3,
+#     dead_letter: dlq
+#   })
+
+# dlq.messages()           -> List all dead letters
+# dlq.size()               -> Number of dead letters
+# dlq.retry(id)            -> Retry a specific message
+# dlq.retry_all()          -> Retry all dead letters
+# dlq.purge()              -> Remove all dead letters
+# dlq.inspect(id)          -> Get details: { message, error, attempts, timestamp }
+
+# ── Channel (Bounded Queue with Blocking) ──────────────────────────────────
+
+# queue.channel(capacity)
+# Creates a bounded channel for communication between async tasks
+# Blocks on send when full, blocks on receive when empty
+# Example:
+#   let ch = queue.channel(10)
+#
+#   # Producer
+#   async fn produce()
+#     for i in 0..100
+#       await ch.send(i)
+#   
+#   # Consumer
+#   async fn consume()
+#     while true
+#       let val = await ch.receive()
+#       process(val)
+
+# ch.send(value)            -> Send a value (blocks if full)
+# ch.receive()              -> Receive a value (blocks if empty)
+# ch.try_send(value)        -> Non-blocking send, returns false if full
+# ch.try_receive()          -> Non-blocking receive, returns nil if empty
+# ch.close()                -> Closes the channel
+# ch.is_closed              -> true if channel is closed
+# ch.len()                  -> Current number of items
+
+# ── Fan-Out / Fan-In ───────────────────────────────────────────────────────
+
+# queue.fan_out(source, targets)
+# Distributes messages from source to multiple target queues (round-robin)
+# Example:
+#   let workers = [queue.create(), queue.create(), queue.create()]
+#   queue.fan_out(incoming_q, workers)
+
+# queue.fan_in(sources, target)
+# Merges messages from multiple source queues into one target
+# Example: queue.fan_in([q1, q2, q3], combined_q)
+
+# queue.broadcast(source, targets)
+# Sends every message to all targets (unlike fan_out which distributes)
+# Example: queue.broadcast(events_q, [logger_q, analytics_q, archive_q])
+
+# ── Rate Limiting ──────────────────────────────────────────────────────────
+
+# queue.rate_limiter(config)
+# Creates a rate-limited queue wrapper
+# config: { rate, interval, burst }
+# rate: number of messages allowed per interval
+# interval: time window in ms (default 1000)
+# burst: max burst size above the rate (default 0)
+# Example:
+#   let limiter = queue.rate_limiter({ rate: 100, interval: 1000, burst: 20 })
+#   let limited_q = limiter.wrap(original_q)

@@ -1,0 +1,53 @@
+# Security-First Design — Built into Pyro, not bolted on
+# Python needs: pip install cryptography bcrypt pyjwt
+# Pyro: just import it — it's built in
+
+import crypto
+import auth
+import validate
+
+# --- Password Hashing (built-in, not a pip package) ---
+# let hashed = crypto.hash_password("my_secret_123")
+# let valid = crypto.verify_password("my_secret_123", hashed)
+# print("Password valid: ", valid)
+
+# --- JWT Tokens (built-in) ---
+# let token = auth.jwt_sign({"user_id": 42, "role": "admin"}, "secret_key")
+# let payload = auth.jwt_verify(token, "secret_key")
+# print("User ID: ", payload.user_id)
+
+# --- Input Validation (built-in) ---
+# let email_ok = validate.email("user@example.com")
+# let url_ok = validate.url("https://pyro-lang.org")
+# let strong = validate.password_strength("MyP@ss123!")
+
+# --- Auto-Sanitization ---
+# let safe = validate.sanitize("<script>alert('xss')</script>")
+# print(safe)  # prints escaped HTML, XSS blocked
+
+# --- Encryption (built-in AES) ---
+# let encrypted = crypto.encrypt("sensitive data", "encryption_key")
+# let decrypted = crypto.decrypt(encrypted, "encryption_key")
+# print("Decrypted: ", decrypted)
+
+# --- Secure Random ---
+# let token = crypto.random_token(32)
+# let uuid = crypto.uuid()
+
+# Demonstration of what Pyro provides built-in
+print("Pyro Security Features:")
+print("  - crypto.hash_password / verify_password (bcrypt)")
+print("  - crypto.encrypt / decrypt (AES-256-GCM)")
+print("  - crypto.sha256 / sha512 / hmac")
+print("  - crypto.random_token / uuid")
+print("  - auth.jwt_sign / jwt_verify")
+print("  - auth.oauth2 / api_key / session")
+print("  - auth.rbac (role-based access control)")
+print("  - auth.two_factor / totp")
+print("  - validate.email / url / phone / ip")
+print("  - validate.sanitize (auto XSS prevention)")
+print("  - validate.sql_safe (SQL injection prevention)")
+print("  - validate.password_strength")
+print("")
+print("Python needs 5+ pip packages for this.")
+print("Pyro has it all built in. Zero dependencies.")

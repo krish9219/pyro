@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Documentation — Pyro Programming Language</title>
+  <meta name="description" content="Complete documentation for the Pyro programming language. Getting started, language guide, standard library, and API reference.">
+  <base href="/pyro-lang/">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔥</text></svg>">
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar" role="navigation" aria-label="Main navigation">
+  <div class="container">
+    <a href="index.html" class="nav-brand text-gradient">Pyro<span>lang</span></a>
+    <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="docs.html" class="active">Docs</a>
+      <a href="examples.html">Examples</a>
+      <a href="install.html">Install</a>
+      <a href="https://github.com/krish9219/pyro" class="btn btn-sm btn-outline">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<div class="docs-layout">
+  <!-- Sidebar -->
+  <aside class="docs-sidebar" role="complementary" aria-label="Documentation navigation">
+    <h4>Getting Started</h4>
+    <a href="#installation" class="active">Installation</a>
+    <a href="#hello-world">Hello World</a>
+    <a href="#first-program">Your First Program</a>
+    <a href="#repl">Using the REPL</a>
+
+    <h4>Language Guide</h4>
+    <a href="#variables">Variables &amp; Types</a>
+    <a href="#functions">Functions</a>
+    <a href="#control-flow">Control Flow</a>
+    <a href="#structs">Structs</a>
+    <a href="#enums">Enums</a>
+    <a href="#match">Pattern Matching</a>
+    <a href="#traits">Traits</a>
+    <a href="#pipes">Pipe Operator</a>
+    <a href="#closures">Closures</a>
+    <a href="#error-handling">Error Handling</a>
+    <a href="#async-await">Async / Await</a>
+    <a href="#modules-guide">Modules</a>
+
+    <h4>Standard Library</h4>
+    <a href="#stdlib-core">Core Modules</a>
+    <a href="#stdlib-data">Data Modules</a>
+    <a href="#stdlib-web">Web Modules</a>
+    <a href="#stdlib-security">Security Modules</a>
+    <a href="#stdlib-algo">Algorithm Modules</a>
+    <a href="#stdlib-net">Networking Modules</a>
+    <a href="#stdlib-system">System Modules</a>
+    <a href="#stdlib-text">Text Modules</a>
+
+    <h4>Reference</h4>
+    <a href="#keywords">Keywords (23)</a>
+    <a href="#operators">Operators</a>
+    <a href="#types-ref">Type System</a>
+    <a href="#grammar">Grammar</a>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="docs-main">
+    <h1>Pyro Documentation</h1>
+    <p>Welcome to the official documentation for the Pyro programming language. Pyro is a compiled language with 23 keywords, 76 built-in modules, and native C++ speed.</p>
+
+    <!-- ===== Getting Started ===== -->
+    <h2 id="installation">Installation</h2>
+    <p>Install Pyro on your system in under a minute.</p>
+
+    <h3>Linux</h3>
+    <pre><button class="copy-btn">Copy</button><code>curl -fsSL https://aravindlabs.tech/pyro-lang/install.sh | bash</code></pre>
+
+    <h3>macOS</h3>
+    <pre><button class="copy-btn">Copy</button><code>brew install aravindlabs/tap/pyro</code></pre>
+
+    <h3>Windows</h3>
+    <pre><button class="copy-btn">Copy</button><code>winget install AravindLabs.Pyro</code></pre>
+
+    <h3>Build from Source</h3>
+    <pre><button class="copy-btn">Copy</button><code>git clone https://github.com/krish9219/pyro.git
+cd pyro
+make build
+sudo make install</code></pre>
+
+    <p>Verify the installation:</p>
+    <pre><button class="copy-btn">Copy</button><code>pyro --version
+<span class="cm"># Pyro 1.0.0 (built from 7,045 lines of C++)</span></code></pre>
+
+    <h2 id="hello-world">Hello World</h2>
+    <p>Create a file called <code>hello.pyro</code>:</p>
+    <pre><button class="copy-btn">Copy</button><code><span class="kw">fn</span> <span class="fn">main</span>() {
+    <span class="bi">print</span>(<span class="str">"Hello, World!"</span>)
+}</code></pre>
+    <p>Run it:</p>
+    <pre><button class="copy-btn">Copy</button><code>pyro run hello.pyro</code></pre>
+    <p>Or compile and run the binary:</p>
+    <pre><button class="copy-btn">Copy</button><code>pyro build hello.pyro -o hello
+./hello</code></pre>
+
+    <h2 id="first-program">Your First Program</h2>
+    <p>Let's build a small program that reads a name and greets the user:</p>
+    <pre><button class="copy-btn">Copy</button><code><span class="kw">use</span> io
+
+<span class="kw">fn</span> <span class="fn">main</span>() {
+    <span class="bi">print</span>(<span class="str">"What is your name?"</span>)
+    <span class="kw">let</span> name = <span class="type">io</span>::<span class="fn">readline</span>()
+    <span class="bi">print</span>(<span class="str">"Hello, "</span> + name + <span class="str">"! Welcome to Pyro."</span>)
+
+    <span class="cm">// Pipe operator example</span>
+    [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>]
+        |&gt; <span class="fn">map</span>(|x| x * x)
+        |&gt; <span class="fn">filter</span>(|x| x &gt; <span class="num">5</span>)
+        |&gt; <span class="fn">each</span>(|x| <span class="bi">print</span>(<span class="str">"Square: "</span> + <span class="fn">str</span>(x)))
+}</code></pre>
+
+    <h2 id="repl">Using the REPL</h2>
+    <p>Start the interactive REPL with:</p>
+    <pre><button class="copy-btn">Copy</button><code>pyro repl</code></pre>
+    <pre><code><span class="cm">Pyro 1.0.0 REPL — Type :help for commands, :quit to exit</span>
+&gt;&gt;&gt; <span class="kw">let</span> x = <span class="num">42</span>
+&gt;&gt;&gt; x * <span class="num">2</span>
+<span class="num">84</span>
+&gt;&gt;&gt; [<span class="num">1</span>,<span class="num">2</span>,<span class="num">3</span>] |&gt; <span class="fn">map</span>(|x| x + <span class="num">10</span>)
+[<span class="num">11</span>, <span class="num">12</span>, <span class="num">13</span>]</code></pre>
+
+    <!-- ===== Language Guide ===== -->
+    <h2 id="variables">Variables &amp; Types</h2>
+    <p>Pyro is statically typed with type inference. Use <code>let</code> for immutable bindings and <code>mut</code> for mutable ones.</p>
+    <pre><button class="copy-btn">Copy</button><code><span class="cm">// Immutable (default)</span>
+<span class="kw">let</span> name = <span class="str">"Pyro"</span>            <span class="cm">// type inferred as str</span>
+<span class="kw">let</span> age: <span class="type">int</span> = <span class="num">1</span>            <span class="cm">// explicit type</span>
+<span class="kw">let</span> pi = <span class="num">3.14159</span>             <span class="cm">// float</span>
+<span class="kw">let</span> active = <span class="kw">true</span>            <span class="cm">// bool</span>
+<span class="kw">let</span> data = <span class="kw">nil</span>               <span class="cm">// nil value</span>
+
+<span class="cm">// Mutable</span>
+<span class="kw">let</span> <span class="kw">mut</span> counter = <span class="num">0</span>
+counter = counter + <span class="num">1</span>
+
+<span class="cm">// Collections</span>
+<span class="kw">let</span> list = [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>]                        <span class="cm">// List&lt;int&gt;</span>
+<span class="kw">let</span> map = { <span class="str">"a"</span>: <span class="num">1</span>, <span class="str">"b"</span>: <span class="num">2</span> }               <span class="cm">// Map&lt;str, int&gt;</span>
+<span class="kw">let</span> tuple = (<span class="num">1</span>, <span class="str">"hello"</span>, <span class="kw">true</span>)              <span class="cm">// (int, str, bool)</span></code></pre>
+
+    <h3>Built-in Types</h3>
+    <table>
+      <thead><tr><th>Type</th><th>Description</th><th>Example</th></tr></thead>
+      <tbody>
+        <tr><td><code>int</code></td><td>64-bit signed integer</td><td><code>42</code></td></tr>
+        <tr><td><code>float</code></td><td>64-bit floating point</td><td><code>3.14</code></td></tr>
+        <tr><td><code>bool</code></td><td>Boolean</td><td><code>true</code>, <code>false</code></td></tr>
+        <tr><td><code>str</code></td><td>UTF-8 string</td><td><code>"hello"</code></td></tr>
+        <tr><td><code>List&lt;T&gt;</code></td><td>Growable array</td><td><code>[1, 2, 3]</code></td></tr>
+        <tr><td><code>Map&lt;K,V&gt;</code></td><td>Hash map</td><td><code>{"a": 1}</code></td></tr>
+        <tr><td><code>nil</code></td><td>Absence of value</td><td><code>nil</code></td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="functions">Functions</h2>
+    <p>Functions are first-class citizens in Pyro. Declare them with <code>fn</code>.</p>
+    <pre><button class="copy-btn">Copy</button><code><span class="cm">// Basic function</span>
+<span class="kw">fn</span> <span class="fn">greet</span>(name: <span class="type">str</span>) -&gt; <span class="type">str</span> {
+    <span class="kw">return</span> <span class="str">"Hello, "</span> + name + <span class="str">"!"</span>
+}
+
+<span class="cm">// Implicit return (last expression)</span>
+<span class="kw">fn</span> <span class="fn">add</span>(a: <span class="type">int</span>, b: <span class="type">int</span>) -&gt; <span class="type">int</span> {
+    a + b
+}
+
+<span class="cm">// Default parameters</span>
+<span class="kw">fn</span> <span class="fn">power</span>(base: <span class="type">int</span>, exp: <span class="type">int</span> = <span class="num">2</span>) -&gt; <span class="type">int</span> {
+    <span class="kw">let</span> <span class="kw">mut</span> result = <span class="num">1</span>
+    <span class="kw">for</span> _ <span class="kw">in</span> <span class="num">0</span>..exp {
+        result = result * base
+    }
+    result
+}
+
+<span class="cm">// Higher-order functions</span>
+<span class="kw">fn</span> <span class="fn">apply_twice</span>(f: <span class="type">fn</span>(<span class="type">int</span>) -&gt; <span class="type">int</span>, val: <span class="type">int</span>) -&gt; <span class="type">int</span> {
+    f(f(val))
+}
+
+<span class="kw">fn</span> <span class="fn">main</span>() {
+    <span class="bi">print</span>(<span class="fn">greet</span>(<span class="str">"World"</span>))
+    <span class="bi">print</span>(<span class="fn">power</span>(<span class="num">3</span>))         <span class="cm">// 9 (default exp=2)</span>
+    <span class="bi">print</span>(<span class="fn">power</span>(<span class="num">2</span>, <span class="num">10</span>))    <span class="cm">// 1024</span>
+    <span class="bi">print</span>(<span class="fn">apply_twice</span>(|x| x * <span class="num">2</span>, <span class="num">3</span>))  <span class="cm">// 12</span>
+}</code></pre>
+
+    <h2 id="control-flow">Control Flow</h2>
+    <pre><button class="copy-btn">Copy</button><code><span class="cm">// If / else (expressions — they return values)</span>
+<span class="kw">let</span> status = <span class="kw">if</span> score &gt;= <span class="num">90</span> { <span class="str">"A"</span> }
+             <span class="kw">else</span> <span class="kw">if</span> score &gt;= <span class="num">80</span> { <span class="str">"B"</span> }
+             <span class="kw">else</span> { <span class="str">"C"</span> }
+
+<span class="cm">// For loops</span>
+<span class="kw">for</span> i <span class="kw">in</span> <span class="num">0</span>..<span class="num">10</span> {
+    <span class="bi">print</span>(i)
+}
+
+<span class="kw">for</span> item <span class="kw">in</span> my_list {
+    <span class="bi">print</span>(item)
+}
+
+<span class="cm">// While loop</span>
+<span class="kw">let</span> <span class="kw">mut</span> n = <span class="num">10</span>
+<span class="kw">while</span> n &gt; <span class="num">0</span> {
+    <span class="bi">print</span>(n)
+    n = n - <span class="num">1</span>
+}
+
+<span class="cm">// Infinite loop with break</span>
+<span class="kw">loop</span> {
+    <span class="kw">let</span> input = <span class="type">io</span>::<span class="fn">readline</span>()
+    <span class="kw">if</span> input == <span class="str">"quit"</span> { <span class="kw">break</span> }
+    <span class="bi">print</span>(<span class="str">"You said: "</span> + input)
+}</code></pre>
+
+    <h2 id="structs">Structs</h2>
+    <pre><button class="copy-btn">Copy</button><code><span class="kw">struct</span> <span class="type">Point</span> {
+    x: <span class="type">float</span>,
+    y: <span class="type">float</span>
+}
+
+<span class="kw">impl</span> <span class="type">Point</span> {
+    <span class="kw">fn</span> <span class="fn">new</span>(x: <span class="type">float</span>, y: <span class="type">float</span>) -&gt; <span class="type">Point</span> {
+        <span class="type">Point</span> { x, y }
+    }
+
+    <span class="kw">fn</span> <span class="fn">distance</span>(self, other: <span class="type">Point</span>) -&gt; <span class="type">float</span> {
+        <span class="kw">let</span> dx = self.x - other.x
+        <span class="kw">let</span> dy = self.y - other.y
+        <span class="type">math</span>::<span class="fn">sqrt</span>(dx * dx + dy * dy)
+    }
+
+    <span class="kw">fn</span> <span class="fn">to_string</span>(self) -&gt; <span class="type">str</span> {
+        <span class="str">"("</span> + <span class="fn">str</span>(self.x) + <span class="str">", "</span> + <span class="fn">str</span>(self.y) + <span class="str">")"</span>
+    }
+}
+
+<span class="kw">fn</span> <span class="fn">main</span>() {
+    <span class="kw">let</span> a = <span class="type">Point</span>::<span class="fn">new</span>(<span class="num">0.0</span>, <span class="num">0.0</span>)
+    <span class="kw">let</span> b = <span class="type">Point</span>::<span class="fn">new</span>(<span class="num">3.0</span>, <span class="num">4.0</span>)
+    <span class="bi">print</span>(a.<span class="fn">distance</span>(b))   <span class="cm">// 5.0</span>
+}</code></pre>
+
+    <h2 id="enums">Enums</h2>
+    <pre><button class="copy-btn">Copy</button><code><span class="kw">enum</span> <span class="type">Color</span> {
+    Red,
+    Green,
+    Blue,
+    Custom(r: <span class="type">int</span>, g: <span class="type">int</span>, b: <span class="type">int</span>)
+}
+
+<span class="kw">enum</span> <span class="type">Option</span>&lt;T&gt; {
+    Some(T),
+    None
+}
+
+<span class="kw">fn</span> <span class="fn">describe</span>(c: <span class="type">Color</span>) -&gt; <span class="type">str</span> {
+    <span class="kw">match</span> c {
+        <span class="type">Color</span>::Red   =&gt; <span class="str">"red"</span>,
+        <span class="type">Color</span>::Green =&gt; <span class="str">"green"</span>,
+        <span class="type">Color</span>::Blue  =&gt; <span class="str">"blue"</span>,
+        <span class="type">Color</span>::Custom(r, g, b) =&gt; <span class="str">"rgb("</span> + <span class="fn">str</span>(r) + <span class="str">","</span> + <span class="fn">str</span>(g) + <span class="str">","</span> + <span class="fn">str</span>(b) + <span class="str">")"</span>
+    }
+}</code></pre>
+
+    <h2 id="match">Pattern Matching</h2>
+    <pre><button class="copy-btn">Copy</button><code><span class="kw">fn</span> <span class="fn">classify</span>(n: <span class="type">int</span>) -&gt; <span class="type">str</span> {
+    <span class="kw">match</span> n {
+        <span class="num">0</span>          =&gt; <span class="str">"zero"</span>,
+        <span class="num">1</span>..<span class="num">10</span>      =&gt; <span class="str">"small"</span>,
+        <span class="num">10</span>..<span class="num">100</span>    =&gt; <span class="str">"medium"</span>,
+        <span class="num">100</span>..<span class="num">1000</span>  =&gt; <span class="str">"large"</span>,
+        _          =&gt; <span class="str">"huge"</span>
+    }
+}
+
+<span class="cm">// Destructuring in match</span>
+<span class="kw">fn</span> <span class="fn">process</span>(point: (<span class="type">int</span>, <span class="type">int</span>)) {
+    <span class="kw">match</span> point {
+        (<span class="num">0</span>, <span class="num">0</span>)    =&gt; <span class="bi">print</span>(<span class="str">"origin"</span>),
+        (x, <span class="num">0</span>)    =&gt; <span class="bi">print</span>(<span class="str">"on x-axis at "</span> + <span class="fn">str</span>(x)),
+        (<span class="num">0</span>, y)    =&gt; <span class="bi">print</span>(<span class="str">"on y-axis at "</span> + <span class="fn">str</span>(y)),
+        (x, y)    =&gt; <span class="bi">print</span>(<span class="str">"at ("</span> + <span class="fn">str</span>(x) + <span class="str">", "</span> + <span class="fn">str</span>(y) + <span class="str">")"</span>)
+    }
+}</code></pre>
+
+    <h2 id="traits">Traits</h2>
+    <pre><button class="copy-btn">Copy</button><code><span class="kw">trait</span> <span class="type">Printable</span> {
+    <span class="kw">fn</span> <span class="fn">to_string</span>(self) -&gt; <span class="type">str</span>
+}
+
+<span class="kw">trait</span> <span class="type">Area</span> {
+    <span class="kw">fn</span> <span class="fn">area</span>(self) -&gt; <span class="type">float</span>
+}
+
+<span class="kw">struct</span> <span class="type">Circle</span> { radius: <span class="type">float</span> }
+
+<span class="kw">impl</span> <span class="type">Area</span> <span class="kw">for</span> <span class="type">Circle</span> {
+    <span class="kw">fn</span> <span class="fn">area</span>(self) -&gt; <span class="type">float</span> {
+        <span class="type">math</span>::PI * self.radius * self.radius
+    }
+}
+
+<span class="kw">impl</span> <span class="type">Printable</span> <span class="kw">for</span> <span class="type">Circle</span> {
+    <span class="kw">fn</span> <span class="fn">to_string</span>(self) -&gt; <span class="type">str</span> {
+        <span class="str">"Circle(r="</span> + <span class="fn">str</span>(self.radius) + <span class="str">")"</span>
+    }
+}</code></pre>
+
+    <h2 id="pipes">Pipe Operator</h2>
+    <p>The pipe operator <code>|&gt;</code> passes the result of the left expression as the first argument to the right function. This makes data transformations read naturally from left to right.</p>
+    <pre><button class="copy-btn">Copy</button><code><span class="cm">// Without pipes (nested, hard to read)</span>
+<span class="bi">print</span>(<span class="fn">join</span>(<span class="fn">sort</span>(<span class="fn">filter</span>(<span class="fn">map</span>(data, square), is_even)), <span class="str">", "</span>))
+
+<span class="cm">// With pipes (clear, left to right)</span>
+data |&gt; <span class="fn">map</span>(square)
+     |&gt; <span class="fn">filter</span>(is_even)
+     |&gt; <span class="fn">sort</span>
+     |&gt; <span class="fn">join</span>(<span class="str">", "</span>)
+     |&gt; <span class="bi">print</span></code></pre>
+
+    <h2 id="closures">Closures</h2>
+    <pre><button class="copy-btn">Copy</button><code><span class="cm">// Closures capture their environment</span>
+<span class="kw">fn</span> <span class="fn">make_adder</span>(n: <span class="type">int</span>) -&gt; <span class="type">fn</span>(<span class="type">int</span>) -&gt; <span class="type">int</span> {
+    |x| x + n  <span class="cm">// captures 'n'</span>
+}
+
+<span class="kw">fn</span> <span class="fn">main</span>() {
+    <span class="kw">let</span> add5 = <span class="fn">make_adder</span>(<span class="num">5</span>)
+    <span class="bi">print</span>(add5(<span class="num">10</span>))  <span class="cm">// 15</span>
+
+    <span class="cm">// Multi-line closure</span>
+    <span class="kw">let</span> process = |items| {
+        items |&gt; <span class="fn">filter</span>(|x| x &gt; <span class="num">0</span>)
+              |&gt; <span class="fn">map</span>(|x| x * <span class="num">2</span>)
+              |&gt; <span class="fn">sort</span>
+    }
+}</code></pre>
+
+    <h2 id="error-handling">Error Handling</h2>
+    <pre><button class="copy-btn">Copy</button><code><span class="kw">use</span> fs
+<span class="kw">use</span> errors
+
+<span class="kw">fn</span> <span class="fn">read_config</span>(path: <span class="type">str</span>) -&gt; <span class="type">Result</span>&lt;<span class="type">str</span>, <span class="type">Error</span>&gt; {
+    <span class="kw">let</span> content = <span class="type">fs</span>::<span class="fn">read</span>(path)?   <span class="cm">// ? propagates errors</span>
+    <span class="kw">if</span> content.<span class="fn">is_empty</span>() {
+        <span class="kw">return</span> <span class="type">Err</span>(<span class="type">errors</span>::<span class="fn">new</span>(<span class="str">"Config file is empty"</span>))
+    }
+    <span class="type">Ok</span>(content)
+}
+
+<span class="kw">fn</span> <span class="fn">main</span>() {
+    <span class="kw">match</span> <span class="fn">read_config</span>(<span class="str">"config.toml"</span>) {
+        <span class="type">Ok</span>(data)  =&gt; <span class="bi">print</span>(<span class="str">"Config loaded: "</span> + data),
+        <span class="type">Err</span>(err) =&gt; <span class="bi">print</span>(<span class="str">"Error: "</span> + err.<span class="fn">message</span>())
+    }
+}</code></pre>
+
+    <h2 id="async-await">Async / Await</h2>
+    <pre><button class="copy-btn">Copy</button><code><span class="kw">use</span> async
+<span class="kw">use</span> http
+
+<span class="kw">async</span> <span class="kw">fn</span> <span class="fn">fetch</span>(url: <span class="type">str</span>) -&gt; <span class="type">str</span> {
+    <span class="kw">let</span> resp = <span class="kw">await</span> <span class="type">http</span>::<span class="fn">get</span>(url)
+    resp.<span class="fn">body</span>()
+}
+
+<span class="kw">fn</span> <span class="fn">main</span>() {
+    <span class="cm">// Concurrent execution</span>
+    <span class="kw">let</span> (a, b) = <span class="kw">await</span> <span class="type">async</span>::<span class="fn">join</span>(
+        <span class="fn">fetch</span>(<span class="str">"https://api.example.com/a"</span>),
+        <span class="fn">fetch</span>(<span class="str">"https://api.example.com/b"</span>)
+    )
+
+    <span class="bi">print</span>(a)
+    <span class="bi">print</span>(b)
+}</code></pre>
+
+    <h2 id="modules-guide">Modules</h2>
+    <pre><button class="copy-btn">Copy</button><code><span class="cm">// Import a standard library module</span>
+<span class="kw">use</span> json
+<span class="kw">use</span> http
+
+<span class="cm">// Import specific items</span>
+<span class="kw">use</span> math::{PI, sqrt, sin, cos}
+
+<span class="cm">// Import with alias</span>
+<span class="kw">use</span> collections <span class="kw">as</span> col
+
+<span class="cm">// Import a local module</span>
+<span class="kw">use</span> ./utils
+<span class="kw">use</span> ../shared/config
+
+<span class="cm">// Create a public module</span>
+<span class="cm">// file: mylib.pyro</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="fn">hello</span>() -&gt; <span class="type">str</span> {
+    <span class="str">"hello from mylib"</span>
+}
+
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="type">Config</span> {
+    <span class="kw">pub</span> name: <span class="type">str</span>,
+    <span class="kw">pub</span> version: <span class="type">int</span>
+}</code></pre>
+
+    <!-- ===== Standard Library ===== -->
+    <h2 id="stdlib-core">Core Modules (12)</h2>
+    <table>
+      <thead><tr><th>Module</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>std</code></td><td>Core utilities, print, assert, type conversions</td></tr>
+        <tr><td><code>io</code></td><td>Input/output streams, stdin/stdout, file handles</td></tr>
+        <tr><td><code>os</code></td><td>Operating system interfaces, environment variables</td></tr>
+        <tr><td><code>fs</code></td><td>File system operations: read, write, mkdir, walk</td></tr>
+        <tr><td><code>path</code></td><td>Path manipulation: join, dirname, basename, ext</td></tr>
+        <tr><td><code>fmt</code></td><td>String formatting with templates and alignment</td></tr>
+        <tr><td><code>math</code></td><td>Math constants and functions: PI, sqrt, sin, cos, log</td></tr>
+        <tr><td><code>time</code></td><td>Time, date, duration, timers, sleep</td></tr>
+        <tr><td><code>log</code></td><td>Structured logging: info, warn, error, debug</td></tr>
+        <tr><td><code>errors</code></td><td>Error types and construction utilities</td></tr>
+        <tr><td><code>types</code></td><td>Type checking and casting utilities</td></tr>
+        <tr><td><code>reflect</code></td><td>Runtime reflection and introspection</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="stdlib-data">Data Modules (12)</h2>
+    <table>
+      <thead><tr><th>Module</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>json</code></td><td>JSON parsing and serialization</td></tr>
+        <tr><td><code>csv</code></td><td>CSV reading/writing with headers and type inference</td></tr>
+        <tr><td><code>xml</code></td><td>XML parsing and generation</td></tr>
+        <tr><td><code>yaml</code></td><td>YAML parsing and serialization</td></tr>
+        <tr><td><code>toml</code></td><td>TOML configuration file support</td></tr>
+        <tr><td><code>base64</code></td><td>Base64 encoding and decoding</td></tr>
+        <tr><td><code>hex</code></td><td>Hexadecimal encoding and decoding</td></tr>
+        <tr><td><code>sqlite</code></td><td>Embedded SQLite database with prepared statements</td></tr>
+        <tr><td><code>collections</code></td><td>HashMap, HashSet, Deque, PriorityQueue, BTree</td></tr>
+        <tr><td><code>iter</code></td><td>Iterator adapters: chain, zip, enumerate, take, skip</td></tr>
+        <tr><td><code>serialize</code></td><td>Binary serialization and deserialization</td></tr>
+        <tr><td><code>compress</code></td><td>Gzip, zlib, and deflate compression</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="stdlib-web">Web Modules (10)</h2>
+    <table>
+      <thead><tr><th>Module</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>http</code></td><td>HTTP client and server with routing</td></tr>
+        <tr><td><code>url</code></td><td>URL parsing, encoding, query string handling</td></tr>
+        <tr><td><code>websocket</code></td><td>WebSocket client and server</td></tr>
+        <tr><td><code>html</code></td><td>HTML parsing and generation</td></tr>
+        <tr><td><code>template</code></td><td>Template engine with logic and loops</td></tr>
+        <tr><td><code>mime</code></td><td>MIME type detection and handling</td></tr>
+        <tr><td><code>cookie</code></td><td>HTTP cookie parsing and creation</td></tr>
+        <tr><td><code>router</code></td><td>URL routing with path parameters</td></tr>
+        <tr><td><code>cors</code></td><td>Cross-Origin Resource Sharing middleware</td></tr>
+        <tr><td><code>sse</code></td><td>Server-Sent Events support</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="stdlib-security">Security Modules (8)</h2>
+    <table>
+      <thead><tr><th>Module</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>crypto</code></td><td>High-level cryptography: encrypt, decrypt, hash</td></tr>
+        <tr><td><code>hash</code></td><td>SHA-256, SHA-512, MD5, BLAKE2</td></tr>
+        <tr><td><code>hmac</code></td><td>HMAC message authentication</td></tr>
+        <tr><td><code>aes</code></td><td>AES-128/256 CBC and GCM modes</td></tr>
+        <tr><td><code>rsa</code></td><td>RSA key generation, encrypt, decrypt, sign, verify</td></tr>
+        <tr><td><code>tls</code></td><td>TLS/SSL connections and certificate handling</td></tr>
+        <tr><td><code>jwt</code></td><td>JSON Web Token creation and verification</td></tr>
+        <tr><td><code>pbkdf2</code></td><td>PBKDF2 key derivation with configurable rounds</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="stdlib-algo">Algorithm Modules (8)</h2>
+    <table>
+      <thead><tr><th>Module</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>sort</code></td><td>Sorting algorithms: quicksort, mergesort, timsort</td></tr>
+        <tr><td><code>search</code></td><td>Binary search, linear search, pattern search</td></tr>
+        <tr><td><code>graph</code></td><td>Graph algorithms: BFS, DFS, Dijkstra, topological sort</td></tr>
+        <tr><td><code>matrix</code></td><td>Matrix operations: multiply, transpose, determinant</td></tr>
+        <tr><td><code>stats</code></td><td>Statistics: mean, median, stdev, linreg, correlation</td></tr>
+        <tr><td><code>random</code></td><td>Random number generation, distributions, shuffle</td></tr>
+        <tr><td><code>bigint</code></td><td>Arbitrary precision integer arithmetic</td></tr>
+        <tr><td><code>bitops</code></td><td>Bitwise operations and bit manipulation</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="stdlib-net">Networking Modules (10)</h2>
+    <table>
+      <thead><tr><th>Module</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>net</code></td><td>Low-level networking: sockets, addresses</td></tr>
+        <tr><td><code>tcp</code></td><td>TCP client and server</td></tr>
+        <tr><td><code>udp</code></td><td>UDP sockets and datagrams</td></tr>
+        <tr><td><code>dns</code></td><td>DNS resolution and lookup</td></tr>
+        <tr><td><code>smtp</code></td><td>SMTP email sending</td></tr>
+        <tr><td><code>ftp</code></td><td>FTP client for file transfers</td></tr>
+        <tr><td><code>ssh</code></td><td>SSH client and remote execution</td></tr>
+        <tr><td><code>grpc</code></td><td>gRPC client and server with protobuf</td></tr>
+        <tr><td><code>mqtt</code></td><td>MQTT messaging protocol client</td></tr>
+        <tr><td><code>redis</code></td><td>Redis client with pub/sub support</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="stdlib-system">System Modules (8)</h2>
+    <table>
+      <thead><tr><th>Module</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>process</code></td><td>Process spawning, pipes, signals</td></tr>
+        <tr><td><code>thread</code></td><td>OS threads with shared memory</td></tr>
+        <tr><td><code>async</code></td><td>Async runtime, tasks, channels, join</td></tr>
+        <tr><td><code>signal</code></td><td>OS signal handling</td></tr>
+        <tr><td><code>env</code></td><td>Environment variable access</td></tr>
+        <tr><td><code>sys</code></td><td>System information: arch, OS, CPU count</td></tr>
+        <tr><td><code>mem</code></td><td>Memory allocation and management</td></tr>
+        <tr><td><code>ffi</code></td><td>Foreign Function Interface for C libraries</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="stdlib-text">Text Modules (8)</h2>
+    <table>
+      <thead><tr><th>Module</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>string</code></td><td>String utilities: split, trim, replace, pad</td></tr>
+        <tr><td><code>regex</code></td><td>Regular expressions with capture groups</td></tr>
+        <tr><td><code>unicode</code></td><td>Unicode normalization and properties</td></tr>
+        <tr><td><code>glob</code></td><td>Glob pattern matching for paths</td></tr>
+        <tr><td><code>diff</code></td><td>Text diffing and patching</td></tr>
+        <tr><td><code>color</code></td><td>Terminal color and styling (ANSI codes)</td></tr>
+        <tr><td><code>table</code></td><td>ASCII table formatting for terminal output</td></tr>
+        <tr><td><code>plot</code></td><td>Terminal-based charts and graphs</td></tr>
+      </tbody>
+    </table>
+
+    <!-- ===== Reference ===== -->
+    <h2 id="keywords">Keywords (23)</h2>
+    <p>Pyro has exactly 23 reserved keywords:</p>
+    <table>
+      <thead><tr><th>Keyword</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td><code>let</code></td><td>Declare an immutable variable</td></tr>
+        <tr><td><code>mut</code></td><td>Make a variable mutable</td></tr>
+        <tr><td><code>fn</code></td><td>Declare a function</td></tr>
+        <tr><td><code>return</code></td><td>Return a value from a function</td></tr>
+        <tr><td><code>if</code></td><td>Conditional branch</td></tr>
+        <tr><td><code>else</code></td><td>Alternative branch</td></tr>
+        <tr><td><code>for</code></td><td>Loop over a range or iterator</td></tr>
+        <tr><td><code>while</code></td><td>Loop with condition</td></tr>
+        <tr><td><code>loop</code></td><td>Infinite loop</td></tr>
+        <tr><td><code>break</code></td><td>Exit a loop</td></tr>
+        <tr><td><code>continue</code></td><td>Skip to next loop iteration</td></tr>
+        <tr><td><code>match</code></td><td>Pattern matching expression</td></tr>
+        <tr><td><code>struct</code></td><td>Define a data structure</td></tr>
+        <tr><td><code>enum</code></td><td>Define an enumeration</td></tr>
+        <tr><td><code>impl</code></td><td>Implement methods on a type</td></tr>
+        <tr><td><code>trait</code></td><td>Define an interface contract</td></tr>
+        <tr><td><code>use</code></td><td>Import a module</td></tr>
+        <tr><td><code>pub</code></td><td>Mark item as public</td></tr>
+        <tr><td><code>async</code></td><td>Declare an async function</td></tr>
+        <tr><td><code>await</code></td><td>Await an async value</td></tr>
+        <tr><td><code>true</code></td><td>Boolean true literal</td></tr>
+        <tr><td><code>false</code></td><td>Boolean false literal</td></tr>
+        <tr><td><code>nil</code></td><td>Null/absence of value</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="operators">Operators</h2>
+    <table>
+      <thead><tr><th>Operator</th><th>Description</th><th>Example</th></tr></thead>
+      <tbody>
+        <tr><td><code>+</code> <code>-</code> <code>*</code> <code>/</code> <code>%</code></td><td>Arithmetic</td><td><code>a + b</code></td></tr>
+        <tr><td><code>==</code> <code>!=</code> <code>&lt;</code> <code>&gt;</code> <code>&lt;=</code> <code>&gt;=</code></td><td>Comparison</td><td><code>a == b</code></td></tr>
+        <tr><td><code>&amp;&amp;</code> <code>||</code> <code>!</code></td><td>Logical</td><td><code>a &amp;&amp; b</code></td></tr>
+        <tr><td><code>|&gt;</code></td><td>Pipe</td><td><code>x |&gt; f</code></td></tr>
+        <tr><td><code>..</code></td><td>Range</td><td><code>0..10</code></td></tr>
+        <tr><td><code>?</code></td><td>Error propagation</td><td><code>val?</code></td></tr>
+        <tr><td><code>::</code></td><td>Path separator</td><td><code>Module::func</code></td></tr>
+        <tr><td><code>=&gt;</code></td><td>Match arm</td><td><code>1 =&gt; "one"</code></td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="types-ref">Type System</h2>
+    <p>Pyro uses a static type system with full type inference. The compiler infers types at compile time, but you can always annotate explicitly for clarity.</p>
+    <pre><button class="copy-btn">Copy</button><code><span class="cm">// Type inference</span>
+<span class="kw">let</span> x = <span class="num">42</span>                    <span class="cm">// int</span>
+<span class="kw">let</span> y = <span class="num">3.14</span>                  <span class="cm">// float</span>
+<span class="kw">let</span> z = <span class="str">"hello"</span>               <span class="cm">// str</span>
+<span class="kw">let</span> list = [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>]          <span class="cm">// List&lt;int&gt;</span>
+
+<span class="cm">// Explicit annotation</span>
+<span class="kw">let</span> a: <span class="type">int</span> = <span class="num">42</span>
+<span class="kw">let</span> b: <span class="type">List</span>&lt;<span class="type">str</span>&gt; = [<span class="str">"a"</span>, <span class="str">"b"</span>]
+
+<span class="cm">// Generic types</span>
+<span class="kw">fn</span> <span class="fn">first</span>&lt;T&gt;(list: <span class="type">List</span>&lt;T&gt;) -&gt; <span class="type">Option</span>&lt;T&gt; {
+    <span class="kw">if</span> list.<span class="fn">is_empty</span>() { <span class="type">None</span> }
+    <span class="kw">else</span> { <span class="type">Some</span>(list[<span class="num">0</span>]) }
+}</code></pre>
+
+    <h2 id="grammar">Grammar Summary</h2>
+    <p>Pyro's grammar is intentionally small. The complete formal grammar fits on a single page:</p>
+    <pre><code><span class="cm">program     = declaration*
+declaration = fn_decl | struct_decl | enum_decl | trait_decl | impl_decl | use_decl | statement
+fn_decl     = ["pub"] ["async"] "fn" IDENT "(" params? ")" ["->" type] block
+struct_decl = ["pub"] "struct" IDENT "{" fields "}"
+enum_decl   = ["pub"] "enum" IDENT "{" variants "}"
+trait_decl  = ["pub"] "trait" IDENT "{" fn_sig* "}"
+impl_decl   = "impl" [IDENT "for"] IDENT "{" fn_decl* "}"
+use_decl    = "use" path ["as" IDENT]
+statement   = let_stmt | expr_stmt | return_stmt | for_stmt | while_stmt | loop_stmt
+expression  = assignment | pipe | logical | comparison | arithmetic | unary | call | primary
+pipe        = expression "|>" expression</span></code></pre>
+
+  </main>
+</div>
+
+<button class="sidebar-toggle" aria-label="Toggle sidebar">&#9776;</button>
+
+<!-- Footer -->
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-bottom">
+      <p>&copy; 2024 Aravind Pilla. All rights reserved.</p>
+      <div class="built-badge">Built with Pyro</div>
+    </div>
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+</body>
+</html>

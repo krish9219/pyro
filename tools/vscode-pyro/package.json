@@ -1,0 +1,53 @@
+{
+    "name": "pyro-language",
+    "displayName": "Pyro Language",
+    "description": "Pyro programming language support - syntax highlighting, auto-indentation, bracket matching, and LSP",
+    "version": "1.1.0",
+    "publisher": "aravindpilla",
+    "engines": {
+        "vscode": "^1.70.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "activationEvents": [
+        "onLanguage:pyro"
+    ],
+    "main": "./extension.js",
+    "contributes": {
+        "languages": [
+            {
+                "id": "pyro",
+                "aliases": [
+                    "Pyro",
+                    "pyro"
+                ],
+                "extensions": [
+                    ".ro"
+                ],
+                "configuration": "./language-configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "pyro",
+                "scopeName": "source.pyro",
+                "path": "./syntaxes/pyro.tmLanguage.json"
+            }
+        ],
+        "configuration": {
+            "type": "object",
+            "title": "Pyro",
+            "properties": {
+                "pyro.lspPath": {
+                    "type": "string",
+                    "default": "pyro-lsp",
+                    "description": "Path to Pyro LSP server binary"
+                }
+            }
+        }
+    },
+    "dependencies": {
+        "vscode-languageclient": "^9.0.1"
+    }
+}

@@ -1,0 +1,258 @@
+# ============================================================================
+# Pyro Built-in Library: validate
+# Created by Aravind Pilla
+# Validation: email, URL, phone, schema, sanitize, regex patterns
+# ============================================================================
+
+import validate
+
+# ── String Validators ───────────────────────────────────────────────────────
+
+# validate.email(str)
+# Returns true if str is a valid email address
+# Example: validate.email("user@example.com") -> true
+
+# validate.url(str, config)
+# Returns true if str is a valid URL
+# config: { protocols, require_protocol }
+# Example: validate.url("https://example.com/path") -> true
+
+# validate.ip(str)
+# Returns true if str is a valid IPv4 or IPv6 address
+# Example: validate.ip("192.168.1.1") -> true
+
+# validate.ipv4(str)        -> Validates IPv4 only
+# validate.ipv6(str)        -> Validates IPv6 only
+
+# validate.phone(str, country)
+# Returns true if str is a valid phone number
+# country: ISO country code (e.g. "US", "IN", "GB") or nil for international
+# Example: validate.phone("+1-555-123-4567", "US") -> true
+
+# validate.uuid(str)
+# Returns true if str is a valid UUID (v1-v5)
+# Example: validate.uuid("550e8400-e29b-41d4-a716-446655440000") -> true
+
+# validate.hex_color(str)
+# Returns true if str is a valid hex color (#RGB, #RRGGBB, #RRGGBBAA)
+# Example: validate.hex_color("#ff5733") -> true
+
+# validate.credit_card(str)
+# Returns true if str is a valid credit card number (Luhn check)
+# Example: validate.credit_card("4111111111111111") -> true
+
+# validate.isbn(str)
+# Returns true if str is a valid ISBN-10 or ISBN-13
+# Example: validate.isbn("978-3-16-148410-0") -> true
+
+# validate.json(str)
+# Returns true if str is valid JSON
+# Example: validate.json('{"key": "value"}') -> true
+
+# validate.base64(str)
+# Returns true if str is valid base64
+# Example: validate.base64("SGVsbG8=") -> true
+
+# validate.slug(str)
+# Returns true if str is a valid URL slug (lowercase, hyphens, numbers)
+# Example: validate.slug("my-blog-post-123") -> true
+
+# validate.semver(str)
+# Returns true if str is a valid semantic version
+# Example: validate.semver("1.2.3-beta.1") -> true
+
+# validate.domain(str)
+# Returns true if str is a valid domain name
+# Example: validate.domain("example.com") -> true
+
+# validate.mac_address(str)
+# Returns true if str is a valid MAC address
+# Example: validate.mac_address("00:1A:2B:3C:4D:5E") -> true
+
+# ── Numeric Validators ─────────────────────────────────────────────────────
+
+# validate.number(value, config)
+# Validates numeric constraints
+# config: { min, max, integer, positive, negative, multiple_of }
+# Example: validate.number(42, { min: 0, max: 100, integer: true }) -> true
+
+# validate.between(value, min, max)
+# Returns true if value is between min and max (inclusive)
+# Example: validate.between(5, 1, 10) -> true
+
+# validate.positive(value)    -> true if value > 0
+# validate.negative(value)    -> true if value < 0
+# validate.integer(value)     -> true if value is an integer
+
+# ── String Constraints ─────────────────────────────────────────────────────
+
+# validate.length(str, min, max)
+# Validates string length
+# Example: validate.length("hello", 1, 100) -> true
+
+# validate.min_length(str, n)
+# Returns true if string has at least n characters
+# Example: validate.min_length(password, 8) -> true
+
+# validate.max_length(str, n)
+# Returns true if string has at most n characters
+# Example: validate.max_length(username, 30) -> true
+
+# validate.alpha(str)         -> true if only letters
+# validate.numeric_str(str)   -> true if only digits
+# validate.alphanumeric(str)  -> true if only letters and digits
+# validate.lowercase(str)     -> true if all lowercase
+# validate.uppercase(str)     -> true if all uppercase
+# validate.contains(str, sub) -> true if str contains sub
+# validate.starts_with(str, prefix) -> true if str starts with prefix
+# validate.ends_with(str, suffix)   -> true if str ends with suffix
+# validate.not_empty(str)     -> true if str is not empty or whitespace
+
+# validate.matches(str, pattern)
+# Returns true if str matches the regex pattern
+# Example: validate.matches("ABC-123", "^[A-Z]+-\\d+$") -> true
+
+# validate.one_of(value, allowed)
+# Returns true if value is in the allowed list
+# Example: validate.one_of("admin", ["user", "admin", "moderator"]) -> true
+
+# ── Date Validators ─────────────────────────────────────────────────────────
+
+# validate.date(str, format)
+# Returns true if str is a valid date in the given format
+# Example: validate.date("2026-03-16", "YYYY-MM-DD") -> true
+
+# validate.date_before(date, reference)
+# Returns true if date is before reference
+# Example: validate.date_before(birthday, time.now()) -> true
+
+# validate.date_after(date, reference)
+# Returns true if date is after reference
+
+# validate.past(date)         -> true if date is in the past
+# validate.future(date)       -> true if date is in the future
+
+# ── Schema Validation ──────────────────────────────────────────────────────
+
+# validate.schema(definition)
+# Creates a reusable validation schema
+# Example:
+#   let user_schema = validate.schema({
+#     name: { type: "string", required: true, min_length: 1, max_length: 100 },
+#     email: { type: "string", required: true, format: "email" },
+#     age: { type: "number", min: 0, max: 150, integer: true },
+#     role: { type: "string", one_of: ["user", "admin", "mod"] },
+#     bio: { type: "string", max_length: 500 },
+#     tags: { type: "array", items: { type: "string" }, max_items: 10 },
+#     address: { type: "object", properties: {
+#       street: { type: "string", required: true },
+#       city: { type: "string", required: true },
+#       zip: { type: "string", matches: "^\\d{5}$" }
+#     }}
+#   })
+
+# schema.validate(data)
+# Validates data against the schema
+# Returns { valid, errors }
+# errors: list of { field, message, rule }
+# Example:
+#   let result = user_schema.validate({
+#     name: "Alice",
+#     email: "invalid-email",
+#     age: -5
+#   })
+#   # result.valid -> false
+#   # result.errors -> [
+#   #   { field: "email", message: "invalid email format", rule: "format" },
+#   #   { field: "age", message: "must be >= 0", rule: "min" }
+#   # ]
+
+# schema.is_valid(data)
+# Returns true/false without detailed errors
+# Example: if user_schema.is_valid(input) ...
+
+# schema.assert(data)
+# Validates and throws an error if invalid
+# Example: user_schema.assert(input)  # raises on failure
+
+# Schema field types:
+# "string"  -> { required, min_length, max_length, matches, format, one_of, trim }
+# "number"  -> { required, min, max, integer, positive, multiple_of }
+# "boolean" -> { required }
+# "array"   -> { required, items, min_items, max_items, unique }
+# "object"  -> { required, properties }
+# "any"     -> { required }
+# Formats: "email", "url", "uuid", "ip", "date", "datetime", "phone", "slug"
+
+# validate.combine(schemas)
+# Combines multiple schemas (all must pass)
+# Example: let full = validate.combine([base_schema, extra_rules])
+
+# ── Sanitization ────────────────────────────────────────────────────────────
+
+# validate.sanitize(str, rules)
+# Applies sanitization rules to a string
+# rules: list of rule names
+# Example: let clean = validate.sanitize(input, ["trim", "lowercase", "strip_html"])
+
+# Available sanitize rules:
+# "trim"           -> Remove leading/trailing whitespace
+# "ltrim"          -> Remove leading whitespace
+# "rtrim"          -> Remove trailing whitespace
+# "lowercase"      -> Convert to lowercase
+# "uppercase"      -> Convert to uppercase
+# "strip_html"     -> Remove HTML tags
+# "escape_html"    -> Escape HTML entities (&, <, >, ", ')
+# "unescape_html"  -> Unescape HTML entities
+# "strip_tags"     -> Remove all XML/HTML tags
+# "normalize_space" -> Collapse multiple spaces to single space
+# "alpha_only"     -> Remove non-letter characters
+# "numeric_only"   -> Remove non-digit characters
+# "slug"           -> Convert to URL-safe slug
+
+# validate.escape_sql(str)
+# Escapes SQL special characters (prefer parameterized queries instead)
+# Example: let safe = validate.escape_sql(user_input)
+
+# validate.escape_regex(str)
+# Escapes regex special characters
+# Example: let pattern = validate.escape_regex("price is $10.00")
+
+# ── Regex Patterns (Pre-built) ─────────────────────────────────────────────
+
+# validate.patterns.EMAIL        -> Email regex pattern
+# validate.patterns.URL          -> URL regex pattern
+# validate.patterns.IPV4         -> IPv4 regex pattern
+# validate.patterns.IPV6         -> IPv6 regex pattern
+# validate.patterns.PHONE        -> International phone pattern
+# validate.patterns.UUID         -> UUID regex pattern
+# validate.patterns.HEX_COLOR    -> Hex color pattern
+# validate.patterns.CREDIT_CARD  -> Credit card pattern
+# validate.patterns.DATE_ISO     -> ISO date pattern (YYYY-MM-DD)
+# validate.patterns.TIME_24H     -> 24-hour time pattern (HH:mm:ss)
+# validate.patterns.SLUG         -> URL slug pattern
+# validate.patterns.SEMVER       -> Semantic version pattern
+# validate.patterns.USERNAME     -> Username pattern (alphanumeric, -, _)
+# validate.patterns.STRONG_PASSWORD -> Strong password (8+ chars, upper, lower, digit, special)
+
+# ── Custom Validators ──────────────────────────────────────────────────────
+
+# validate.custom(name, fn)
+# Registers a custom validation function
+# fn receives the value and returns true/false or an error message string
+# Example:
+#   validate.custom("even", fn(value)
+#     if value % 2 == 0
+#       return true
+#     return "must be an even number"
+#   )
+#   # Then use in schemas: { type: "number", custom: "even" }
+
+# validate.chain(value, validators)
+# Runs multiple validators in sequence, collecting all errors
+# Example:
+#   let errors = validate.chain(input, [
+#     fn(v) return validate.not_empty(v) or "cannot be empty",
+#     fn(v) return validate.min_length(v, 3) or "too short",
+#     fn(v) return validate.max_length(v, 50) or "too long"
+#   ])

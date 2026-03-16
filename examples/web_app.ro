@@ -1,0 +1,10 @@
+import web
+
+mut app = web.app()
+
+app.get("/", fn(req) = web.html("<h1>Hello from Pyro!</h1><p>Created by Aravind Pilla</p>"))
+app.get("/api/status", fn(req) = web.json("[\"status\", \"ok\", \"language\", \"Pyro\"]"))
+app.get("/api/time", fn(req) = web.text("Server is running"))
+
+print("Starting Pyro web server...")
+app.listen(8080)

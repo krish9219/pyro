@@ -1,0 +1,25 @@
+# Fibonacci sequence in Pyro
+# Demonstrates recursion and loops
+
+# Recursive version
+fn fib_recursive(n)
+    if n <= 1
+        return n
+    return fib_recursive(n - 1) + fib_recursive(n - 2)
+
+# Iterative version (faster)
+fn fib_iterative(n)
+    if n <= 1
+        return n
+    mut a = 0
+    mut b = 1
+    for i in 2..n
+        let temp = a + b
+        a = b
+        b = temp
+    return b
+
+# Print first 20 Fibonacci numbers
+print("Fibonacci sequence:")
+for i in 0..20
+    print("fib(", i, ") = ", fib_iterative(i))

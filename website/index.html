@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pyro — The Language That Makes C++ Simple and Python Jealous</title>
+  <meta name="description" content="Pyro is a compiled programming language with 23 keywords, 76 built-in modules, native C++ speed, and a full toolchain. Created by Aravind Pilla.">
+  <base href="/pyro-lang/">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔥</text></svg>">
+</head>
+<body>
+
+<!-- ============ Navbar ============ -->
+<nav class="navbar" role="navigation" aria-label="Main navigation">
+  <div class="container">
+    <a href="index.html" class="nav-brand text-gradient">Pyro<span>lang</span></a>
+    <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="nav-links">
+      <a href="index.html" class="active">Home</a>
+      <a href="docs.html">Docs</a>
+      <a href="examples.html">Examples</a>
+      <a href="install.html">Install</a>
+      <a href="#modules">Modules</a>
+      <a href="https://github.com/krish9219/pyro" class="btn btn-sm btn-outline">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ============ Hero ============ -->
+<header class="hero" id="top">
+  <div class="container">
+    <h1 class="hero-logo text-gradient">Pyro</h1>
+    <p class="hero-tagline">The language that makes C++ simple and Python jealous.</p>
+    <p class="hero-creator">Created by <strong>Aravind Pilla</strong></p>
+    <div class="hero-actions">
+      <a href="install.html" class="btn btn-primary">Get Started</a>
+      <a href="https://github.com/krish9219/pyro" class="btn btn-outline">View on GitHub</a>
+    </div>
+    <div class="hero-code fade-in">
+      <div class="hero-code-panel">
+        <div class="code-label">Pyro</div>
+        <pre><code><span class="kw">fn</span> <span class="fn">main</span>() {
+    <span class="bi">print</span>(<span class="str">"Hello, World!"</span>)
+
+    <span class="kw">let</span> nums = [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>]
+    nums |&gt; <span class="fn">filter</span>(|x| x &gt; <span class="num">2</span>)
+         |&gt; <span class="fn">map</span>(|x| x * x)
+         |&gt; <span class="fn">print</span>
+}</code></pre>
+      </div>
+      <div class="hero-code-panel">
+        <div class="code-label">Python</div>
+        <pre><code><span class="kw">def</span> <span class="fn">main</span>():
+    <span class="bi">print</span>(<span class="str">"Hello, World!"</span>)
+
+    nums = [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>]
+    result = <span class="bi">list</span>(<span class="bi">map</span>(
+        <span class="kw">lambda</span> x: x * x,
+        <span class="bi">filter</span>(<span class="kw">lambda</span> x: x > <span class="num">2</span>, nums)
+    ))
+    <span class="bi">print</span>(result)</code></pre>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ============ Stats ============ -->
+<section>
+  <div class="container">
+    <div class="stats-row fade-in">
+      <div class="stat-item">
+        <div class="stat-num text-gradient" data-count="23">0</div>
+        <div class="stat-label">Keywords</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num text-gradient" data-count="76">0</div>
+        <div class="stat-label">Built-in Modules</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num text-gradient" data-count="199">0</div>
+        <div class="stat-label">Tests Passing</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num text-gradient" data-count="7045">0</div>
+        <div class="stat-label">Lines of Compiler</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ Features ============ -->
+<section id="features">
+  <div class="container">
+    <div class="section-header fade-in">
+      <h2>Why <span class="text-gradient">Pyro</span>?</h2>
+      <p>Power, simplicity, and speed in one language.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card fade-in">
+        <div class="feature-icon orange">23</div>
+        <h3>23 Keywords</h3>
+        <p>Simpler than any mainstream language. Python has 35, Rust has 39, C++ has 97. Pyro proves you can do more with less.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon gold">C+</div>
+        <h3>Native C++ Speed</h3>
+        <p>Compiled to optimized machine code. 10-100x faster than Python on compute-heavy workloads. Fibonacci(35) in 0.02s vs Python's 3.2s.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon cyan">76</div>
+        <h3>76 Built-in Modules</h3>
+        <p>More batteries included than Python's standard library. From HTTP servers to AES encryption to CSV parsing — all built in.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon purple">|&gt;</div>
+        <h3>Pipe Operator |&gt;</h3>
+        <p>Data flows left to right, not inside out. Chain operations naturally. No more nested function calls or temporary variables.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon red">&#x1f512;</div>
+        <h3>Real OpenSSL Security</h3>
+        <p>AES-256-GCM encryption, SHA-256 hashing, PBKDF2 key derivation, and more. Production-grade cryptography built right in.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon green">&#x2699;</div>
+        <h3>Full Toolchain</h3>
+        <p>REPL, LSP server, code formatter, debugger, profiler, and package manager. Everything you need from day one.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ Comparison Table ============ -->
+<section id="comparison">
+  <div class="container">
+    <div class="section-header fade-in">
+      <h2>How Pyro <span class="text-gradient">Compares</span></h2>
+      <p>A head-to-head comparison with the most popular languages.</p>
+    </div>
+    <div class="table-wrap fade-in">
+      <table class="comparison-table">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>Pyro</th>
+            <th>Python</th>
+            <th>Go</th>
+            <th>Rust</th>
+            <th>JavaScript</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Keywords</td>
+            <td class="cell-best">23</td>
+            <td class="cell-ok">35</td>
+            <td class="cell-ok">25</td>
+            <td class="cell-weak">39</td>
+            <td class="cell-ok">30</td>
+          </tr>
+          <tr>
+            <td>Compilation</td>
+            <td class="cell-best">Native binary</td>
+            <td class="cell-weak">Interpreted</td>
+            <td class="cell-best">Native binary</td>
+            <td class="cell-best">Native binary</td>
+            <td class="cell-weak">JIT / Interpreted</td>
+          </tr>
+          <tr>
+            <td>Speed (Fibonacci 35)</td>
+            <td class="cell-best">0.02s</td>
+            <td class="cell-weak">3.2s</td>
+            <td class="cell-good">0.05s</td>
+            <td class="cell-best">0.01s</td>
+            <td class="cell-ok">0.6s</td>
+          </tr>
+          <tr>
+            <td>Built-in Modules</td>
+            <td class="cell-best">76</td>
+            <td class="cell-good">~70 (stdlib)</td>
+            <td class="cell-ok">~40</td>
+            <td class="cell-weak">~15</td>
+            <td class="cell-weak">~10</td>
+          </tr>
+          <tr>
+            <td>Pipe Operator</td>
+            <td class="cell-best">Yes ( |&gt; )</td>
+            <td class="cell-weak">No</td>
+            <td class="cell-weak">No</td>
+            <td class="cell-weak">No (nightly)</td>
+            <td class="cell-weak">Stage 2 proposal</td>
+          </tr>
+          <tr>
+            <td>Built-in Crypto</td>
+            <td class="cell-best">AES-256, SHA, PBKDF2</td>
+            <td class="cell-good">hashlib, ssl</td>
+            <td class="cell-good">crypto pkg</td>
+            <td class="cell-weak">External crate</td>
+            <td class="cell-ok">Web Crypto API</td>
+          </tr>
+          <tr>
+            <td>Pattern Matching</td>
+            <td class="cell-best">match expression</td>
+            <td class="cell-good">match (3.10+)</td>
+            <td class="cell-weak">No</td>
+            <td class="cell-best">match expression</td>
+            <td class="cell-weak">No</td>
+          </tr>
+          <tr>
+            <td>Memory Safety</td>
+            <td class="cell-best">Compile-time checks</td>
+            <td class="cell-good">GC managed</td>
+            <td class="cell-good">GC managed</td>
+            <td class="cell-best">Ownership model</td>
+            <td class="cell-good">GC managed</td>
+          </tr>
+          <tr>
+            <td>Learning Curve</td>
+            <td class="cell-best">Very easy</td>
+            <td class="cell-best">Very easy</td>
+            <td class="cell-good">Easy</td>
+            <td class="cell-weak">Steep</td>
+            <td class="cell-good">Easy</td>
+          </tr>
+          <tr>
+            <td>Built-in Toolchain</td>
+            <td class="cell-best">REPL, LSP, fmt, debug</td>
+            <td class="cell-ok">REPL only</td>
+            <td class="cell-good">go fmt, go vet</td>
+            <td class="cell-good">cargo, rustfmt</td>
+            <td class="cell-weak">npm (external)</td>
+          </tr>
+          <tr>
+            <td>Startup Time</td>
+            <td class="cell-best">~1ms</td>
+            <td class="cell-weak">~30ms</td>
+            <td class="cell-best">~2ms</td>
+            <td class="cell-best">~1ms</td>
+            <td class="cell-ok">~40ms (Node)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============ Code Examples ============ -->
+<section id="examples">
+  <div class="container">
+    <div class="section-header fade-in">
+      <h2>Code <span class="text-gradient">Examples</span></h2>
+      <p>See Pyro in action across different domains.</p>
+    </div>
+    <div class="tab-container fade-in">
+      <div class="tabs" data-tabs>
+        <button class="tab-btn active" data-tab="hello">Hello World</button>
+        <button class="tab-btn" data-tab="functions">Functions</button>
+        <button class="tab-btn" data-tab="lists">Lists &amp; Pipes</button>
+        <button class="tab-btn" data-tab="web">Web Server</button>
+        <button class="tab-btn" data-tab="data">Data Science</button>
+        <button class="tab-btn" data-tab="crypto">Crypto</button>
+        <button class="tab-btn" data-tab="async">Async</button>
+      </div>
+      <div class="tab-body">
+        <div class="tab-content active" data-tab-content="hello">
+          <pre><button class="copy-btn">Copy</button><code><span class="cm">// Hello World in Pyro</span>
+<span class="kw">fn</span> <span class="fn">main</span>() {
+    <span class="bi">print</span>(<span class="str">"Hello, World!"</span>)
+    <span class="bi">print</span>(<span class="str">"Welcome to Pyro "</span> + <span class="fn">version</span>())
+}</code></pre>
+        </div>
+        <div class="tab-content" data-tab-content="functions">
+          <pre><button class="copy-btn">Copy</button><code><span class="cm">// Functions, closures, and pattern matching</span>
+<span class="kw">fn</span> <span class="fn">fibonacci</span>(n: <span class="type">int</span>) -&gt; <span class="type">int</span> {
+    <span class="kw">match</span> n {
+        <span class="num">0</span> =&gt; <span class="num">0</span>,
+        <span class="num">1</span> =&gt; <span class="num">1</span>,
+        _ =&gt; <span class="fn">fibonacci</span>(n - <span class="num">1</span>) + <span class="fn">fibonacci</span>(n - <span class="num">2</span>)
+    }
+}
+
+<span class="kw">fn</span> <span class="fn">apply</span>(f: <span class="type">fn</span>(<span class="type">int</span>) -&gt; <span class="type">int</span>, val: <span class="type">int</span>) -&gt; <span class="type">int</span> {
+    f(val)
+}
+
+<span class="kw">fn</span> <span class="fn">main</span>() {
+    <span class="kw">let</span> double = |x| x * <span class="num">2</span>
+    <span class="bi">print</span>(<span class="fn">apply</span>(double, <span class="num">21</span>))  <span class="cm">// 42</span>
+    <span class="bi">print</span>(<span class="fn">fibonacci</span>(<span class="num">35</span>))     <span class="cm">// 9227465</span>
+}</code></pre>
+        </div>
+        <div class="tab-content" data-tab-content="lists">
+          <pre><button class="copy-btn">Copy</button><code><span class="cm">// Lists, maps, and the pipe operator</span>
+<span class="kw">use</span> math
+<span class="kw">use</span> collections
+
+<span class="kw">fn</span> <span class="fn">main</span>() {
+    <span class="kw">let</span> data = [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>, <span class="num">6</span>, <span class="num">7</span>, <span class="num">8</span>, <span class="num">9</span>, <span class="num">10</span>]
+
+    <span class="cm">// Pipe operator: data flows left to right</span>
+    <span class="kw">let</span> result = data
+        |&gt; <span class="fn">filter</span>(|x| x % <span class="num">2</span> == <span class="num">0</span>)
+        |&gt; <span class="fn">map</span>(|x| x * x)
+        |&gt; <span class="fn">reduce</span>(|a, b| a + b)
+
+    <span class="bi">print</span>(<span class="str">"Sum of even squares: "</span> + <span class="fn">str</span>(result))
+    <span class="cm">// Sum of even squares: 220</span>
+
+    <span class="cm">// HashMap with method chaining</span>
+    <span class="kw">let</span> scores = <span class="type">HashMap</span>::<span class="fn">new</span>()
+    scores.<span class="fn">insert</span>(<span class="str">"Alice"</span>, <span class="num">95</span>)
+    scores.<span class="fn">insert</span>(<span class="str">"Bob"</span>, <span class="num">87</span>)
+    scores.<span class="fn">insert</span>(<span class="str">"Carol"</span>, <span class="num">92</span>)
+
+    scores |&gt; <span class="fn">entries</span>
+           |&gt; <span class="fn">sort_by</span>(|a, b| b.<span class="num">1</span> - a.<span class="num">1</span>)
+           |&gt; <span class="fn">each</span>(|e| <span class="bi">print</span>(e.<span class="num">0</span> + <span class="str">": "</span> + <span class="fn">str</span>(e.<span class="num">1</span>)))
+}</code></pre>
+        </div>
+        <div class="tab-content" data-tab-content="web">
+          <pre><button class="copy-btn">Copy</button><code><span class="cm">// HTTP web server in Pyro</span>
+<span class="kw">use</span> http
+<span class="kw">use</span> json
+
+<span class="kw">fn</span> <span class="fn">main</span>() {
+    <span class="kw">let</span> app = <span class="type">http</span>::<span class="fn">Server</span>::<span class="fn">new</span>()
+
+    app.<span class="fn">get</span>(<span class="str">"/"</span>, |req, res| {
+        res.<span class="fn">html</span>(<span class="str">"&lt;h1&gt;Welcome to Pyro!&lt;/h1&gt;"</span>)
+    })
+
+    app.<span class="fn">get</span>(<span class="str">"/api/users"</span>, |req, res| {
+        <span class="kw">let</span> users = [
+            { <span class="str">"name"</span>: <span class="str">"Alice"</span>, <span class="str">"age"</span>: <span class="num">30</span> },
+            { <span class="str">"name"</span>: <span class="str">"Bob"</span>,   <span class="str">"age"</span>: <span class="num">25</span> }
+        ]
+        res.<span class="fn">json</span>(users)
+    })
+
+    app.<span class="fn">post</span>(<span class="str">"/api/echo"</span>, |req, res| {
+        <span class="kw">let</span> body = req.<span class="fn">json</span>()
+        res.<span class="fn">json</span>({ <span class="str">"echo"</span>: body })
+    })
+
+    <span class="bi">print</span>(<span class="str">"Server running on :8080"</span>)
+    app.<span class="fn">listen</span>(<span class="num">8080</span>)
+}</code></pre>
+        </div>
+        <div class="tab-content" data-tab-content="data">
+          <pre><button class="copy-btn">Copy</button><code><span class="cm">// Data science with Pyro</span>
+<span class="kw">use</span> csv
+<span class="kw">use</span> math
+<span class="kw">use</span> stats
+<span class="kw">use</span> plot
+
+<span class="kw">fn</span> <span class="fn">main</span>() {
+    <span class="cm">// Read CSV data</span>
+    <span class="kw">let</span> data = <span class="type">csv</span>::<span class="fn">read</span>(<span class="str">"sales.csv"</span>)
+
+    <span class="cm">// Compute statistics with pipes</span>
+    <span class="kw">let</span> revenue = data
+        |&gt; <span class="fn">column</span>(<span class="str">"revenue"</span>)
+        |&gt; <span class="fn">map</span>(<span class="fn">float</span>)
+
+    <span class="bi">print</span>(<span class="str">"Mean:   "</span> + <span class="fn">str</span>(<span class="type">stats</span>::<span class="fn">mean</span>(revenue)))
+    <span class="bi">print</span>(<span class="str">"Median: "</span> + <span class="fn">str</span>(<span class="type">stats</span>::<span class="fn">median</span>(revenue)))
+    <span class="bi">print</span>(<span class="str">"Std:    "</span> + <span class="fn">str</span>(<span class="type">stats</span>::<span class="fn">stdev</span>(revenue)))
+
+    <span class="cm">// Linear regression</span>
+    <span class="kw">let</span> months = data |&gt; <span class="fn">column</span>(<span class="str">"month"</span>) |&gt; <span class="fn">map</span>(<span class="fn">float</span>)
+    <span class="kw">let</span> model = <span class="type">stats</span>::<span class="fn">linreg</span>(months, revenue)
+    <span class="bi">print</span>(<span class="str">"Slope: "</span> + <span class="fn">str</span>(model.slope))
+}</code></pre>
+        </div>
+        <div class="tab-content" data-tab-content="crypto">
+          <pre><button class="copy-btn">Copy</button><code><span class="cm">// Cryptography with built-in OpenSSL bindings</span>
+<span class="kw">use</span> crypto
+
+<span class="kw">fn</span> <span class="fn">main</span>() {
+    <span class="cm">// SHA-256 hashing</span>
+    <span class="kw">let</span> hash = <span class="type">crypto</span>::<span class="fn">sha256</span>(<span class="str">"Hello, Pyro!"</span>)
+    <span class="bi">print</span>(<span class="str">"SHA-256: "</span> + hash)
+
+    <span class="cm">// AES-256-GCM encryption</span>
+    <span class="kw">let</span> key = <span class="type">crypto</span>::<span class="fn">random_bytes</span>(<span class="num">32</span>)
+    <span class="kw">let</span> plaintext = <span class="str">"Top secret message"</span>
+
+    <span class="kw">let</span> encrypted = <span class="type">crypto</span>::<span class="fn">aes_encrypt</span>(plaintext, key)
+    <span class="kw">let</span> decrypted = <span class="type">crypto</span>::<span class="fn">aes_decrypt</span>(encrypted, key)
+
+    <span class="bi">assert</span>(decrypted == plaintext)
+
+    <span class="cm">// PBKDF2 key derivation</span>
+    <span class="kw">let</span> password = <span class="str">"my_password"</span>
+    <span class="kw">let</span> salt = <span class="type">crypto</span>::<span class="fn">random_bytes</span>(<span class="num">16</span>)
+    <span class="kw">let</span> derived = <span class="type">crypto</span>::<span class="fn">pbkdf2</span>(password, salt, <span class="num">100000</span>)
+    <span class="bi">print</span>(<span class="str">"Key derived successfully"</span>)
+}</code></pre>
+        </div>
+        <div class="tab-content" data-tab-content="async">
+          <pre><button class="copy-btn">Copy</button><code><span class="cm">// Async/await concurrency</span>
+<span class="kw">use</span> http
+<span class="kw">use</span> async
+
+<span class="kw">async</span> <span class="kw">fn</span> <span class="fn">fetch_data</span>(url: <span class="type">str</span>) -&gt; <span class="type">str</span> {
+    <span class="kw">let</span> resp = <span class="kw">await</span> <span class="type">http</span>::<span class="fn">get</span>(url)
+    resp.<span class="fn">body</span>()
+}
+
+<span class="kw">fn</span> <span class="fn">main</span>() {
+    <span class="cm">// Run multiple requests concurrently</span>
+    <span class="kw">let</span> urls = [
+        <span class="str">"https://api.example.com/users"</span>,
+        <span class="str">"https://api.example.com/posts"</span>,
+        <span class="str">"https://api.example.com/comments"</span>
+    ]
+
+    <span class="kw">let</span> results = urls
+        |&gt; <span class="fn">map</span>(<span class="fn">fetch_data</span>)
+        |&gt; <span class="type">async</span>::<span class="fn">join_all</span>
+        |&gt; <span class="kw">await</span>
+
+    results |&gt; <span class="fn">each</span>(|r| <span class="bi">print</span>(<span class="fn">len</span>(r)))
+
+    <span class="cm">// Channels for message passing</span>
+    <span class="kw">let</span> (tx, rx) = <span class="type">async</span>::<span class="fn">channel</span>()
+
+    <span class="type">async</span>::<span class="fn">spawn</span>(|| {
+        tx.<span class="fn">send</span>(<span class="str">"Hello from another task!"</span>)
+    })
+
+    <span class="bi">print</span>(<span class="kw">await</span> rx.<span class="fn">recv</span>())
+}</code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ Speed Benchmarks ============ -->
+<section id="benchmarks">
+  <div class="container">
+    <div class="section-header fade-in">
+      <h2>Raw <span class="text-gradient">Speed</span></h2>
+      <p>Benchmarked on an AMD Ryzen 9 5900X, 32 GB RAM, Ubuntu 22.04.</p>
+    </div>
+
+    <div class="benchmark-group fade-in">
+      <h3>Fibonacci(35) — Recursive</h3>
+      <div class="bench-row">
+        <div class="bench-label">Pyro</div>
+        <div class="bench-bar-wrap"><div class="bench-bar pyro" style="--bar-width: 8%">0.02s</div></div>
+        <div class="bench-value">0.02s</div>
+      </div>
+      <div class="bench-row">
+        <div class="bench-label">Rust</div>
+        <div class="bench-bar-wrap"><div class="bench-bar rust" style="--bar-width: 5%">0.01s</div></div>
+        <div class="bench-value">0.01s</div>
+      </div>
+      <div class="bench-row">
+        <div class="bench-label">Go</div>
+        <div class="bench-bar-wrap"><div class="bench-bar go" style="--bar-width: 12%">0.05s</div></div>
+        <div class="bench-value">0.05s</div>
+      </div>
+      <div class="bench-row">
+        <div class="bench-label">Python</div>
+        <div class="bench-bar-wrap"><div class="bench-bar python" style="--bar-width: 100%">3.2s</div></div>
+        <div class="bench-value">3.2s</div>
+      </div>
+    </div>
+
+    <div class="benchmark-group fade-in">
+      <h3>HTTP Throughput — Requests per Second</h3>
+      <div class="bench-row">
+        <div class="bench-label">Go</div>
+        <div class="bench-bar-wrap"><div class="bench-bar go" style="--bar-width: 100%">100k rps</div></div>
+        <div class="bench-value">100k rps</div>
+      </div>
+      <div class="bench-row">
+        <div class="bench-label">Pyro</div>
+        <div class="bench-bar-wrap"><div class="bench-bar pyro" style="--bar-width: 50%">50k rps</div></div>
+        <div class="bench-value">50k rps</div>
+      </div>
+      <div class="bench-row">
+        <div class="bench-label">Python</div>
+        <div class="bench-bar-wrap"><div class="bench-bar python" style="--bar-width: 2%">2k rps</div></div>
+        <div class="bench-value">2k rps</div>
+      </div>
+    </div>
+
+    <div class="benchmark-group fade-in">
+      <h3>CSV Processing — 1M Rows</h3>
+      <div class="bench-row">
+        <div class="bench-label">Pyro</div>
+        <div class="bench-bar-wrap"><div class="bench-bar pyro" style="--bar-width: 4%">0.1s</div></div>
+        <div class="bench-value">0.1s</div>
+      </div>
+      <div class="bench-row">
+        <div class="bench-label">Python</div>
+        <div class="bench-bar-wrap"><div class="bench-bar python" style="--bar-width: 100%">2.5s</div></div>
+        <div class="bench-value">2.5s</div>
+      </div>
+    </div>
+
+    <div class="benchmark-group fade-in">
+      <h3>Startup Time</h3>
+      <div class="bench-row">
+        <div class="bench-label">Pyro</div>
+        <div class="bench-bar-wrap"><div class="bench-bar pyro" style="--bar-width: 3%">0.001s</div></div>
+        <div class="bench-value">0.001s</div>
+      </div>
+      <div class="bench-row">
+        <div class="bench-label">Python</div>
+        <div class="bench-bar-wrap"><div class="bench-bar python" style="--bar-width: 100%">0.03s</div></div>
+        <div class="bench-value">0.03s</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 76 Modules ============ -->
+<section id="modules">
+  <div class="container">
+    <div class="section-header fade-in">
+      <h2><span class="text-gradient">76</span> Built-in Modules</h2>
+      <p>Everything you need, from day one. No package manager required for the basics.</p>
+    </div>
+
+    <div class="fade-in">
+      <div class="modules-category">
+        <h3 class="text-accent">Core (12)</h3>
+        <div class="modules-list">
+          <span class="module-tag cat-core">std</span>
+          <span class="module-tag cat-core">io</span>
+          <span class="module-tag cat-core">os</span>
+          <span class="module-tag cat-core">fs</span>
+          <span class="module-tag cat-core">path</span>
+          <span class="module-tag cat-core">fmt</span>
+          <span class="module-tag cat-core">math</span>
+          <span class="module-tag cat-core">time</span>
+          <span class="module-tag cat-core">log</span>
+          <span class="module-tag cat-core">errors</span>
+          <span class="module-tag cat-core">types</span>
+          <span class="module-tag cat-core">reflect</span>
+        </div>
+      </div>
+      <div class="modules-category">
+        <h3 class="text-accent2">Data (12)</h3>
+        <div class="modules-list">
+          <span class="module-tag cat-data">json</span>
+          <span class="module-tag cat-data">csv</span>
+          <span class="module-tag cat-data">xml</span>
+          <span class="module-tag cat-data">yaml</span>
+          <span class="module-tag cat-data">toml</span>
+          <span class="module-tag cat-data">base64</span>
+          <span class="module-tag cat-data">hex</span>
+          <span class="module-tag cat-data">sqlite</span>
+          <span class="module-tag cat-data">collections</span>
+          <span class="module-tag cat-data">iter</span>
+          <span class="module-tag cat-data">serialize</span>
+          <span class="module-tag cat-data">compress</span>
+        </div>
+      </div>
+      <div class="modules-category">
+        <h3 class="text-accent3">Web (10)</h3>
+        <div class="modules-list">
+          <span class="module-tag cat-web">http</span>
+          <span class="module-tag cat-web">url</span>
+          <span class="module-tag cat-web">websocket</span>
+          <span class="module-tag cat-web">html</span>
+          <span class="module-tag cat-web">template</span>
+          <span class="module-tag cat-web">mime</span>
+          <span class="module-tag cat-web">cookie</span>
+          <span class="module-tag cat-web">router</span>
+          <span class="module-tag cat-web">cors</span>
+          <span class="module-tag cat-web">sse</span>
+        </div>
+      </div>
+      <div class="modules-category">
+        <h3 style="color: var(--danger);">Security (8)</h3>
+        <div class="modules-list">
+          <span class="module-tag cat-security">crypto</span>
+          <span class="module-tag cat-security">hash</span>
+          <span class="module-tag cat-security">hmac</span>
+          <span class="module-tag cat-security">aes</span>
+          <span class="module-tag cat-security">rsa</span>
+          <span class="module-tag cat-security">tls</span>
+          <span class="module-tag cat-security">jwt</span>
+          <span class="module-tag cat-security">pbkdf2</span>
+        </div>
+      </div>
+      <div class="modules-category">
+        <h3 style="color: #c792ea;">Algorithms (8)</h3>
+        <div class="modules-list">
+          <span class="module-tag cat-algo">sort</span>
+          <span class="module-tag cat-algo">search</span>
+          <span class="module-tag cat-algo">graph</span>
+          <span class="module-tag cat-algo">matrix</span>
+          <span class="module-tag cat-algo">stats</span>
+          <span class="module-tag cat-algo">random</span>
+          <span class="module-tag cat-algo">bigint</span>
+          <span class="module-tag cat-algo">bitops</span>
+        </div>
+      </div>
+      <div class="modules-category">
+        <h3 style="color: var(--success);">Networking (10)</h3>
+        <div class="modules-list">
+          <span class="module-tag cat-net">net</span>
+          <span class="module-tag cat-net">tcp</span>
+          <span class="module-tag cat-net">udp</span>
+          <span class="module-tag cat-net">dns</span>
+          <span class="module-tag cat-net">smtp</span>
+          <span class="module-tag cat-net">ftp</span>
+          <span class="module-tag cat-net">ssh</span>
+          <span class="module-tag cat-net">grpc</span>
+          <span class="module-tag cat-net">mqtt</span>
+          <span class="module-tag cat-net">redis</span>
+        </div>
+      </div>
+      <div class="modules-category">
+        <h3 style="color: var(--warning);">System (8)</h3>
+        <div class="modules-list">
+          <span class="module-tag cat-system">process</span>
+          <span class="module-tag cat-system">thread</span>
+          <span class="module-tag cat-system">async</span>
+          <span class="module-tag cat-system">signal</span>
+          <span class="module-tag cat-system">env</span>
+          <span class="module-tag cat-system">sys</span>
+          <span class="module-tag cat-system">mem</span>
+          <span class="module-tag cat-system">ffi</span>
+        </div>
+      </div>
+      <div class="modules-category">
+        <h3 style="color: #80cbc4;">Text (8)</h3>
+        <div class="modules-list">
+          <span class="module-tag cat-text">string</span>
+          <span class="module-tag cat-text">regex</span>
+          <span class="module-tag cat-text">unicode</span>
+          <span class="module-tag cat-text">glob</span>
+          <span class="module-tag cat-text">diff</span>
+          <span class="module-tag cat-text">color</span>
+          <span class="module-tag cat-text">table</span>
+          <span class="module-tag cat-text">plot</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ Installation ============ -->
+<section id="install">
+  <div class="container">
+    <div class="section-header fade-in">
+      <h2>Get <span class="text-gradient">Started</span></h2>
+      <p>Install Pyro in under a minute.</p>
+    </div>
+    <div class="install-box fade-in">
+      <div class="tab-container">
+        <div class="tabs" data-tabs>
+          <button class="tab-btn active" data-tab="linux">Linux</button>
+          <button class="tab-btn" data-tab="macos">macOS</button>
+          <button class="tab-btn" data-tab="windows">Windows</button>
+        </div>
+        <div class="tab-body">
+          <div class="tab-content active" data-tab-content="linux">
+            <div class="install-cmd">
+              <code>curl -fsSL https://aravindlabs.tech/pyro-lang/install.sh | bash</code>
+              <button class="copy-inline">Copy</button>
+            </div>
+          </div>
+          <div class="tab-content" data-tab-content="macos">
+            <div class="install-cmd">
+              <code>brew install aravindlabs/tap/pyro</code>
+              <button class="copy-inline">Copy</button>
+            </div>
+          </div>
+          <div class="tab-content" data-tab-content="windows">
+            <div class="install-cmd">
+              <code>winget install AravindLabs.Pyro</code>
+              <button class="copy-inline">Copy</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p style="text-align:center; margin-top:20px;">
+        <a href="install.html" style="color: var(--text-secondary);">See full installation guide &rarr;</a>
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ About the Creator ============ -->
+<section id="creator">
+  <div class="container">
+    <div class="section-header fade-in">
+      <h2>About the <span class="text-gradient">Creator</span></h2>
+    </div>
+    <div class="creator-card fade-in">
+      <div class="creator-avatar">AP</div>
+      <h3>Aravind Pilla</h3>
+      <div class="creator-title">Creator of Pyro</div>
+      <p>Aravind Pilla is a developer who believes programming languages should be powerful without being painful. Pyro was born from a simple question: what if a language had the speed of C++, the readability of Python, and the batteries-included philosophy turned up to eleven? With 7,045 lines of compiler code, 76 built-in modules, and 199 passing tests, Pyro is the answer. Built at <a href="https://aravindlabs.tech">aravindlabs.tech</a>.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 23 Keywords ============ -->
+<section>
+  <div class="container">
+    <div class="section-header fade-in">
+      <h2>Just <span class="text-gradient">23</span> Keywords</h2>
+      <p>Learn the entire keyword set in minutes.</p>
+    </div>
+    <div class="modules-list fade-in" style="justify-content: center; gap: 10px; max-width: 800px; margin: 0 auto;">
+      <span class="module-tag cat-core">let</span>
+      <span class="module-tag cat-core">mut</span>
+      <span class="module-tag cat-core">fn</span>
+      <span class="module-tag cat-core">return</span>
+      <span class="module-tag cat-core">if</span>
+      <span class="module-tag cat-core">else</span>
+      <span class="module-tag cat-core">for</span>
+      <span class="module-tag cat-core">while</span>
+      <span class="module-tag cat-core">loop</span>
+      <span class="module-tag cat-core">break</span>
+      <span class="module-tag cat-core">continue</span>
+      <span class="module-tag cat-core">match</span>
+      <span class="module-tag cat-core">struct</span>
+      <span class="module-tag cat-core">enum</span>
+      <span class="module-tag cat-core">impl</span>
+      <span class="module-tag cat-core">trait</span>
+      <span class="module-tag cat-core">use</span>
+      <span class="module-tag cat-core">pub</span>
+      <span class="module-tag cat-core">async</span>
+      <span class="module-tag cat-core">await</span>
+      <span class="module-tag cat-core">true</span>
+      <span class="module-tag cat-core">false</span>
+      <span class="module-tag cat-core">nil</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ Footer ============ -->
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand text-gradient">Pyro</div>
+        <p>The language that makes C++ simple and Python jealous. Built with passion by Aravind Pilla.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Learn</h4>
+        <a href="docs.html">Documentation</a>
+        <a href="examples.html">Examples</a>
+        <a href="install.html">Installation</a>
+        <a href="docs.html#tutorial">Tutorial</a>
+      </div>
+      <div class="footer-col">
+        <h4>Community</h4>
+        <a href="https://github.com/krish9219/pyro">GitHub</a>
+        <a href="https://github.com/krish9219/pyro/issues">Issues</a>
+        <a href="https://github.com/krish9219/pyro/discussions">Discussions</a>
+        <a href="https://discord.gg/pyro-lang">Discord</a>
+      </div>
+      <div class="footer-col">
+        <h4>More</h4>
+        <a href="https://aravindlabs.tech">AravindLabs</a>
+        <a href="https://github.com/krish9219/pyro/blob/main/LICENSE">License</a>
+        <a href="https://github.com/krish9219/pyro/blob/main/CHANGELOG.md">Changelog</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2024 Aravind Pilla. All rights reserved.</p>
+      <div class="built-badge">Built with Pyro</div>
+    </div>
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+# Built-in Library Showcase
+# Everything is included — no pip install, no npm, no cargo
+# Just import and go
+
+# Python needs: pip install pandas numpy matplotlib flask
+#               pip install cryptography pyjwt bcrypt requests
+#               pip install scikit-learn pillow sqlalchemy redis
+#
+# Pyro: ALL of these are built in. Zero package manager.
+
+print("=== Pyro Built-in Libraries (20 modules) ===")
+print("")
+print("CORE:")
+print("  import math      - Math, stats, linear algebra, random")
+print("  import io        - File I/O, streams, glob, zip")
+print("  import json      - Parse, stringify, validate, schema")
+print("  import time      - Date, time, timezone, timer, cron")
+print("  import net       - TCP, UDP, DNS, SSH, FTP, email")
+print("  import log       - Structured logging, levels, formatters")
+print("")
+print("DATA & AI:")
+print("  import data      - DataFrames, CSV, aggregation, pivot")
+print("  import ml        - Regression, classification, neural nets")
+print("  import viz       - Charts, dashboards, 3D plots, export")
+print("  import img       - Resize, crop, filter, OCR, face detect")
+print("")
+print("WEB & API:")
+print("  import web       - Server, REST, WebSocket, GraphQL, SSE")
+print("  import auth      - OAuth2, JWT, sessions, 2FA, RBAC")
+print("  import validate  - Email, URL, phone, sanitize, regex")
+print("  import cache     - In-memory, Redis, LRU, TTL")
+print("  import queue     - Pub/sub, workers, job scheduling")
+print("")
+print("INFRASTRUCTURE:")
+print("  import db        - SQL, NoSQL, ORM, migrations, pooling")
+print("  import crypto    - AES, RSA, SHA, HMAC, password hash")
+print("  import cloud     - AWS, GCP, Azure, S3, Lambda")
+print("  import test      - Assert, mock, benchmark, coverage")
+print("  import ui        - GUI windows, buttons, layouts, events")
+print("")
+print("Python standard library: ~70 modules (most are low-level)")
+print("Pyro standard library:   20 power modules (all high-level)")
+print("")
+print("One import in Pyro replaces 5-10 pip packages in Python.")

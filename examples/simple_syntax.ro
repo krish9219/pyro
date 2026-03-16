@@ -1,0 +1,55 @@
+# Pyro — Simpler than Python
+# No 'let' needed. No 'fn main()' needed. Just code.
+
+name = "Aravind Pilla"
+age = 25
+language = "Pyro"
+
+print("Creator: {name}")
+print("Age: {age}")
+print("Language: {language}")
+
+# Functions use 'fn' (shorter than Python's 'def')
+fn greet(person)
+    return "Hello, {person}!"
+
+fn add(a, b) = a + b
+fn square(x) = x * x
+
+print(greet("World"))
+print("2 + 3 = {add(2, 3)}")
+print("5 squared = {square(5)}")
+
+# Lists — clean syntax
+fruits = ["apple", "banana", "cherry"]
+print("Fruits: {fruits}")
+
+# Loops — same as Python but no colon
+for fruit in fruits
+    print("  I like {fruit}")
+
+for i in 0..5
+    print("Count: {i}")
+
+# Conditionals — same as Python but no colon
+score = 85
+if score >= 90
+    print("Grade: A")
+else if score >= 80
+    print("Grade: B")
+else
+    print("Grade: C")
+
+# 'mut' only when you NEED to change a value
+mut total = 0
+for i in 0..10
+    total = total + i
+print("Sum 0-9: {total}")
+
+# Side by side:
+# Python:           Pyro:
+# name = "X"        name = "X"        (identical!)
+# def f(x):         fn f(x)           (shorter!)
+#   return x*2        return x * 2    (no colon!)
+# for i in r(10):   for i in 0..10    (no range()!)
+#   print(i)           print(i)       (identical!)

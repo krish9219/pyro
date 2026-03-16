@@ -1,0 +1,61 @@
+# Pyro Language Basics
+# Demonstrates core language features
+
+# Variables (immutable by default)
+let name = "Pyro"
+let version = 1
+let pi = 3.14159
+
+# Mutable variables
+mut counter = 0
+counter = counter + 1
+
+# Functions
+fn add(a, b)
+    return a + b
+
+# One-liner functions
+fn double(x) = x * 2
+fn square(x) = x * x
+
+# Using functions
+let result = add(10, 20)
+print("10 + 20 = ", result)
+print("double(5) = ", double(5))
+print("square(4) = ", square(4))
+
+# Pipe operator
+let piped = 5 |> double
+print("5 |> double = ", piped)
+
+# Conditionals
+let score = 85
+if score >= 90
+    print("Grade: A")
+else if score >= 80
+    print("Grade: B")
+else
+    print("Grade: C")
+
+# For loops with ranges
+print("Counting to 5:")
+for i in 0..5
+    print(i)
+
+# Lists
+let fruits = ["apple", "banana", "cherry"]
+print("Fruits: ", fruits)
+
+# While loop
+mut n = 10
+while n > 0
+    n = n - 1
+print("Countdown done!")
+
+# Pattern matching
+let status = 200
+match status
+    200 -> print("OK")
+    404 -> print("Not Found")
+    500 -> print("Server Error")
+    _ -> print("Unknown status")

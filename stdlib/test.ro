@@ -1,0 +1,239 @@
+# ============================================================================
+# Pyro Built-in Library: test
+# Created by Aravind Pilla
+# Testing framework: assert, mock, benchmark, coverage, property testing
+# ============================================================================
+
+import test
+
+# ── Test Definition ─────────────────────────────────────────────────────────
+
+# test.describe(name, fn)
+# Creates a test suite (group of related tests)
+# Example:
+#   test.describe("User Authentication", fn()
+#     test.it("should hash passwords", fn()
+#       let hash = crypto.bcrypt_hash("secret", 10)
+#       test.assert(crypto.bcrypt_verify("secret", hash))
+#     )
+#   )
+
+# test.it(name, fn)
+# Defines a single test case
+# Example:
+#   test.it("adds two numbers", fn()
+#     test.eq(add(2, 3), 5)
+#   )
+
+# test.before_each(fn)   -> Runs before every test in the suite
+# test.after_each(fn)    -> Runs after every test in the suite
+# test.before_all(fn)    -> Runs once before all tests in the suite
+# test.after_all(fn)     -> Runs once after all tests in the suite
+
+# test.skip(name, fn)    -> Defines a test that is skipped
+# test.only(name, fn)    -> Runs only this test (useful for debugging)
+# test.todo(name)        -> Placeholder for a test to write later
+
+# ── Assertions ──────────────────────────────────────────────────────────────
+
+# test.assert(condition)
+# Asserts that condition is truthy
+# Example: test.assert(user.is_active)
+
+# test.eq(actual, expected)
+# Asserts deep equality
+# Example: test.eq(result, [1, 2, 3])
+
+# test.ne(actual, expected)
+# Asserts not equal
+# Example: test.ne(a, b)
+
+# test.gt(actual, expected)     -> actual > expected
+# test.gte(actual, expected)    -> actual >= expected
+# test.lt(actual, expected)     -> actual < expected
+# test.lte(actual, expected)    -> actual <= expected
+
+# test.is_true(value)           -> Asserts value is true
+# test.is_false(value)          -> Asserts value is false
+# test.is_nil(value)            -> Asserts value is nil
+# test.is_not_nil(value)        -> Asserts value is not nil
+
+# test.contains(collection, item)
+# Asserts that a list or string contains the item
+# Example: test.contains([1, 2, 3], 2)
+# Example: test.contains("hello world", "world")
+
+# test.not_contains(collection, item)
+# Asserts item is not in the collection
+
+# test.matches(string, pattern)
+# Asserts that a string matches a regex pattern
+# Example: test.matches(email, "^[a-z]+@[a-z]+\\.[a-z]+$")
+
+# test.has_length(collection, n)
+# Asserts the collection has exactly n elements
+# Example: test.has_length(users, 5)
+
+# test.is_empty(collection)
+# Asserts the collection is empty
+# Example: test.is_empty(errors)
+
+# test.approx(actual, expected, tolerance)
+# Asserts approximate floating point equality
+# Example: test.approx(math.PI, 3.14159, 0.001)
+
+# test.type_of(value, type_name)
+# Asserts the value is of the given type
+# Example: test.type_of(result, "string")
+
+# test.throws(fn, error_message)
+# Asserts that calling fn raises an error
+# error_message: optional pattern to match against the error
+# Example:
+#   test.throws(fn() return divide(1, 0), "division by zero")
+
+# test.not_throws(fn)
+# Asserts that fn does not raise an error
+# Example: test.not_throws(fn() return parse("valid json"))
+
+# test.snapshot(value, name)
+# Compares value against a stored snapshot; creates snapshot on first run
+# Example: test.snapshot(render(component), "homepage_render")
+
+# ── Mocking ─────────────────────────────────────────────────────────────────
+
+# test.mock(fn)
+# Creates a mock function that records calls
+# Example:
+#   let callback = test.mock(fn(x) return x * 2)
+#   process(callback)
+#   test.eq(callback.call_count, 3)
+
+# mock.call_count          -> Number of times the mock was called
+# mock.calls               -> List of argument lists for each call
+# mock.last_call           -> Arguments of the most recent call
+# mock.return_values       -> List of return values
+# mock.returns(value)      -> Makes the mock always return value
+# mock.returns_once(value) -> Returns value for the next call only
+# mock.throws_error(msg)   -> Makes the mock throw an error
+# mock.reset()             -> Resets call history
+
+# test.spy(object, method)
+# Creates a spy on an existing method (tracks calls without changing behavior)
+# Example:
+#   let spy = test.spy(logger, "info")
+#   do_stuff()
+#   test.assert(spy.called)
+
+# spy.called              -> true if spy was called at least once
+# spy.call_count          -> Number of calls
+# spy.calls               -> List of argument lists
+# spy.restore()           -> Removes the spy, restores original method
+
+# test.stub(object, method, replacement)
+# Replaces a method with a stub function
+# Example:
+#   test.stub(http, "get", fn(url) return { status: 200, body: "ok" })
+
+# test.fake_timer()
+# Creates a fake timer for controlling time in tests
+# Example:
+#   let clock = test.fake_timer()
+#   schedule_task()
+#   clock.advance(time.hours(1))
+#   test.assert(task_completed)
+#   clock.restore()
+
+# clock.advance(duration)  -> Advance time by duration
+# clock.set(datetime)      -> Set clock to specific time
+# clock.restore()          -> Restore real timers
+
+# ── Benchmarks ──────────────────────────────────────────────────────────────
+
+# test.bench(name, fn, config)
+# Runs a benchmark
+# config: { iterations, warmup, min_time }
+# Example:
+#   test.bench("string concat", fn()
+#     let s = ""
+#     for i in 0..1000
+#       s = s + "x"
+#   , { iterations: 100 })
+
+# Benchmark output includes:
+# - ops/sec (operations per second)
+# - mean time per operation
+# - min/max time
+# - standard deviation
+
+# test.compare(name, benchmarks)
+# Compares multiple benchmarks side by side
+# Example:
+#   test.compare("concat methods", {
+#     "plus operator": fn() "a" + "b" + "c",
+#     "join": fn() ["a", "b", "c"].join("")
+#   })
+
+# ── Property Testing ───────────────────────────────────────────────────────
+
+# test.property(name, generators, fn)
+# Runs property-based tests with random inputs
+# Example:
+#   test.property("reverse is involutory", [test.gen.list(test.gen.int())], fn(xs)
+#     test.eq(xs.reverse().reverse(), xs)
+#   )
+
+# Generators:
+# test.gen.int(min, max)         -> Random integer
+# test.gen.float(min, max)       -> Random float
+# test.gen.string(min_len, max_len) -> Random string
+# test.gen.bool()                -> Random boolean
+# test.gen.list(gen, min_len, max_len) -> Random list of generated values
+# test.gen.dict(key_gen, val_gen) -> Random dict
+# test.gen.one_of(values)        -> Random choice from a list
+# test.gen.optional(gen)         -> Randomly nil or generated value
+
+# ── Test Runner ─────────────────────────────────────────────────────────────
+
+# test.run(config)
+# Runs all defined tests
+# config: { verbose, filter, timeout, parallel, coverage, bail }
+# verbose: show individual test results (default true)
+# filter: regex pattern to filter test names
+# timeout: max time per test in ms (default 5000)
+# parallel: run test suites in parallel (default false)
+# coverage: collect code coverage (default false)
+# bail: stop on first failure (default false)
+# Example:
+#   test.run({ verbose: true, coverage: true, parallel: true })
+
+# test.run_file(path)       -> Run tests in a specific file
+# test.run_dir(path)        -> Run all test files in a directory
+
+# ── Coverage ────────────────────────────────────────────────────────────────
+
+# test.coverage()
+# Returns code coverage report after tests complete
+# Returns { total_lines, covered_lines, percentage, files: [...] }
+# Each file: { path, total, covered, percentage, uncovered_lines }
+# Example:
+#   let cov = test.coverage()
+#   print("Coverage:", cov.percentage, "%")
+
+# ── Fixtures ────────────────────────────────────────────────────────────────
+
+# test.fixture(name, setup_fn)
+# Defines a reusable test fixture
+# setup_fn returns the fixture value; optionally returns a teardown function
+# Example:
+#   test.fixture("db", fn()
+#     let conn = db.sqlite_memory()
+#     conn.execute("CREATE TABLE users (id INT, name TEXT)")
+#     return conn
+#   )
+#
+#   test.it("queries users", fn(db)
+#     db.execute("INSERT INTO users VALUES (1, 'Alice')")
+#     let users = db.query("SELECT * FROM users")
+#     test.has_length(users, 1)
+#   )

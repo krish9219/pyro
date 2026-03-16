@@ -1,0 +1,86 @@
+# data_advanced.ro - Advanced data and db module demo
+import data
+import db
+
+fn main()
+    # --- DataFrame operations from CSV ---
+    let sales = data.read("examples/sales_advanced.csv")
+    print("=== Sales Data ===")
+    sales.head(10)
+
+    # --- GroupBy: sum revenue by region ---
+    print("\n=== GroupBy (sum revenue by region) ===")
+    let grouped = sales.groupby("region", "revenue", "sum")
+    for g in grouped
+        print(g)
+
+    # --- Merge: join with prices ---
+    let prices = data.read("examples/prices.csv")
+    print("\n=== Merge (inner join on product) ===")
+    let merged = sales.merge(prices, "product")
+    merged.head(10)
+
+    # --- Drop duplicates ---
+    let dupes = data.read("examples/dupes.csv")
+    print("\n=== Drop Duplicates ===")
+    let unique = dupes.drop_duplicates()
+    unique.head(10)
+
+    # --- To JSON ---
+    print("\n=== To JSON ===")
+    print(unique.to_json())
+
+    # --- Rename and Drop ---
+    print("\n=== Rename 'score' -> 'grade', then drop 'name' ===")
+    let renamed = unique.rename("score", "grade")
+    let dropped = renamed.drop("name")
+    dropped.head(10)
+
+    # --- FillNA ---
+    let sparse = data.read("examples/sparse.csv")
+    print("\n=== FillNA with '0' ===")
+    let filled = sparse.fillna("0")
+    filled.head(10)
+
+    # --- Database CRUD ---
+    print("\n=== Database Operations ===")
+    mut conn = db.connect(":memory:")
+    mut users = conn.create_table("users", ["id", "name", "age"])
+    users.insert(["1", "Alice", "30"])
+    users.insert(["2", "Bob", "25"])
+    users.insert(["3", "Carol", "35"])
+    users.insert(["4", "Dave", "25"])
+
+    print("All users:")
+    let all = users.select_all()
+    for row in all
+        print(row)
+
+    print("\nWhere age > 25:")
+    let older = users.where("age", ">", "25")
+    for row in older
+        print(row)
+
+    print("\nOrder by name (ascending):")
+    let sorted_rows = users.order_by("name", true)
+    for row in sorted_rows
+        print(row)
+
+    print("\nUpdate Bob's age to 28:")
+    users.update("age", "28", "name", "Bob")
+    let after_update = users.select_all()
+    for row in after_update
+        print(row)
+
+    print("\nDelete Dave:")
+    users.delete_where("name", "Dave")
+    print("Count after delete:")
+    print(users.count())
+    let remaining = users.select_all()
+    for row in remaining
+        print(row)
+
+    # --- Save ---
+    print("\nSaving database to /tmp/pyro_test.db ...")
+    conn.save("/tmp/pyro_test.db")
+    print("Done!")

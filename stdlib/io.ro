@@ -1,0 +1,257 @@
+# ============================================================================
+# Pyro Built-in Library: io
+# Created by Aravind Pilla
+# File I/O: read, write, streams, watch, glob, zip, temp files
+# ============================================================================
+
+import io
+
+# ── Reading Files ───────────────────────────────────────────────────────────
+
+# io.read(path)
+# Reads entire file contents as a string
+# Example: let content = io.read("config.toml")
+
+# io.read_bytes(path)
+# Reads entire file as bytes
+# Example: let data = io.read_bytes("image.png")
+
+# io.read_lines(path)
+# Reads file and returns a list of lines
+# Example: let lines = io.read_lines("data.txt")
+
+# io.read_json(path)
+# Reads and parses a JSON file
+# Example: let config = io.read_json("settings.json")
+
+# io.read_toml(path)
+# Reads and parses a TOML file
+# Example: let config = io.read_toml("config.toml")
+
+# io.read_yaml(path)
+# Reads and parses a YAML file
+# Example: let config = io.read_yaml("docker-compose.yml")
+
+# io.read_csv(path, delimiter)
+# Reads CSV into a list of row lists
+# Example: let rows = io.read_csv("data.csv", ",")
+
+# ── Writing Files ───────────────────────────────────────────────────────────
+
+# io.write(path, content)
+# Writes a string to a file (creates or overwrites)
+# Example: io.write("output.txt", "Hello, Pyro!")
+
+# io.write_bytes(path, data)
+# Writes bytes to a file
+# Example: io.write_bytes("output.bin", byte_data)
+
+# io.write_lines(path, lines)
+# Writes a list of strings as lines
+# Example: io.write_lines("log.txt", ["line 1", "line 2", "line 3"])
+
+# io.write_json(path, data, pretty)
+# Writes data as JSON to a file
+# pretty: indent with 2 spaces (default true)
+# Example: io.write_json("config.json", settings, true)
+
+# io.write_toml(path, data)
+# Writes data as TOML
+# Example: io.write_toml("config.toml", settings)
+
+# io.write_yaml(path, data)
+# Writes data as YAML
+# Example: io.write_yaml("output.yml", data)
+
+# io.append(path, content)
+# Appends a string to a file
+# Example: io.append("log.txt", "New log entry\n")
+
+# io.append_bytes(path, data)
+# Appends bytes to a file
+
+# ── Streams ─────────────────────────────────────────────────────────────────
+
+# io.open(path, mode)
+# Opens a file and returns a stream handle
+# mode: "r" (read), "w" (write), "a" (append), "rb", "wb", "ab"
+# Example:
+#   let f = io.open("large_file.txt", "r")
+#   for line in f.lines()
+#     process(line)
+#   f.close()
+
+# stream.read(n)          -> Read n bytes
+# stream.read_line()      -> Read one line
+# stream.lines()          -> Iterator over lines
+# stream.read_all()       -> Read remaining content
+# stream.write(data)      -> Write string or bytes
+# stream.flush()          -> Flush buffered data to disk
+# stream.seek(offset)     -> Move to byte offset
+# stream.tell()           -> Current position in file
+# stream.close()          -> Close the stream
+# stream.is_eof           -> true if at end of file
+
+# io.pipe()
+# Creates a connected reader/writer pair for in-memory streaming
+# Returns { reader, writer }
+# Example:
+#   let p = io.pipe()
+#   p.writer.write("hello")
+#   let data = p.reader.read(5)
+
+# ── File System Operations ─────────────────────────────────────────────────
+
+# io.exists(path)
+# Returns true if the path exists
+# Example: if io.exists("config.json") ...
+
+# io.is_file(path)        -> true if path is a regular file
+# io.is_dir(path)         -> true if path is a directory
+# io.is_symlink(path)     -> true if path is a symbolic link
+
+# io.size(path)
+# Returns file size in bytes
+# Example: let bytes = io.size("video.mp4")
+
+# io.stat(path)
+# Returns file metadata
+# Returns { size, created, modified, accessed, permissions, is_dir, is_file }
+# Example: let info = io.stat("data.csv")
+
+# io.copy(src, dest)
+# Copies a file from src to dest
+# Example: io.copy("original.txt", "backup.txt")
+
+# io.move(src, dest)
+# Moves or renames a file
+# Example: io.move("old_name.txt", "new_name.txt")
+
+# io.remove(path)
+# Deletes a file
+# Example: io.remove("temp.txt")
+
+# io.symlink(target, link_path)
+# Creates a symbolic link
+# Example: io.symlink("/usr/bin/python3", "python")
+
+# io.read_link(path)
+# Reads the target of a symbolic link
+# Example: io.read_link("python") -> "/usr/bin/python3"
+
+# ── Directory Operations ───────────────────────────────────────────────────
+
+# io.mkdir(path, recursive)
+# Creates a directory
+# recursive: create parent dirs if needed (default false)
+# Example: io.mkdir("data/output/2024", true)
+
+# io.rmdir(path, recursive)
+# Removes a directory
+# recursive: remove contents too (default false)
+# Example: io.rmdir("temp_dir", true)
+
+# io.list_dir(path)
+# Lists entries in a directory, returns list of { name, is_dir, is_file, size }
+# Example:
+#   let entries = io.list_dir(".")
+#   for entry in entries
+#     print(entry.name, entry.is_dir)
+
+# io.walk(path)
+# Recursively walks a directory tree
+# Returns iterator of { root, dirs, files }
+# Example:
+#   for entry in io.walk("/projects")
+#     for file in entry.files
+#       print(entry.root + "/" + file)
+
+# ── Glob / Pattern Matching ────────────────────────────────────────────────
+
+# io.glob(pattern)
+# Finds files matching a glob pattern
+# Example:
+#   let py_files = io.glob("src/**/*.py")
+#   let configs = io.glob("config/*.{json,toml,yaml}")
+
+# io.match(path, pattern)
+# Tests if a path matches a glob pattern
+# Example: io.match("src/main.py", "**/*.py") -> true
+
+# ── Temp Files & Directories ───────────────────────────────────────────────
+
+# io.temp_file(prefix, suffix)
+# Creates a temporary file, returns { path, stream }
+# Example: let tmp = io.temp_file("pyro_", ".txt")
+
+# io.temp_dir(prefix)
+# Creates a temporary directory, returns the path
+# Example: let dir = io.temp_dir("build_")
+
+# io.temp_path(prefix, suffix)
+# Returns a unique temporary file path without creating it
+# Example: let p = io.temp_path("out_", ".csv")
+
+# ── Compression & Archives ─────────────────────────────────────────────────
+
+# io.zip(output_path, files)
+# Creates a ZIP archive from a list of file paths
+# Example: io.zip("archive.zip", ["file1.txt", "file2.txt", "data/"])
+
+# io.unzip(archive_path, dest_dir)
+# Extracts a ZIP archive to a directory
+# Example: io.unzip("archive.zip", "extracted/")
+
+# io.tar(output_path, files, compression)
+# Creates a tar archive
+# compression: "none", "gzip" (default), "bz2", "xz"
+# Example: io.tar("backup.tar.gz", ["src/", "config/"], "gzip")
+
+# io.untar(archive_path, dest_dir)
+# Extracts a tar archive
+# Example: io.untar("backup.tar.gz", "restored/")
+
+# io.gzip(data)           -> Compresses bytes with gzip
+# io.gunzip(data)          -> Decompresses gzip bytes
+# io.zstd_compress(data)   -> Compresses with Zstandard
+# io.zstd_decompress(data) -> Decompresses Zstandard
+
+# ── File Watching ───────────────────────────────────────────────────────────
+
+# io.watch(paths, handler)
+# Watches files or directories for changes
+# handler receives { event, path } where event is "create", "modify", "delete", "rename"
+# Example:
+#   let watcher = io.watch(["src/", "config/"], fn(event)
+#     print("File changed:", event.path, event.event)
+#   )
+#   # ... later:
+#   watcher.stop()
+
+# ── Permissions ─────────────────────────────────────────────────────────────
+
+# io.chmod(path, mode)
+# Sets file permissions (Unix octal mode)
+# Example: io.chmod("script.sh", 0o755)
+
+# io.chown(path, user, group)
+# Changes file ownership
+# Example: io.chown("data.db", "www-data", "www-data")
+
+# ── Standard I/O ────────────────────────────────────────────────────────────
+
+# io.stdin            -> Standard input stream
+# io.stdout           -> Standard output stream
+# io.stderr           -> Standard error stream
+
+# io.input(prompt)
+# Reads a line from stdin with an optional prompt
+# Example: let name = io.input("Enter your name: ")
+
+# io.print(args...)
+# Prints to stdout with newline (alias for built-in print)
+# Example: io.print("Hello", "World")
+
+# io.eprint(args...)
+# Prints to stderr
+# Example: io.eprint("Warning: something happened")

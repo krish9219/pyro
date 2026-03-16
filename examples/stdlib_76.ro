@@ -1,0 +1,79 @@
+# Pyro 76-Module Standard Library Showcase
+
+import os
+import re
+import path
+import subprocess
+import text
+import color
+import base64
+import url
+import random
+import csv
+import env
+import fs
+
+# OS module
+print("Platform: ", os.platform())
+print("PID: ", os.pid())
+print("CPUs: ", os.cpus())
+print("CWD: ", os.cwd())
+
+# Regex module
+print("Search: ", re.search("[0-9]+", "abc123def"))
+print("Replace: ", re.replace("[0-9]+", "abc123def456", "NUM"))
+
+# Path module
+print("Join: ", path.join("/home", "user"))
+print("Basename: ", path.basename("/home/user/file.txt"))
+print("Extension: ", path.extension("/home/user/file.txt"))
+print("Exists /tmp: ", path.exists("/tmp"))
+
+# Subprocess
+let result = subprocess.exec("echo Hello from subprocess")
+print("Subprocess: ", result)
+
+# Text module
+print("Capitalize: ", text.capitalize("hello world"))
+print("Title: ", text.title("hello pyro world"))
+print("Center: ", text.center("PYRO", 20))
+
+# Color module
+print(color.green("This is green!"))
+print(color.bold("This is bold!"))
+print(color.red("This is red!"))
+
+# Base64
+let encoded = base64.encode("Hello, Pyro!")
+print("Base64 encode: ", encoded)
+let decoded = base64.decode(encoded)
+print("Base64 decode: ", decoded)
+
+# URL parsing
+let u = url.parse("https://pyro-lang.org:8080/docs?page=1")
+print("URL host: ", u.host)
+print("URL path: ", u.path)
+print("URL port: ", u.port)
+
+# Random
+print("Random int: ", random.randint(1, 100))
+print("Random float: ", random.uniform(0.0, 1.0))
+
+# CSV
+csv.write("/tmp/test_pyro.csv", [["name", "age"], ["Alice", "30"], ["Bob", "25"]])
+let data = csv.read("/tmp/test_pyro.csv")
+print("CSV rows: ", data)
+
+# Environment
+print("HOME: ", env.get("HOME", "unknown"))
+print("Has PATH: ", env.has("PATH"))
+
+# Filesystem
+fs.write("/tmp/pyro_fs_test.txt", "Hello from fs module!")
+print("File exists: ", fs.exists("/tmp/pyro_fs_test.txt"))
+print("File size: ", fs.size("/tmp/pyro_fs_test.txt"))
+fs.remove("/tmp/pyro_fs_test.txt")
+fs.remove("/tmp/test_pyro.csv")
+
+print("")
+print("All modules working!")

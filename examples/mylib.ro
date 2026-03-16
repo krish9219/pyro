@@ -1,0 +1,11 @@
+# mylib.ro - A helper library for testing multi-file imports
+
+fn add(a, b) = a + b
+
+fn greet(name)
+    print("Hello, {name}!")
+end
+
+fn square(x) = x * x
+
+fn double_val(x) = x * 2

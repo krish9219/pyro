@@ -1,0 +1,225 @@
+# ============================================================================
+# Pyro Built-in Library: cache
+# Created by Aravind Pilla
+# Caching: in-memory, Redis, LRU, TTL, distributed cache
+# ============================================================================
+
+import cache
+
+# ── In-Memory Cache ─────────────────────────────────────────────────────────
+
+# cache.memory(config)
+# Creates an in-memory cache
+# config: { max_size, ttl, eviction }
+# max_size: maximum number of entries (default unlimited)
+# ttl: default time-to-live in seconds (default unlimited)
+# eviction: "lru" (default), "lfu", "fifo", "random"
+# Example:
+#   let c = cache.memory({ max_size: 1000, ttl: 300, eviction: "lru" })
+
+# c.get(key)
+# Gets a value by key, returns nil if not found or expired
+# Example: let user = c.get("user:42")
+
+# c.set(key, value, ttl)
+# Sets a key-value pair with optional TTL in seconds
+# Example: c.set("user:42", user_data, 600)
+
+# c.has(key)
+# Returns true if key exists and is not expired
+# Example: if c.has("session:abc") ...
+
+# c.delete(key)
+# Removes an entry
+# Example: c.delete("user:42")
+
+# c.clear()
+# Removes all entries
+# Example: c.clear()
+
+# c.size()
+# Returns the number of entries
+# Example: c.size() -> 42
+
+# c.keys()
+# Returns list of all keys
+# Example: let all_keys = c.keys()
+
+# c.values()
+# Returns list of all values
+
+# c.entries()
+# Returns list of { key, value, ttl_remaining }
+
+# c.stats()
+# Returns cache statistics
+# Returns { hits, misses, hit_rate, size, evictions }
+# Example: c.stats() -> { hits: 1500, misses: 200, hit_rate: 0.882, ... }
+
+# ── Get-or-Set Pattern ─────────────────────────────────────────────────────
+
+# c.get_or_set(key, loader, ttl)
+# Gets value if cached; otherwise calls loader, caches and returns the result
+# Example:
+#   let user = c.get_or_set("user:42", fn()
+#     return db.query_one("SELECT * FROM users WHERE id = $1", [42])
+#   , 300)
+
+# c.get_or_set_async(key, loader, ttl)
+# Async version that prevents thundering herd (only one loader runs at a time)
+# Example:
+#   let data = await c.get_or_set_async("api:weather", fn()
+#     return await web.get("https://api.weather.com/current")
+#   , 60)
+
+# ── Bulk Operations ─────────────────────────────────────────────────────────
+
+# c.get_many(keys)
+# Gets multiple values at once, returns dict of key -> value
+# Example: let users = c.get_many(["user:1", "user:2", "user:3"])
+
+# c.set_many(entries, ttl)
+# Sets multiple entries at once
+# entries: dict of key -> value
+# Example: c.set_many({ "user:1": u1, "user:2": u2 }, 300)
+
+# c.delete_many(keys)
+# Deletes multiple entries
+# Example: c.delete_many(["temp:a", "temp:b"])
+
+# ── TTL & Expiration ───────────────────────────────────────────────────────
+
+# c.ttl(key)
+# Returns remaining TTL in seconds, or nil if no expiry
+# Example: c.ttl("session:abc") -> 245
+
+# c.set_ttl(key, ttl)
+# Updates the TTL of an existing entry
+# Example: c.set_ttl("session:abc", 3600)
+
+# c.persist(key)
+# Removes TTL from a key (makes it permanent)
+# Example: c.persist("config:app")
+
+# c.expire_at(key, timestamp)
+# Sets expiry to a specific Unix timestamp
+# Example: c.expire_at("promo:sale", time.parse_iso("2026-12-31T23:59:59Z").unix)
+
+# c.on_expire(handler)
+# Called when entries expire
+# handler receives (key, value)
+# Example: c.on_expire(fn(k, v) log.info("Expired:", k))
+
+# ── LRU Cache (Function Memoization) ───────────────────────────────────────
+
+# cache.lru(max_size)
+# Creates an LRU cache for function memoization
+# Example:
+#   let memo = cache.lru(100)
+
+# cache.memoize(fn, config)
+# Wraps a function with automatic caching
+# config: { max_size, ttl, key_fn }
+# key_fn: custom function to generate cache key from arguments
+# Example:
+#   let fetch_user = cache.memoize(fn(id)
+#     return db.query_one("SELECT * FROM users WHERE id = $1", [id])
+#   , { max_size: 500, ttl: 60 })
+#
+#   let user = fetch_user(42)  # cached after first call
+
+# ── Redis Cache ─────────────────────────────────────────────────────────────
+
+# cache.redis(config)
+# Creates a Redis-backed cache
+# config: { host, port, password, db, prefix, pool_size }
+# Example:
+#   let rc = cache.redis({
+#     host: "localhost",
+#     port: 6379,
+#     prefix: "myapp:",
+#     pool_size: 5
+#   })
+
+# Redis cache has the same interface as memory cache:
+# rc.get(key), rc.set(key, val, ttl), rc.has(key), rc.delete(key), etc.
+# Plus additional Redis-specific methods:
+
+# rc.incr(key, amount)
+# Atomically increments a numeric value
+# Example: rc.incr("page:views", 1)
+
+# rc.decr(key, amount)
+# Atomically decrements
+# Example: rc.decr("stock:item:42", 1)
+
+# rc.list_push(key, values)
+# Pushes values to a Redis list
+# Example: rc.list_push("queue:tasks", ["task1", "task2"])
+
+# rc.list_pop(key)
+# Pops from a Redis list
+# Example: let task = rc.list_pop("queue:tasks")
+
+# rc.set_add(key, members)
+# Adds members to a Redis set
+# Example: rc.set_add("online:users", ["user:1", "user:2"])
+
+# rc.set_members(key)
+# Returns all members of a set
+# Example: let online = rc.set_members("online:users")
+
+# rc.hash_set(key, field, value)
+# Sets a hash field
+# Example: rc.hash_set("user:42", "name", "Alice")
+
+# rc.hash_get(key, field)
+# Gets a hash field
+# Example: rc.hash_get("user:42", "name") -> "Alice"
+
+# rc.hash_all(key)
+# Gets all fields and values of a hash
+# Example: rc.hash_all("user:42") -> { name: "Alice", age: "30" }
+
+# rc.publish(channel, message)
+# Publishes a message to a Redis channel
+# Example: rc.publish("notifications", json.stringify({ type: "alert" }))
+
+# rc.subscribe(channel, handler)
+# Subscribes to a Redis channel
+# Example: rc.subscribe("notifications", fn(msg) print(msg))
+
+# ── Distributed Cache ──────────────────────────────────────────────────────
+
+# cache.distributed(nodes, config)
+# Creates a distributed cache across multiple nodes using consistent hashing
+# nodes: list of { host, port }
+# config: { replicas, read_quorum, write_quorum }
+# Example:
+#   let dc = cache.distributed([
+#     { host: "cache1.internal", port: 6379 },
+#     { host: "cache2.internal", port: 6379 },
+#     { host: "cache3.internal", port: 6379 }
+#   ], { replicas: 2 })
+
+# dc.get(key), dc.set(key, val, ttl), dc.delete(key)
+# Same interface as other caches, but distributed
+
+# ── Cache Decorators / Helpers ──────────────────────────────────────────────
+
+# cache.wrap(cache_instance, fn, config)
+# Wraps any function with caching behavior
+# config: { key_prefix, ttl, invalidate_on }
+# Example:
+#   let get_products = cache.wrap(c, fn(category)
+#     return db.query("SELECT * FROM products WHERE category = $1", [category])
+#   , { key_prefix: "products", ttl: 300 })
+
+# cache.invalidate_pattern(cache_instance, pattern)
+# Invalidates all keys matching a glob pattern
+# Example: cache.invalidate_pattern(c, "user:*")
+
+# cache.warm(cache_instance, entries)
+# Pre-populates cache with entries
+# entries: list of { key, value, ttl }
+# Example: cache.warm(c, [{ key: "config", value: app_config, ttl: 3600 }])

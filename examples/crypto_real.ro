@@ -1,0 +1,49 @@
+# Real Cryptography — Powered by OpenSSL
+# SHA-256, SHA-512, HMAC, AES-256-GCM, PBKDF2
+
+import crypto
+
+# Real SHA-256 (OpenSSL)
+let hash = crypto.sha256("Hello, Pyro!")
+print("SHA-256: {hash}")
+
+# Real SHA-512 (OpenSSL)
+let hash512 = crypto.sha512("Hello, Pyro!")
+print("SHA-512: {hash512}")
+
+# Real HMAC-SHA256 (OpenSSL)
+let mac = crypto.hmac_sha256("secret_key", "important data")
+print("HMAC-SHA256: {mac}")
+
+# Real AES-256-GCM encryption (OpenSSL)
+let plaintext = "This is a secret message from Aravind Pilla"
+let key = "my-super-secret-key"
+let encrypted = crypto.encrypt(plaintext, key)
+print("Encrypted: {encrypted}")
+
+let decrypted = crypto.decrypt(encrypted, key)
+print("Decrypted: {decrypted}")
+
+# Verify encryption works correctly
+print("Match: {decrypted == plaintext}")
+
+# Secure random (OpenSSL RAND_bytes)
+let token = crypto.random_token(32)
+print("Token: {token}")
+
+let id = crypto.uuid()
+print("UUID: {id}")
+
+let bytes = crypto.random_bytes(16)
+print("Random bytes: {bytes}")
+
+# Password hashing (PBKDF2 via OpenSSL)
+let password = "MySecureP@ssw0rd!"
+let hashed = crypto.hash_password(password)
+print("Password hash: {hashed}")
+
+let valid = crypto.verify_password(password, hashed)
+print("Verify correct password: {valid}")
+
+let invalid = crypto.verify_password("wrong_password", hashed)
+print("Verify wrong password: {invalid}")

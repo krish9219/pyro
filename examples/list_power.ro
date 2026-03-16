@@ -1,0 +1,42 @@
+# List Methods — Python needs list comprehensions, Pyro has method chains
+fn double(x) = x * 2
+fn is_even(x) = x % 2 == 0
+
+let nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+# Map - transform each element
+let doubled = nums.map(fn(x) = x * 2)
+print("Doubled: ", doubled)
+
+# Filter - keep elements matching predicate
+let evens = nums.filter(fn(x) = x % 2 == 0)
+print("Evens: ", evens)
+
+# Reduce - fold into single value
+let total = nums.reduce(0, fn(acc, x) = acc + x)
+print("Sum: ", total)
+
+# Chain operations with pipes
+let result = nums.filter(fn(x) = x > 3).map(fn(x) = x * 10)
+print("Filter > 3 then *10: ", result)
+
+# Sort, reverse
+let sorted = [5, 3, 1, 4, 2].sort()
+print("Sorted: ", sorted)
+
+let rev = [1, 2, 3].reverse()
+print("Reversed: ", rev)
+
+# Join
+let words = ["Hello", "Pyro", "World"]
+let sentence = words.join(" ")
+print("Joined: ", sentence)
+
+# Contains
+print("Has 5: ", nums.contains(5))
+print("Has 99: ", nums.contains(99))
+
+# Built-in aggregates via reduce
+let sum2 = nums.reduce(0, fn(a, x) = a + x)
+print("Sum: ", sum2)
+print("Length: ", nums.len())

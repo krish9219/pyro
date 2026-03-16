@@ -1,0 +1,272 @@
+# ============================================================================
+# Pyro Built-in Library: ml
+# Created by Aravind Pilla
+# Machine Learning: regression, classification, clustering, neural nets, NLP
+# ============================================================================
+
+import ml
+
+# ── Data Preprocessing ──────────────────────────────────────────────────────
+
+# ml.normalize(data, method)
+# Normalizes feature data
+# method: "minmax" (default), "zscore", "robust", "l2"
+# Returns { data, params } where params can be used to transform new data
+# Example: let result = ml.normalize(features, "zscore")
+
+# ml.standardize(data)
+# Standardizes to zero mean and unit variance (alias for zscore normalize)
+# Example: let result = ml.standardize(training_data)
+
+# ml.impute(data, strategy)
+# Fills missing values
+# strategy: "mean", "median", "mode", "constant", "knn"
+# Example: let filled = ml.impute(data, "median")
+
+# ml.one_hot_encode(labels)
+# Converts categorical labels to one-hot vectors
+# Example: ml.one_hot_encode(["cat","dog","cat"]) -> [[1,0],[0,1],[1,0]]
+
+# ml.label_encode(labels)
+# Converts string labels to integers
+# Example: ml.label_encode(["a","b","c","a"]) -> [0, 1, 2, 0]
+
+# ml.pca(data, n_components)
+# Principal Component Analysis for dimensionality reduction
+# Returns { transformed, components, explained_variance }
+# Example: let result = ml.pca(high_dim_data, 2)
+
+# ml.train_test_split(x, y, ratio, seed)
+# Splits features and labels into training and test sets
+# Returns { x_train, x_test, y_train, y_test }
+# Example: let split = ml.train_test_split(features, labels, 0.8, 42)
+
+# ml.cross_validate(model, x, y, folds)
+# K-fold cross-validation
+# Returns { scores, mean_score, std_score }
+# Example: let cv = ml.cross_validate(model, x, y, 5)
+
+# ml.feature_scale(data, scaler)
+# Applies a fitted scaler to new data
+# Example: let scaled = ml.feature_scale(new_data, result.params)
+
+# ── Regression ──────────────────────────────────────────────────────────────
+
+# ml.linear_regression(config)
+# Creates a linear regression model
+# config: { fit_intercept, regularization, alpha }
+# regularization: nil, "l1" (lasso), "l2" (ridge), "elasticnet"
+# Example:
+#   let model = ml.linear_regression({ regularization: "l2", alpha: 0.01 })
+#   model.fit(x_train, y_train)
+#   let predictions = model.predict(x_test)
+
+# ml.polynomial_regression(degree, config)
+# Polynomial regression
+# Example: let model = ml.polynomial_regression(3)
+
+# ml.logistic_regression(config)
+# Logistic regression for binary classification
+# config: { regularization, alpha, max_iter }
+# Example: let model = ml.logistic_regression({ max_iter: 1000 })
+
+# Model methods (shared across all models):
+# model.fit(x, y)              -> Train the model
+# model.predict(x)             -> Make predictions
+# model.score(x, y)            -> Returns accuracy/R2 score
+# model.save(path)             -> Save model to file
+# model.coefficients            -> Model coefficients/weights
+# model.intercept               -> Model intercept/bias
+
+# ml.load_model(path)
+# Loads a saved model from file
+# Example: let model = ml.load_model("model.pyro")
+
+# ── Classification ──────────────────────────────────────────────────────────
+
+# ml.knn(config)
+# K-Nearest Neighbors classifier
+# config: { k, distance, weights }
+# distance: "euclidean" (default), "manhattan", "cosine"
+# weights: "uniform" (default), "distance"
+# Example:
+#   let model = ml.knn({ k: 5, distance: "euclidean" })
+#   model.fit(x_train, y_train)
+#   let pred = model.predict(x_test)
+
+# ml.decision_tree(config)
+# Decision tree classifier/regressor
+# config: { max_depth, min_samples, criterion, task }
+# criterion: "gini" (default), "entropy" for classification; "mse" for regression
+# task: "classify" (default), "regress"
+# Example: let tree = ml.decision_tree({ max_depth: 10, criterion: "entropy" })
+
+# ml.random_forest(config)
+# Random forest ensemble
+# config: { n_trees, max_depth, min_samples, task, max_features }
+# Example: let rf = ml.random_forest({ n_trees: 100, max_depth: 15 })
+
+# ml.gradient_boost(config)
+# Gradient boosting classifier/regressor
+# config: { n_estimators, learning_rate, max_depth, task }
+# Example: let gb = ml.gradient_boost({ n_estimators: 200, learning_rate: 0.1 })
+
+# ml.svm(config)
+# Support Vector Machine
+# config: { kernel, c, gamma, task }
+# kernel: "linear", "rbf" (default), "poly", "sigmoid"
+# Example: let svm = ml.svm({ kernel: "rbf", c: 1.0 })
+
+# ml.naive_bayes(variant)
+# Naive Bayes classifier
+# variant: "gaussian" (default), "multinomial", "bernoulli"
+# Example: let nb = ml.naive_bayes("gaussian")
+
+# ── Clustering ──────────────────────────────────────────────────────────────
+
+# ml.kmeans(config)
+# K-Means clustering
+# config: { k, max_iter, init, seed }
+# init: "kmeans++" (default), "random"
+# Returns after fit: { labels, centroids, inertia }
+# Example:
+#   let km = ml.kmeans({ k: 3, seed: 42 })
+#   km.fit(data)
+#   let labels = km.labels
+#   let centroids = km.centroids
+
+# ml.dbscan(config)
+# Density-based clustering
+# config: { eps, min_samples }
+# Example: let db = ml.dbscan({ eps: 0.5, min_samples: 5 })
+
+# ml.hierarchical(config)
+# Agglomerative hierarchical clustering
+# config: { n_clusters, linkage, distance }
+# linkage: "ward" (default), "complete", "average", "single"
+# Example: let hc = ml.hierarchical({ n_clusters: 4 })
+
+# ── Neural Networks ─────────────────────────────────────────────────────────
+
+# ml.neural_net(layers, config)
+# Creates a feedforward neural network
+# layers: list of layer definitions
+# config: { optimizer, learning_rate, loss, epochs, batch_size }
+# optimizer: "adam" (default), "sgd", "rmsprop", "adagrad"
+# loss: "mse", "cross_entropy", "binary_cross_entropy"
+# Example:
+#   let nn = ml.neural_net([
+#     ml.dense(128, "relu"),
+#     ml.dropout(0.3),
+#     ml.dense(64, "relu"),
+#     ml.dense(10, "softmax")
+#   ], {
+#     optimizer: "adam",
+#     learning_rate: 0.001,
+#     loss: "cross_entropy",
+#     epochs: 50,
+#     batch_size: 32
+#   })
+#   nn.fit(x_train, y_train, { validation: [x_val, y_val] })
+
+# Layer types:
+# ml.dense(units, activation)       -> Fully connected layer
+# ml.dropout(rate)                  -> Dropout for regularization
+# ml.batch_norm()                   -> Batch normalization
+# ml.conv2d(filters, kernel, activation) -> 2D convolution
+# ml.max_pool2d(size)               -> Max pooling
+# ml.flatten()                      -> Flatten spatial dims
+# ml.lstm(units, return_sequences)  -> LSTM recurrent layer
+# ml.gru(units, return_sequences)   -> GRU recurrent layer
+# ml.embedding(vocab_size, dim)     -> Embedding layer
+
+# Activations: "relu", "sigmoid", "tanh", "softmax", "leaky_relu", "elu", "swish"
+
+# nn.fit(x, y, config)             -> Train the network
+# nn.predict(x)                    -> Forward pass
+# nn.evaluate(x, y)                -> Returns { loss, accuracy }
+# nn.summary()                     -> Prints model architecture
+# nn.save(path)                    -> Save model weights
+
+# ── Metrics ─────────────────────────────────────────────────────────────────
+
+# ml.accuracy(y_true, y_pred)
+# Classification accuracy
+# Example: ml.accuracy(labels, predictions) -> 0.95
+
+# ml.precision(y_true, y_pred, average)
+# Precision score
+# average: "binary", "macro", "micro", "weighted"
+# Example: ml.precision(labels, preds, "macro")
+
+# ml.recall(y_true, y_pred, average)
+# Recall score
+# Example: ml.recall(labels, preds, "weighted")
+
+# ml.f1(y_true, y_pred, average)
+# F1 score (harmonic mean of precision and recall)
+# Example: ml.f1(labels, preds, "binary")
+
+# ml.confusion_matrix(y_true, y_pred)
+# Returns a confusion matrix as a 2D list
+# Example: let cm = ml.confusion_matrix(labels, preds)
+
+# ml.roc_auc(y_true, y_scores)
+# Area under the ROC curve
+# Example: ml.roc_auc(labels, probabilities) -> 0.98
+
+# ml.mse(y_true, y_pred)     -> Mean squared error
+# ml.rmse(y_true, y_pred)    -> Root mean squared error
+# ml.mae(y_true, y_pred)     -> Mean absolute error
+# ml.r2(y_true, y_pred)      -> R-squared score
+
+# ml.classification_report(y_true, y_pred)
+# Returns a detailed per-class metrics report
+# Example: let report = ml.classification_report(labels, preds)
+
+# ── NLP (Natural Language Processing) ──────────────────────────────────────
+
+# ml.tokenize(text, method)
+# Tokenizes text into words or subwords
+# method: "word" (default), "sentence", "char", "bpe"
+# Example: ml.tokenize("Hello world!") -> ["Hello", "world", "!"]
+
+# ml.bag_of_words(texts, config)
+# Creates bag-of-words features
+# config: { max_features, stop_words }
+# Returns { matrix, vocabulary }
+# Example: let bow = ml.bag_of_words(documents, { max_features: 5000 })
+
+# ml.tfidf(texts, config)
+# Creates TF-IDF feature matrix
+# config: { max_features, stop_words, ngram_range }
+# Example: let features = ml.tfidf(docs, { max_features: 10000 })
+
+# ml.word2vec(texts, config)
+# Trains word embeddings
+# config: { dim, window, min_count, epochs }
+# Example: let w2v = ml.word2vec(corpus, { dim: 100, window: 5 })
+
+# ml.sentiment(text)
+# Returns sentiment score from -1.0 (negative) to 1.0 (positive)
+# Example: ml.sentiment("I love this!") -> 0.85
+
+# ml.similarity(text_a, text_b)
+# Cosine similarity between two texts
+# Example: ml.similarity("hello world", "hi earth") -> 0.62
+
+# ml.summarize(text, max_sentences)
+# Extractive text summarization
+# Example: let summary = ml.summarize(long_article, 3)
+
+# ml.stop_words(language)
+# Returns list of stop words for a language
+# Example: ml.stop_words("en") -> ["the", "a", "an", "is", ...]
+
+# ml.stem(word, language)
+# Applies stemming to a word
+# Example: ml.stem("running", "en") -> "run"
+
+# ml.lemmatize(word, language)
+# Applies lemmatization
+# Example: ml.lemmatize("better", "en") -> "good"

@@ -1,0 +1,13 @@
+# use_import.ro - Test multi-file imports
+import mylib
+
+let result = add(10, 20)
+print("10 + 20 = {result}")
+
+greet("Pyro User")
+
+let sq = square(7)
+print("7 squared = {sq}")
+
+let d = double_val(21)
+print("double of 21 = {d}")

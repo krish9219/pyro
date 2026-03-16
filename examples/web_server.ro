@@ -1,0 +1,37 @@
+# Web Development with Nova (Built-in support)
+# Full web server in under 30 lines
+
+import web
+
+let app = web.app()
+
+# Static HTML route
+app.get("/")
+    return web.html("<h1>Welcome to Pyro Web!</h1><p>Built with love by Aravind Pilla</p>")
+
+# JSON API
+let users = [
+    {"name": "Alice", "age": 30},
+    {"name": "Bob", "age": 25}
+]
+
+app.get("/api/users")
+    return web.json(users)
+
+app.get("/api/users/:id")
+    let id = web.param("id")
+    return web.json(users[id])
+
+# POST route
+app.post("/api/users")
+    let body = web.body()
+    print("New user: ", body)
+    return web.json({"status": "created"})
+
+# Middleware
+app.use(web.cors())
+app.use(web.logger())
+
+# Start server
+print("Server starting on port 8080...")
+app.listen(8080)

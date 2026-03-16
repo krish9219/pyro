@@ -1,0 +1,243 @@
+# ============================================================================
+# Pyro Built-in Library: net
+# Created by Aravind Pilla
+# Networking: TCP, UDP, DNS, SSH, FTP, email, sockets
+# ============================================================================
+
+import net
+
+# ── TCP ─────────────────────────────────────────────────────────────────────
+
+# net.tcp_listen(host, port, handler)
+# Starts a TCP server
+# handler receives a socket for each connection
+# Example:
+#   let server = net.tcp_listen("0.0.0.0", 9000, fn(socket)
+#     let data = socket.read()
+#     socket.write("Echo: " + data)
+#     socket.close()
+#   )
+
+# net.tcp_connect(host, port, config)
+# Opens a TCP client connection
+# config: { timeout, tls, keep_alive }
+# Example:
+#   let socket = await net.tcp_connect("example.com", 80, { timeout: 5000 })
+#   socket.write("GET / HTTP/1.1\r\nHost: example.com\r\n\r\n")
+#   let response = socket.read()
+#   socket.close()
+
+# Socket methods:
+# socket.read(n)           -> Read up to n bytes (reads available if n omitted)
+# socket.read_line()       -> Read until newline
+# socket.read_until(delim) -> Read until delimiter found
+# socket.write(data)       -> Write string or bytes
+# socket.close()           -> Close the connection
+# socket.set_timeout(ms)   -> Set read/write timeout
+# socket.remote_addr       -> Remote address string
+# socket.local_addr        -> Local address string
+# socket.is_open           -> true if connection is alive
+
+# server.stop()            -> Stops the TCP server
+
+# ── UDP ─────────────────────────────────────────────────────────────────────
+
+# net.udp_bind(host, port)
+# Creates a UDP socket bound to the given address
+# Example:
+#   let udp = net.udp_bind("0.0.0.0", 5000)
+#   udp.on("message", fn(data, remote_addr)
+#     print("From", remote_addr, ":", data)
+#     udp.send("ack", remote_addr)
+#   )
+
+# udp.send(data, addr)     -> Send data to a specific address
+# udp.on(event, handler)   -> Listen for "message", "error"
+# udp.close()              -> Close the socket
+# udp.set_broadcast(bool)  -> Enable/disable broadcast
+# udp.set_multicast(group) -> Join a multicast group
+
+# net.udp_send(host, port, data)
+# One-shot UDP message send
+# Example: net.udp_send("192.168.1.255", 5000, "ping")
+
+# ── DNS ─────────────────────────────────────────────────────────────────────
+
+# net.dns_lookup(hostname)
+# Resolves a hostname to IP addresses
+# Returns list of IP address strings
+# Example: net.dns_lookup("google.com") -> ["142.250.80.46"]
+
+# net.dns_reverse(ip)
+# Reverse DNS lookup
+# Example: net.dns_reverse("8.8.8.8") -> ["dns.google"]
+
+# net.dns_resolve(hostname, record_type)
+# Queries specific DNS record types
+# record_type: "A", "AAAA", "MX", "TXT", "CNAME", "NS", "SRV", "SOA", "PTR"
+# Example:
+#   net.dns_resolve("example.com", "MX") -> [{ priority: 10, host: "mail.example.com" }]
+#   net.dns_resolve("example.com", "TXT") -> ["v=spf1 include:..."]
+
+# net.dns_server(config)
+# Creates a simple DNS server
+# Example:
+#   let dns = net.dns_server({ port: 5353 })
+#   dns.on("query", fn(query, respond)
+#     if query.name == "test.local"
+#       respond({ type: "A", address: "127.0.0.1", ttl: 300 })
+#   )
+
+# ── SSH ─────────────────────────────────────────────────────────────────────
+
+# net.ssh(config)
+# Opens an SSH connection
+# config: { host, port, user, password, key_file, passphrase, timeout }
+# Example:
+#   let session = await net.ssh({
+#     host: "server.example.com",
+#     user: "deploy",
+#     key_file: "~/.ssh/id_ed25519"
+#   })
+
+# session.exec(command)
+# Executes a command on the remote host
+# Returns { stdout, stderr, exit_code }
+# Example:
+#   let result = await session.exec("ls -la /var/www")
+#   print(result.stdout)
+
+# session.upload(local_path, remote_path)
+# Uploads a file via SFTP
+# Example: await session.upload("app.tar.gz", "/tmp/app.tar.gz")
+
+# session.download(remote_path, local_path)
+# Downloads a file via SFTP
+# Example: await session.download("/var/log/app.log", "app.log")
+
+# session.shell()
+# Opens an interactive shell session
+# Returns a stream for reading/writing
+
+# session.forward(local_port, remote_host, remote_port)
+# Creates an SSH tunnel (port forwarding)
+# Example: session.forward(3306, "localhost", 3306)
+
+# session.close()
+# Closes the SSH session
+
+# ── FTP / SFTP ──────────────────────────────────────────────────────────────
+
+# net.ftp(config)
+# Opens an FTP connection
+# config: { host, port, user, password, secure }
+# Example:
+#   let ftp = await net.ftp({ host: "ftp.example.com", user: "admin", password: "pass" })
+
+# ftp.list(path)           -> List directory contents
+# ftp.upload(local, remote) -> Upload a file
+# ftp.download(remote, local) -> Download a file
+# ftp.mkdir(path)          -> Create directory
+# ftp.rmdir(path)          -> Remove directory
+# ftp.delete(path)         -> Delete a file
+# ftp.rename(old, new)     -> Rename a file
+# ftp.pwd()                -> Current working directory
+# ftp.cd(path)             -> Change directory
+# ftp.close()              -> Close the connection
+
+# ── Email (SMTP) ───────────────────────────────────────────────────────────
+
+# net.smtp(config)
+# Creates an SMTP client for sending emails
+# config: { host, port, user, password, tls }
+# Example:
+#   let mailer = net.smtp({
+#     host: "smtp.gmail.com",
+#     port: 587,
+#     user: "you@gmail.com",
+#     password: "app_password",
+#     tls: true
+#   })
+
+# mailer.send(message)
+# Sends an email
+# message: { from, to, cc, bcc, subject, text, html, attachments }
+# Example:
+#   await mailer.send({
+#     from: "you@gmail.com",
+#     to: ["alice@example.com"],
+#     subject: "Hello from Pyro",
+#     text: "This is a plain text email",
+#     html: "<h1>Hello!</h1><p>This is HTML</p>",
+#     attachments: [{ path: "report.pdf", name: "report.pdf" }]
+#   })
+
+# mailer.close()           -> Close the SMTP connection
+
+# net.imap(config)
+# Creates an IMAP client for reading emails
+# config: { host, port, user, password, tls }
+# Example:
+#   let inbox = await net.imap({
+#     host: "imap.gmail.com", port: 993, user: "you@gmail.com", password: "pass", tls: true
+#   })
+
+# inbox.folders()              -> List mail folders
+# inbox.select(folder)         -> Select a folder ("INBOX", "Sent", etc.)
+# inbox.search(criteria)       -> Search messages, returns list of IDs
+# inbox.fetch(id)              -> Fetch a message by ID
+# inbox.mark_read(id)          -> Mark as read
+# inbox.mark_unread(id)        -> Mark as unread
+# inbox.delete(id)             -> Delete a message
+# inbox.move(id, folder)       -> Move to folder
+# inbox.close()                -> Close connection
+
+# ── HTTP Utilities ──────────────────────────────────────────────────────────
+
+# net.url_parse(url_string)
+# Parses a URL into components
+# Returns { scheme, host, port, path, query, fragment, user, password }
+# Example: net.url_parse("https://user:pass@host.com:443/path?q=1#frag")
+
+# net.url_encode(string)        -> URL-encode a string
+# net.url_decode(string)        -> Decode a URL-encoded string
+# net.query_string(params)      -> Build query string from dict
+# net.parse_query(string)       -> Parse query string to dict
+
+# ── Network Utilities ──────────────────────────────────────────────────────
+
+# net.ip_info(ip)
+# Returns info about an IP address: { version, is_private, is_loopback, is_multicast }
+# Example: net.ip_info("192.168.1.1") -> { version: 4, is_private: true, ... }
+
+# net.hostname()
+# Returns the local hostname
+# Example: net.hostname() -> "my-machine"
+
+# net.interfaces()
+# Returns list of network interfaces
+# Each: { name, addresses, mac, mtu, is_up }
+# Example: net.interfaces() -> [{ name: "eth0", addresses: ["10.0.0.5"], ... }]
+
+# net.ping(host, config)
+# Pings a host
+# config: { count, timeout }
+# Returns { min, max, avg, loss_percent }
+# Example: net.ping("google.com", { count: 4 }) -> { min: 10, avg: 15, max: 22, loss_percent: 0 }
+
+# net.port_scan(host, ports)
+# Scans ports on a host, returns list of open ports
+# ports: list of ints or range [start, end]
+# Example: net.port_scan("localhost", [80, 443, 8080]) -> [80, 443]
+
+# net.is_reachable(host, port, timeout)
+# Tests if a host:port is reachable
+# Example: net.is_reachable("db.internal", 5432, 3000) -> true
+
+# net.local_ip()
+# Returns the machine's local IP address
+# Example: net.local_ip() -> "192.168.1.42"
+
+# net.public_ip()
+# Returns the machine's public IP address
+# Example: await net.public_ip() -> "203.0.113.5"

@@ -1,0 +1,248 @@
+# ============================================================================
+# Pyro Built-in Library: crypto
+# Created by Aravind Pilla
+# Cryptography & Security: hashing, encryption, signing, JWT, TLS
+# ============================================================================
+
+import crypto
+
+# ── Hashing ─────────────────────────────────────────────────────────────────
+
+# crypto.sha256(data)
+# Returns SHA-256 hex digest of the input string or bytes
+# Example: crypto.sha256("hello world") -> "b94d27b9934d3e08..."
+
+# crypto.sha384(data)       -> SHA-384 hex digest
+# crypto.sha512(data)       -> SHA-512 hex digest
+# crypto.sha1(data)         -> SHA-1 hex digest (legacy, avoid for security)
+# crypto.md5(data)          -> MD5 hex digest (legacy, avoid for security)
+# crypto.blake2b(data, size) -> BLAKE2b digest with optional output size
+# crypto.blake2s(data, size) -> BLAKE2s digest with optional output size
+# crypto.sha3_256(data)     -> SHA-3 256-bit digest
+# crypto.sha3_512(data)     -> SHA-3 512-bit digest
+
+# crypto.hash(algorithm, data)
+# Generic hashing with specified algorithm
+# Example: crypto.hash("sha256", "hello") -> "2cf24dba5fb0a30e..."
+
+# crypto.hash_file(algorithm, path)
+# Hashes the contents of a file
+# Example: crypto.hash_file("sha256", "/path/to/file.bin")
+
+# ── HMAC ────────────────────────────────────────────────────────────────────
+
+# crypto.hmac(algorithm, key, data)
+# Creates an HMAC (Hash-based Message Authentication Code)
+# Example: crypto.hmac("sha256", "secret_key", "message") -> "f7bc83f430538..."
+
+# crypto.hmac_verify(algorithm, key, data, expected)
+# Verifies an HMAC using constant-time comparison
+# Returns true if valid
+# Example: crypto.hmac_verify("sha256", key, msg, received_hmac)
+
+# ── Password Hashing ───────────────────────────────────────────────────────
+
+# crypto.bcrypt_hash(password, rounds)
+# Hashes a password using bcrypt
+# rounds: cost factor (default 12)
+# Example: let hashed = crypto.bcrypt_hash("my_password", 12)
+
+# crypto.bcrypt_verify(password, hash)
+# Verifies a password against a bcrypt hash
+# Example: crypto.bcrypt_verify("my_password", hashed) -> true
+
+# crypto.argon2_hash(password, config)
+# Hashes using Argon2id (recommended for new projects)
+# config: { memory, iterations, parallelism, salt_length, hash_length }
+# Example: let h = crypto.argon2_hash("password", { memory: 65536, iterations: 3 })
+
+# crypto.argon2_verify(password, hash)
+# Verifies a password against an Argon2 hash
+# Example: crypto.argon2_verify("password", h) -> true
+
+# crypto.scrypt_hash(password, config)
+# Hashes using scrypt
+# config: { n, r, p, key_length }
+# Example: let h = crypto.scrypt_hash("password", { n: 16384 })
+
+# crypto.scrypt_verify(password, hash)
+# Verifies against a scrypt hash
+
+# ── Symmetric Encryption (AES) ─────────────────────────────────────────────
+
+# crypto.aes_encrypt(plaintext, key, config)
+# Encrypts data using AES
+# config: { mode, iv, aad } where mode is "gcm" (default), "cbc", "ctr"
+# Returns { ciphertext, iv, tag } for GCM mode
+# Example:
+#   let key = crypto.random_bytes(32)
+#   let result = crypto.aes_encrypt("secret data", key, { mode: "gcm" })
+
+# crypto.aes_decrypt(ciphertext, key, config)
+# Decrypts AES-encrypted data
+# config: { mode, iv, tag, aad }
+# Example:
+#   let plain = crypto.aes_decrypt(result.ciphertext, key, {
+#     mode: "gcm", iv: result.iv, tag: result.tag
+#   })
+
+# crypto.chacha20_encrypt(plaintext, key, nonce)
+# Encrypts using ChaCha20-Poly1305
+# Example: let enc = crypto.chacha20_encrypt("data", key, nonce)
+
+# crypto.chacha20_decrypt(ciphertext, key, nonce, tag)
+# Decrypts ChaCha20-Poly1305
+
+# ── Asymmetric Encryption (RSA) ────────────────────────────────────────────
+
+# crypto.rsa_generate(bits)
+# Generates an RSA key pair
+# bits: key size (2048, 3072, or 4096)
+# Returns { public_key, private_key }
+# Example: let keys = crypto.rsa_generate(4096)
+
+# crypto.rsa_encrypt(plaintext, public_key)
+# Encrypts data using RSA-OAEP
+# Example: let enc = crypto.rsa_encrypt("secret", keys.public_key)
+
+# crypto.rsa_decrypt(ciphertext, private_key)
+# Decrypts RSA-encrypted data
+# Example: let dec = crypto.rsa_decrypt(enc, keys.private_key)
+
+# crypto.rsa_sign(data, private_key, algorithm)
+# Signs data using RSA
+# algorithm: "sha256" (default), "sha384", "sha512"
+# Example: let sig = crypto.rsa_sign("message", keys.private_key, "sha256")
+
+# crypto.rsa_verify(data, signature, public_key, algorithm)
+# Verifies an RSA signature
+# Example: crypto.rsa_verify("message", sig, keys.public_key, "sha256") -> true
+
+# ── Elliptic Curve (EC) ────────────────────────────────────────────────────
+
+# crypto.ec_generate(curve)
+# Generates an EC key pair
+# curve: "p256" (default), "p384", "p521", "ed25519"
+# Returns { public_key, private_key }
+# Example: let keys = crypto.ec_generate("ed25519")
+
+# crypto.ec_sign(data, private_key)
+# Signs data using ECDSA or EdDSA
+# Example: let sig = crypto.ec_sign("message", keys.private_key)
+
+# crypto.ec_verify(data, signature, public_key)
+# Verifies an EC signature
+# Example: crypto.ec_verify("message", sig, keys.public_key) -> true
+
+# crypto.ecdh(private_key, peer_public_key)
+# Performs ECDH key exchange, returns shared secret
+# Example: let shared = crypto.ecdh(my_keys.private_key, peer_keys.public_key)
+
+# ── Key Management ──────────────────────────────────────────────────────────
+
+# crypto.export_key(key, format)
+# Exports a key to PEM or DER format
+# format: "pem" (default) or "der"
+# Example: let pem = crypto.export_key(keys.public_key, "pem")
+
+# crypto.import_key(data, format)
+# Imports a key from PEM or DER format
+# Example: let key = crypto.import_key(pem_string, "pem")
+
+# crypto.derive_key(password, salt, config)
+# Derives an encryption key from a password using PBKDF2 or HKDF
+# config: { algorithm, iterations, key_length, method }
+# method: "pbkdf2" (default) or "hkdf"
+# Example:
+#   let key = crypto.derive_key("password", salt, {
+#     algorithm: "sha256", iterations: 100000, key_length: 32
+#   })
+
+# ── JWT (JSON Web Tokens) ──────────────────────────────────────────────────
+
+# crypto.jwt_sign(payload, secret, config)
+# Creates a signed JWT
+# config: { algorithm, expires_in, issuer, audience }
+# algorithm: "hs256" (default), "hs384", "hs512", "rs256", "es256"
+# Example:
+#   let token = crypto.jwt_sign(
+#     { user_id: 123, role: "admin" },
+#     "my_secret",
+#     { algorithm: "hs256", expires_in: "24h" }
+#   )
+
+# crypto.jwt_verify(token, secret, config)
+# Verifies and decodes a JWT
+# config: { algorithms, issuer, audience }
+# Returns the decoded payload or raises on invalid token
+# Example:
+#   let payload = crypto.jwt_verify(token, "my_secret", {
+#     algorithms: ["hs256"]
+#   })
+
+# crypto.jwt_decode(token)
+# Decodes a JWT without verifying (for inspection only)
+# Returns { header, payload, signature }
+# Example: let parts = crypto.jwt_decode(token)
+
+# ── Secure Random ───────────────────────────────────────────────────────────
+
+# crypto.random_bytes(length)
+# Generates cryptographically secure random bytes
+# Example: let iv = crypto.random_bytes(16)
+
+# crypto.random_hex(length)
+# Generates a random hex string of the given byte length
+# Example: crypto.random_hex(32) -> "a3f1b2c4d5e6..."
+
+# crypto.random_base64(length)
+# Generates a random base64 string
+# Example: crypto.random_base64(32) -> "R2FyYmFnZS..."
+
+# crypto.random_uuid()
+# Generates a cryptographically random UUID v4
+# Example: crypto.random_uuid() -> "550e8400-e29b-41d4-a716-446655440000"
+
+# crypto.random_token(length)
+# Generates a URL-safe random token
+# Example: crypto.random_token(48) -> "xVq9k2pL..."
+
+# ── Encoding ────────────────────────────────────────────────────────────────
+
+# crypto.base64_encode(data)    -> Base64 encode
+# crypto.base64_decode(str)     -> Base64 decode
+# crypto.base64url_encode(data) -> URL-safe base64 encode
+# crypto.base64url_decode(str)  -> URL-safe base64 decode
+# crypto.hex_encode(data)       -> Hex encode bytes
+# crypto.hex_decode(str)        -> Decode hex string to bytes
+
+# ── TLS & Certificates ─────────────────────────────────────────────────────
+
+# crypto.tls_config(config)
+# Creates a TLS configuration
+# config: { cert_file, key_file, ca_file, min_version, verify_client }
+# Example:
+#   let tls = crypto.tls_config({
+#     cert_file: "server.crt",
+#     key_file: "server.key",
+#     min_version: "1.3"
+#   })
+
+# crypto.self_signed_cert(config)
+# Generates a self-signed certificate for development
+# config: { common_name, org, validity_days, key_size }
+# Returns { cert, key }
+# Example:
+#   let certs = crypto.self_signed_cert({
+#     common_name: "localhost", validity_days: 365
+#   })
+
+# ── Utilities ───────────────────────────────────────────────────────────────
+
+# crypto.constant_time_equal(a, b)
+# Compares two strings/bytes in constant time to prevent timing attacks
+# Example: crypto.constant_time_equal(computed_mac, received_mac)
+
+# crypto.checksum(algorithm, data)
+# Computes a checksum (alias for hash)
+# Example: crypto.checksum("crc32", file_data)

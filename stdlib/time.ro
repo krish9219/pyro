@@ -1,0 +1,265 @@
+# ============================================================================
+# Pyro Built-in Library: time
+# Created by Aravind Pilla
+# Time & Date: now, format, parse, timezone, duration, timer, cron
+# ============================================================================
+
+import time
+
+# ── Current Time ────────────────────────────────────────────────────────────
+
+# time.now()
+# Returns the current date/time as a DateTime object (UTC)
+# Example: let t = time.now()
+
+# time.now_local()
+# Returns the current local date/time
+# Example: let t = time.now_local()
+
+# time.today()
+# Returns today's date (no time component)
+# Example: let d = time.today()
+
+# time.timestamp()
+# Returns current Unix timestamp in seconds (float)
+# Example: time.timestamp() -> 1710547200.123
+
+# time.timestamp_ms()
+# Returns current Unix timestamp in milliseconds
+# Example: time.timestamp_ms() -> 1710547200123
+
+# time.monotonic()
+# Returns a monotonic clock value in nanoseconds (for measuring elapsed time)
+# Example: let start = time.monotonic()
+
+# ── DateTime Creation ───────────────────────────────────────────────────────
+
+# time.date(year, month, day)
+# Creates a Date object
+# Example: let d = time.date(2026, 3, 16)
+
+# time.datetime(year, month, day, hour, minute, second, tz)
+# Creates a DateTime object
+# tz: timezone string (default "UTC")
+# Example: let dt = time.datetime(2026, 3, 16, 14, 30, 0, "America/New_York")
+
+# time.from_timestamp(ts)
+# Creates a DateTime from a Unix timestamp (seconds)
+# Example: let dt = time.from_timestamp(1710547200)
+
+# time.from_timestamp_ms(ts)
+# Creates a DateTime from milliseconds
+# Example: let dt = time.from_timestamp_ms(1710547200000)
+
+# ── DateTime Properties ────────────────────────────────────────────────────
+
+# dt.year            -> Year (e.g. 2026)
+# dt.month           -> Month (1-12)
+# dt.day             -> Day of month (1-31)
+# dt.hour            -> Hour (0-23)
+# dt.minute          -> Minute (0-59)
+# dt.second          -> Second (0-59)
+# dt.millisecond     -> Millisecond (0-999)
+# dt.weekday         -> Day of week (0=Monday, 6=Sunday)
+# dt.weekday_name    -> "Monday", "Tuesday", etc.
+# dt.month_name      -> "January", "February", etc.
+# dt.day_of_year     -> Day of year (1-366)
+# dt.week_of_year    -> ISO week number (1-53)
+# dt.quarter         -> Quarter (1-4)
+# dt.is_leap_year    -> true if the year is a leap year
+# dt.is_weekend      -> true if Saturday or Sunday
+# dt.timezone        -> Timezone string
+# dt.unix            -> Unix timestamp as float
+# dt.unix_ms         -> Unix timestamp in milliseconds
+
+# ── Formatting & Parsing ───────────────────────────────────────────────────
+
+# dt.format(pattern)
+# Formats a DateTime using a pattern string
+# Tokens: YYYY, MM, DD, HH, mm, ss, SSS, Z, ddd, dddd, MMM, MMMM
+# Example:
+#   time.now().format("YYYY-MM-DD HH:mm:ss") -> "2026-03-16 14:30:00"
+#   time.now().format("dddd, MMMM DD, YYYY") -> "Monday, March 16, 2026"
+
+# dt.iso()
+# Returns ISO 8601 string
+# Example: dt.iso() -> "2026-03-16T14:30:00.000Z"
+
+# time.parse(text, pattern)
+# Parses a date/time string using a format pattern
+# Example: let dt = time.parse("2026-03-16 14:30", "YYYY-MM-DD HH:mm")
+
+# time.parse_iso(text)
+# Parses an ISO 8601 string
+# Example: let dt = time.parse_iso("2026-03-16T14:30:00Z")
+
+# time.parse_rfc2822(text)
+# Parses an RFC 2822 date string (common in email headers)
+# Example: let dt = time.parse_rfc2822("Mon, 16 Mar 2026 14:30:00 +0000")
+
+# ── Arithmetic ──────────────────────────────────────────────────────────────
+
+# dt.add(duration)
+# Adds a duration to a DateTime, returns a new DateTime
+# Example:
+#   let tomorrow = time.now().add(time.days(1))
+#   let next_hour = time.now().add(time.hours(1))
+
+# dt.sub(duration)
+# Subtracts a duration
+# Example: let yesterday = time.now().sub(time.days(1))
+
+# dt.diff(other)
+# Returns a Duration representing the difference between two DateTimes
+# Example:
+#   let d = end_time.diff(start_time)
+#   print(d.hours, "hours elapsed")
+
+# dt.start_of(unit)
+# Returns the start of the given unit: "year", "month", "week", "day", "hour", "minute"
+# Example: time.now().start_of("month") -> first day of current month at 00:00
+
+# dt.end_of(unit)
+# Returns the end of the given unit
+# Example: time.now().end_of("day") -> today at 23:59:59.999
+
+# ── Duration ────────────────────────────────────────────────────────────────
+
+# time.nanoseconds(n)     -> Duration of n nanoseconds
+# time.microseconds(n)    -> Duration of n microseconds
+# time.milliseconds(n)    -> Duration of n milliseconds
+# time.seconds(n)         -> Duration of n seconds
+# time.minutes(n)         -> Duration of n minutes
+# time.hours(n)           -> Duration of n hours
+# time.days(n)            -> Duration of n days
+# time.weeks(n)           -> Duration of n weeks
+
+# time.duration(text)
+# Parses a duration string
+# Example:
+#   time.duration("2h30m") -> Duration of 2.5 hours
+#   time.duration("1d12h") -> Duration of 1.5 days
+
+# Duration properties:
+# d.nanoseconds     -> Total nanoseconds
+# d.microseconds    -> Total microseconds
+# d.milliseconds    -> Total milliseconds
+# d.seconds         -> Total seconds
+# d.minutes         -> Total minutes
+# d.hours           -> Total hours
+# d.days            -> Total days
+
+# d.humanize()
+# Returns a human-readable string
+# Example: time.hours(25).humanize() -> "1 day 1 hour"
+
+# ── Timezone ────────────────────────────────────────────────────────────────
+
+# dt.to_tz(timezone)
+# Converts a DateTime to a different timezone
+# Example:
+#   let ny = time.now().to_tz("America/New_York")
+#   let tokyo = time.now().to_tz("Asia/Tokyo")
+
+# dt.to_utc()
+# Converts to UTC
+# Example: let utc = local_time.to_utc()
+
+# time.timezones()
+# Returns a list of all valid timezone strings
+# Example: time.timezones() -> ["Africa/Abidjan", "Africa/Accra", ...]
+
+# time.tz_offset(timezone)
+# Returns the UTC offset in hours for a timezone
+# Example: time.tz_offset("America/New_York") -> -5
+
+# ── Comparison ──────────────────────────────────────────────────────────────
+
+# dt.before(other)       -> true if dt is before other
+# dt.after(other)        -> true if dt is after other
+# dt.equal(other)        -> true if dt equals other
+# dt.between(start, end) -> true if dt is between start and end (inclusive)
+
+# time.min_dt(a, b)      -> Returns the earlier DateTime
+# time.max_dt(a, b)      -> Returns the later DateTime
+
+# ── Timers & Sleep ──────────────────────────────────────────────────────────
+
+# time.sleep(duration)
+# Pauses execution for the given duration
+# Example: await time.sleep(time.seconds(2))
+
+# time.sleep_ms(ms)
+# Pauses for the given milliseconds
+# Example: await time.sleep_ms(500)
+
+# time.timer()
+# Creates a stopwatch-style timer
+# Example:
+#   let t = time.timer()
+#   t.start()
+#   do_work()
+#   t.stop()
+#   print("Elapsed:", t.elapsed().humanize())
+
+# t.start()         -> Start or resume the timer
+# t.stop()          -> Stop/pause the timer
+# t.reset()         -> Reset to zero
+# t.elapsed()       -> Returns elapsed Duration
+# t.lap()           -> Records a lap time and returns elapsed since last lap
+
+# time.timeout(duration, fn)
+# Executes fn after a delay
+# Returns a handle that can be cancelled
+# Example: let handle = time.timeout(time.seconds(5), fn() print("done"))
+
+# handle.cancel()   -> Cancel the timeout
+
+# time.interval(duration, fn)
+# Executes fn repeatedly at the given interval
+# Returns a handle that can be stopped
+# Example: let ticker = time.interval(time.seconds(1), fn() print("tick"))
+
+# ticker.stop()     -> Stop the interval
+
+# ── Cron ────────────────────────────────────────────────────────────────────
+
+# time.cron(expression, fn)
+# Schedules a function using a cron expression
+# Cron format: "minute hour day_of_month month day_of_week"
+# Example:
+#   time.cron("0 */6 * * *", fn()
+#     print("Runs every 6 hours")
+#   )
+#   time.cron("30 2 * * 1-5", fn()
+#     print("Runs at 2:30 AM on weekdays")
+#   )
+
+# time.cron_next(expression, from)
+# Returns the next DateTime that matches the cron expression
+# Example: time.cron_next("0 0 * * *", time.now()) -> next midnight
+
+# ── Utilities ───────────────────────────────────────────────────────────────
+
+# time.days_in_month(year, month)
+# Returns the number of days in a month
+# Example: time.days_in_month(2024, 2) -> 29
+
+# time.is_leap(year)
+# Returns true if the year is a leap year
+# Example: time.is_leap(2024) -> true
+
+# time.ago(text)
+# Parses relative time strings
+# Example: time.ago("3 days") -> DateTime 3 days in the past
+
+# time.from_now(text)
+# Returns a DateTime in the future
+# Example: time.from_now("2 hours") -> DateTime 2 hours from now
+
+# time.measure(fn)
+# Measures execution time of a function
+# Returns { result, elapsed }
+# Example:
+#   let m = time.measure(fn() return heavy_computation())
+#   print("Took:", m.elapsed.humanize())

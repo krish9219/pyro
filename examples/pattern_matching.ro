@@ -1,0 +1,38 @@
+# Pattern Matching — Python's match/case is weaker than Pyro's
+# Pyro match is an expression, uses ->, and is more concise
+
+# HTTP status handler
+fn handle_status(code)
+    match code
+        200 -> print("OK - Success")
+        201 -> print("Created")
+        301 -> print("Moved Permanently")
+        400 -> print("Bad Request")
+        401 -> print("Unauthorized")
+        403 -> print("Forbidden")
+        404 -> print("Not Found")
+        500 -> print("Internal Server Error")
+        502 -> print("Bad Gateway")
+        503 -> print("Service Unavailable")
+        _ -> print("Unknown status: ", code)
+
+# Test various codes
+handle_status(200)
+handle_status(404)
+handle_status(500)
+handle_status(418)
+
+# Day of week
+fn day_type(day)
+    match day
+        1 -> print("Monday - Start of the grind")
+        2 -> print("Tuesday")
+        3 -> print("Wednesday - Hump day")
+        4 -> print("Thursday - Almost there")
+        5 -> print("Friday - Weekend vibes!")
+        6 -> print("Saturday - Freedom!")
+        7 -> print("Sunday - Rest day")
+        _ -> print("Invalid day")
+
+for d in 1..8
+    day_type(d)

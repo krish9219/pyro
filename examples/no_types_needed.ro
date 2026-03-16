@@ -1,0 +1,59 @@
+# Dynamic Typing in Pyro — No types ANYWHERE
+# Simpler than Python: no type hints, no annotations, just code
+
+# Functions just take names — the compiler figures out types
+fn add(a, b)
+    return a + b
+
+fn multiply(a, b)
+    return a * b
+
+fn factorial(n)
+    if n <= 1
+        return 1
+    return n * factorial(n - 1)
+
+fn fibonacci(n)
+    if n <= 1
+        return n
+    mut a = 0
+    mut b = 1
+    for i in 2..n
+        let temp = a + b
+        a = b
+        b = temp
+    return b
+
+# One-liners — the ultimate simplicity
+fn cube(x) = x * x * x
+fn is_even(x) = x % 2 == 0
+fn clamp(x, lo, hi)
+    if x < lo
+        return lo
+    if x > hi
+        return hi
+    return x
+
+# Variables are always auto-typed
+let name = "Aravind"
+let age = 25
+let score = 99.5
+let active = true
+let items = [1, 2, 3, 4, 5]
+
+# Everything just works
+print("add(3, 4) = ", add(3, 4))
+print("multiply(6, 7) = ", multiply(6, 7))
+print("factorial(10) = ", factorial(10))
+print("fibonacci(15) = ", fibonacci(15))
+print("cube(5) = ", cube(5))
+print("is_even(42) = ", is_even(42))
+
+# Structs don't need types either
+struct Config
+    host
+    port
+    debug
+
+let cfg = Config("localhost", 8080, true)
+print("Server: ", cfg.host, ":", cfg.port)

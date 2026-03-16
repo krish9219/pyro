@@ -1,0 +1,32 @@
+# Pipe Operator & Method Chaining — Python doesn't have this
+# Pyro's |> operator makes data transformation beautiful
+
+# Simple pipe: pass result as first argument
+fn double(x) = x * 2
+fn add_ten(x) = x + 10
+fn negate(x) = 0 - x
+
+# Chain operations left-to-right (not nested inside-out)
+# Python: negate(add_ten(double(5)))  <-- ugly, read right-to-left
+# Pyro:   5 |> double |> add_ten |> negate  <-- clean, read left-to-right
+
+let result = 5 |> double |> add_ten |> negate
+print("5 |> double |> add_ten |> negate = ", result)
+
+# Functions need NO type annotations
+fn greet(name)
+    return "Hello, " + name + "!"
+
+fn shout(text)
+    return text + "!!!"
+
+# Pipe through string functions
+let message = "pyro" |> greet |> shout
+print(message)
+
+# One-liner functions with pipe
+fn triple(x) = x * 3
+fn square(x) = x * x
+
+print("Pipeline: ", 4 |> triple |> square)
+print("Pipeline: ", 10 |> double |> double |> double)

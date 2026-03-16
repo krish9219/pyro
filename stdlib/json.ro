@@ -1,0 +1,247 @@
+# ============================================================================
+# Pyro Built-in Library: json
+# Created by Aravind Pilla
+# JSON: parse, stringify, validate, schema, diff, patch, streaming
+# ============================================================================
+
+import json
+
+# ── Core Operations ─────────────────────────────────────────────────────────
+
+# json.parse(text)
+# Parses a JSON string into a Pyro value (dict, list, string, number, bool, nil)
+# Raises an error on invalid JSON
+# Example:
+#   let data = json.parse('{"name": "Alice", "age": 30}')
+#   # data.name -> "Alice"
+
+# json.stringify(value, config)
+# Converts a Pyro value to a JSON string
+# config: { pretty, indent, sort_keys }
+# pretty: if true, formats with indentation (default false)
+# indent: number of spaces for indentation (default 2)
+# sort_keys: if true, sorts object keys alphabetically (default false)
+# Example:
+#   let text = json.stringify({ name: "Alice", age: 30 }, { pretty: true })
+
+# json.parse_or(text, default)
+# Parses JSON; returns default value if parsing fails (no error raised)
+# Example: let config = json.parse_or(raw_text, {})
+
+# json.is_valid(text)
+# Returns true if the string is valid JSON
+# Example: json.is_valid('{"key": "value"}') -> true
+
+# json.typeof(text)
+# Returns the JSON type of the top-level value: "object", "array", "string", "number", "boolean", "null"
+# Example: json.typeof("[1,2,3]") -> "array"
+
+# ── Access & Manipulation ──────────────────────────────────────────────────
+
+# json.get(data, path, default)
+# Gets a nested value using a dot-path or JSON Pointer
+# Returns default if path not found
+# Example:
+#   let data = { user: { name: "Alice", address: { city: "Portland" } } }
+#   json.get(data, "user.address.city") -> "Portland"
+#   json.get(data, "user.phone", "N/A") -> "N/A"
+
+# json.set(data, path, value)
+# Sets a nested value, returning a new modified copy
+# Example:
+#   let updated = json.set(data, "user.address.zip", "97201")
+
+# json.delete(data, path)
+# Removes a key at the given path, returning a new copy
+# Example: let cleaned = json.delete(data, "user.temp_token")
+
+# json.has(data, path)
+# Returns true if the path exists in the data
+# Example: json.has(data, "user.email") -> false
+
+# json.flatten(data, separator)
+# Flattens nested objects into a single-level dict
+# separator: delimiter for keys (default ".")
+# Example:
+#   json.flatten({ a: { b: { c: 1 } } }) -> { "a.b.c": 1 }
+
+# json.unflatten(data, separator)
+# Reconstructs a nested object from a flattened dict
+# Example:
+#   json.unflatten({ "a.b.c": 1 }) -> { a: { b: { c: 1 } } }
+
+# json.keys(data)
+# Returns all keys of a JSON object
+# Example: json.keys({ a: 1, b: 2 }) -> ["a", "b"]
+
+# json.values(data)
+# Returns all values of a JSON object
+# Example: json.values({ a: 1, b: 2 }) -> [1, 2]
+
+# json.entries(data)
+# Returns list of [key, value] pairs
+# Example: json.entries({ a: 1 }) -> [["a", 1]]
+
+# ── Schema Validation ──────────────────────────────────────────────────────
+
+# json.schema(definition)
+# Creates a JSON Schema validator
+# Example:
+#   let user_schema = json.schema({
+#     type: "object",
+#     required: ["name", "email"],
+#     properties: {
+#       name: { type: "string", min_length: 1 },
+#       email: { type: "string", format: "email" },
+#       age: { type: "integer", minimum: 0, maximum: 150 },
+#       tags: { type: "array", items: { type: "string" } }
+#     }
+#   })
+
+# schema.validate(data)
+# Validates data against the schema
+# Returns { valid, errors }
+# Example:
+#   let result = user_schema.validate({ name: "Alice", email: "alice@test.com" })
+#   # result.valid -> true
+#   # result.errors -> []
+
+# schema.is_valid(data)
+# Returns true if data matches the schema
+# Example: user_schema.is_valid({ name: "" }) -> false
+
+# Schema types:
+# "string"   -> { min_length, max_length, pattern, format, enum }
+# "integer"  -> { minimum, maximum, multiple_of }
+# "number"   -> { minimum, maximum, exclusive_minimum, exclusive_maximum }
+# "boolean"  -> no extra options
+# "array"    -> { items, min_items, max_items, unique_items }
+# "object"   -> { properties, required, additional_properties }
+# "null"     -> matches nil only
+# Formats: "email", "url", "uuid", "date", "datetime", "ipv4", "ipv6"
+
+# ── Diff & Patch ────────────────────────────────────────────────────────────
+
+# json.diff(a, b)
+# Computes the difference between two JSON values
+# Returns a list of operations (RFC 6902 JSON Patch format)
+# Example:
+#   let ops = json.diff(
+#     { name: "Alice", age: 30 },
+#     { name: "Alice", age: 31, city: "Portland" }
+#   )
+#   # ops -> [
+#   #   { op: "replace", path: "/age", value: 31 },
+#   #   { op: "add", path: "/city", value: "Portland" }
+#   # ]
+
+# json.patch(data, operations)
+# Applies a list of JSON Patch operations to a value
+# Returns the patched result
+# Example:
+#   let patched = json.patch(original, [
+#     { op: "add", path: "/email", value: "alice@example.com" },
+#     { op: "remove", path: "/temp" },
+#     { op: "replace", path: "/status", value: "active" }
+#   ])
+
+# json.merge_patch(target, patch)
+# Applies an RFC 7396 merge patch
+# Example:
+#   let result = json.merge_patch(
+#     { name: "Alice", age: 30, city: "NYC" },
+#     { age: 31, city: nil }
+#   )
+#   # result -> { name: "Alice", age: 31 }
+
+# ── Transformation ──────────────────────────────────────────────────────────
+
+# json.map(data, fn)
+# Applies a function to each value in an object or array
+# Example: json.map({ a: 1, b: 2 }, fn(k, v) return v * 2) -> { a: 2, b: 4 }
+
+# json.filter(data, fn)
+# Filters entries from an object or elements from an array
+# Example: json.filter({ a: 1, b: 2, c: 3 }, fn(k, v) return v > 1) -> { b: 2, c: 3 }
+
+# json.pick(data, keys)
+# Returns a new object with only the specified keys
+# Example: json.pick({ a: 1, b: 2, c: 3 }, ["a", "c"]) -> { a: 1, c: 3 }
+
+# json.omit(data, keys)
+# Returns a new object without the specified keys
+# Example: json.omit({ a: 1, b: 2, c: 3 }, ["b"]) -> { a: 1, c: 3 }
+
+# json.deep_merge(a, b)
+# Deep merges two objects (b values override a)
+# Example:
+#   json.deep_merge({ a: { x: 1 } }, { a: { y: 2 } }) -> { a: { x: 1, y: 2 } }
+
+# json.deep_clone(data)
+# Returns a deep copy of the data
+# Example: let copy = json.deep_clone(original)
+
+# json.sort_keys(data, recursive)
+# Returns data with object keys sorted alphabetically
+# recursive: sort nested objects too (default true)
+# Example: json.sort_keys({ c: 3, a: 1, b: 2 }) -> { a: 1, b: 2, c: 3 }
+
+# ── Streaming / Large Files ────────────────────────────────────────────────
+
+# json.stream_parse(path, on_item)
+# Parses a large JSON file incrementally without loading it all into memory
+# on_item receives each top-level array element or object entry
+# Example:
+#   json.stream_parse("huge_array.json", fn(item)
+#     process(item)
+#   )
+
+# json.stream_write(path, config)
+# Creates a streaming JSON writer
+# Example:
+#   let writer = json.stream_write("output.json", { pretty: true })
+#   writer.begin_array()
+#   for item in items
+#     writer.value(item)
+#   writer.end_array()
+#   writer.close()
+
+# json.lines_parse(path, on_line)
+# Parses a JSON Lines (.jsonl) file, one JSON object per line
+# Example:
+#   json.lines_parse("events.jsonl", fn(event)
+#     log(event.type)
+#   )
+
+# json.lines_write(path, items)
+# Writes items as JSON Lines
+# Example: json.lines_write("output.jsonl", list_of_records)
+
+# ── Conversion ──────────────────────────────────────────────────────────────
+
+# json.to_yaml(data)       -> Converts to YAML string
+# json.from_yaml(text)     -> Parses YAML to Pyro value
+# json.to_toml(data)       -> Converts to TOML string
+# json.from_toml(text)     -> Parses TOML to Pyro value
+# json.to_csv(data, config) -> Converts array of objects to CSV string
+# json.from_csv(text)      -> Parses CSV to list of dicts
+# json.to_xml(data, root)  -> Converts to XML string
+# json.from_xml(text)      -> Parses XML to Pyro value
+
+# ── Utilities ───────────────────────────────────────────────────────────────
+
+# json.minify(text)
+# Removes whitespace from a JSON string
+# Example: json.minify('{ "a" : 1 }') -> '{"a":1}'
+
+# json.prettify(text, indent)
+# Formats a JSON string with indentation
+# Example: json.prettify('{"a":1}', 2) -> '{\n  "a": 1\n}'
+
+# json.size(text)
+# Returns the byte size of a JSON string
+# Example: json.size('{"a":1}') -> 7
+
+# json.equal(a, b)
+# Deep equality check for two JSON values
+# Example: json.equal({ a: 1 }, { a: 1 }) -> true

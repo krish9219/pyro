@@ -1,0 +1,257 @@
+# ============================================================================
+# Pyro Built-in Library: cloud
+# Created by Aravind Pilla
+# Cloud services: AWS, GCP, Azure, S3, Lambda, storage, queues
+# ============================================================================
+
+import cloud
+
+# ── Provider Configuration ──────────────────────────────────────────────────
+
+# cloud.aws(config)
+# Configures AWS credentials and region
+# config: { access_key, secret_key, region, profile, endpoint }
+# Example:
+#   let aws = cloud.aws({
+#     access_key: env("AWS_ACCESS_KEY"),
+#     secret_key: env("AWS_SECRET_KEY"),
+#     region: "us-east-1"
+#   })
+
+# cloud.gcp(config)
+# Configures Google Cloud credentials
+# config: { credentials_file, project_id, region }
+# Example:
+#   let gcp = cloud.gcp({
+#     credentials_file: "service-account.json",
+#     project_id: "my-project"
+#   })
+
+# cloud.azure(config)
+# Configures Azure credentials
+# config: { tenant_id, client_id, client_secret, subscription_id }
+# Example:
+#   let az = cloud.azure({
+#     tenant_id: env("AZURE_TENANT"),
+#     client_id: env("AZURE_CLIENT_ID"),
+#     client_secret: env("AZURE_SECRET")
+#   })
+
+# ── Object Storage (S3 / GCS / Blob) ───────────────────────────────────────
+
+# aws.s3.list_buckets()
+# Lists all S3 buckets
+# Example: let buckets = await aws.s3.list_buckets()
+
+# aws.s3.create_bucket(name, config)
+# Creates a new S3 bucket
+# config: { region, acl }
+# Example: await aws.s3.create_bucket("my-bucket", { region: "us-west-2" })
+
+# aws.s3.delete_bucket(name)
+# Deletes an S3 bucket
+# Example: await aws.s3.delete_bucket("old-bucket")
+
+# aws.s3.list(bucket, prefix, config)
+# Lists objects in a bucket
+# config: { max_keys, delimiter }
+# Example: let files = await aws.s3.list("my-bucket", "uploads/")
+
+# aws.s3.upload(bucket, key, data, config)
+# Uploads data to S3
+# config: { content_type, acl, metadata, storage_class }
+# Example:
+#   await aws.s3.upload("my-bucket", "data/report.csv", file_data, {
+#     content_type: "text/csv",
+#     storage_class: "STANDARD_IA"
+#   })
+
+# aws.s3.upload_file(bucket, key, local_path, config)
+# Uploads a local file to S3
+# Example: await aws.s3.upload_file("my-bucket", "backups/db.sql", "/tmp/db.sql")
+
+# aws.s3.download(bucket, key)
+# Downloads object data as bytes
+# Example: let data = await aws.s3.download("my-bucket", "data/config.json")
+
+# aws.s3.download_file(bucket, key, local_path)
+# Downloads to a local file
+# Example: await aws.s3.download_file("my-bucket", "data/big.csv", "/tmp/big.csv")
+
+# aws.s3.delete(bucket, key)
+# Deletes an object
+# Example: await aws.s3.delete("my-bucket", "temp/old-file.txt")
+
+# aws.s3.copy(src_bucket, src_key, dest_bucket, dest_key)
+# Copies an object between buckets/keys
+# Example: await aws.s3.copy("src-bucket", "file.txt", "dest-bucket", "file.txt")
+
+# aws.s3.presign(bucket, key, expires)
+# Generates a pre-signed URL for temporary access
+# expires: duration in seconds (default 3600)
+# Example: let url = aws.s3.presign("my-bucket", "private/doc.pdf", 7200)
+
+# aws.s3.exists(bucket, key)
+# Checks if an object exists
+# Example: await aws.s3.exists("my-bucket", "data/file.csv") -> true
+
+# GCS equivalent:
+# gcp.storage.list_buckets()
+# gcp.storage.upload(bucket, path, data, config)
+# gcp.storage.download(bucket, path)
+# gcp.storage.delete(bucket, path)
+# gcp.storage.presign(bucket, path, expires)
+
+# Azure equivalent:
+# az.blob.list_containers()
+# az.blob.upload(container, blob_name, data, config)
+# az.blob.download(container, blob_name)
+# az.blob.delete(container, blob_name)
+
+# ── Serverless Functions ────────────────────────────────────────────────────
+
+# aws.lambda.invoke(function_name, payload, config)
+# Invokes an AWS Lambda function
+# config: { async, qualifier }
+# Example:
+#   let result = await aws.lambda.invoke("process-order", { order_id: 12345 })
+#   print(result.body)
+
+# aws.lambda.list()
+# Lists all Lambda functions
+# Example: let fns = await aws.lambda.list()
+
+# gcp.functions.invoke(name, payload)
+# Invokes a Google Cloud Function
+# Example: let result = await gcp.functions.invoke("process", { id: 42 })
+
+# az.functions.invoke(app, function_name, payload)
+# Invokes an Azure Function
+# Example: let result = await az.functions.invoke("my-app", "process", data)
+
+# ── Message Queues ──────────────────────────────────────────────────────────
+
+# aws.sqs.send(queue_url, message, config)
+# Sends a message to an SQS queue
+# config: { delay, attributes, group_id, dedup_id }
+# Example: await aws.sqs.send(queue_url, json.stringify({ event: "order.created" }))
+
+# aws.sqs.receive(queue_url, config)
+# Receives messages from an SQS queue
+# config: { max_messages, wait_time, visibility_timeout }
+# Example:
+#   let msgs = await aws.sqs.receive(queue_url, { max_messages: 10, wait_time: 20 })
+#   for msg in msgs
+#     process(msg.body)
+#     await aws.sqs.delete(queue_url, msg.receipt_handle)
+
+# aws.sqs.delete(queue_url, receipt_handle)
+# Deletes a processed message from the queue
+
+# aws.sns.publish(topic_arn, message, config)
+# Publishes to an SNS topic
+# config: { subject, attributes }
+# Example: await aws.sns.publish(topic, "Alert: server down", { subject: "Alert" })
+
+# gcp.pubsub.publish(topic, message, attributes)
+# Publishes to a GCP Pub/Sub topic
+# Example: await gcp.pubsub.publish("orders", data, { type: "create" })
+
+# gcp.pubsub.subscribe(subscription, handler)
+# Subscribes to messages
+# Example: gcp.pubsub.subscribe("orders-sub", fn(msg) process(msg))
+
+# ── Databases (Cloud) ──────────────────────────────────────────────────────
+
+# aws.dynamodb.put(table, item)
+# Puts an item into DynamoDB
+# Example: await aws.dynamodb.put("users", { id: "u1", name: "Alice" })
+
+# aws.dynamodb.get(table, key)
+# Gets an item by key
+# Example: let user = await aws.dynamodb.get("users", { id: "u1" })
+
+# aws.dynamodb.query(table, condition, config)
+# Queries items
+# config: { index, limit, scan_forward }
+# Example:
+#   let items = await aws.dynamodb.query("orders", {
+#     key: "user_id = :uid",
+#     values: { ":uid": "u1" }
+#   })
+
+# aws.dynamodb.delete(table, key)
+# Deletes an item
+# Example: await aws.dynamodb.delete("users", { id: "u1" })
+
+# aws.dynamodb.scan(table, config)
+# Scans all items in a table
+# config: { filter, limit }
+
+# gcp.firestore.get(collection, doc_id)
+# Gets a Firestore document
+# Example: let doc = await gcp.firestore.get("users", "alice")
+
+# gcp.firestore.set(collection, doc_id, data)
+# Sets a Firestore document
+# Example: await gcp.firestore.set("users", "alice", { name: "Alice", age: 30 })
+
+# gcp.firestore.query(collection, conditions)
+# Queries Firestore
+# Example: let users = await gcp.firestore.query("users", [["age", ">", 18]])
+
+# ── Secrets & Config ───────────────────────────────────────────────────────
+
+# aws.secrets.get(name)
+# Gets a secret from AWS Secrets Manager
+# Example: let db_pass = await aws.secrets.get("prod/db/password")
+
+# aws.ssm.get(name)
+# Gets a parameter from AWS Systems Manager Parameter Store
+# Example: let config = await aws.ssm.get("/app/config/db_host")
+
+# gcp.secrets.get(name, version)
+# Gets a secret from GCP Secret Manager
+# Example: let key = await gcp.secrets.get("api-key", "latest")
+
+# az.keyvault.get(vault, name)
+# Gets a secret from Azure Key Vault
+# Example: let secret = await az.keyvault.get("my-vault", "db-password")
+
+# ── Container & Compute ────────────────────────────────────────────────────
+
+# aws.ecs.run_task(config)
+# Runs a task on ECS
+# config: { cluster, task_definition, count, subnets, security_groups }
+# Example: await aws.ecs.run_task({ cluster: "prod", task_definition: "worker:5" })
+
+# aws.ec2.list_instances(filters)
+# Lists EC2 instances
+# Example: let instances = await aws.ec2.list_instances({ state: "running" })
+
+# gcp.compute.list_instances(zone)
+# Lists GCE instances
+# Example: let vms = await gcp.compute.list_instances("us-central1-a")
+
+# ── Email (SES) ────────────────────────────────────────────────────────────
+
+# aws.ses.send(config)
+# Sends email via Amazon SES
+# config: { from, to, subject, text, html }
+# Example:
+#   await aws.ses.send({
+#     from: "noreply@example.com",
+#     to: ["user@example.com"],
+#     subject: "Welcome",
+#     html: "<h1>Welcome to our app!</h1>"
+#   })
+
+# ── CDN & DNS ──────────────────────────────────────────────────────────────
+
+# aws.cloudfront.invalidate(distribution_id, paths)
+# Invalidates CloudFront cache
+# Example: await aws.cloudfront.invalidate("EDIST123", ["/*"])
+
+# aws.route53.list_records(zone_id)
+# Lists DNS records
+# Example: let records = await aws.route53.list_records("Z123456")

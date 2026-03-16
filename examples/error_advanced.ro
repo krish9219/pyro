@@ -1,0 +1,23 @@
+# Advanced Error Handling
+
+fn risky(x)
+    if x < 0
+        throw "Value must be positive"
+    return x * 2
+
+# try/catch/finally
+try
+    let result = risky(-5)
+    print("Result: {result}")
+catch err
+    print("Caught: {err}")
+finally
+    print("Cleanup done (always runs)")
+
+# throw with try/catch
+try
+    throw "Custom error message"
+catch err
+    print("Got: {err}")
+
+print("Program continues after error handling")

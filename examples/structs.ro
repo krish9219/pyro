@@ -1,0 +1,31 @@
+# Structs in Pyro
+# Clean, minimal syntax for data structures
+
+struct Point
+    x
+    y
+
+    fn distance(self, other)
+        let dx = self.x - other.x
+        let dy = self.y - other.y
+        return (dx * dx + dy * dy)
+
+struct Person
+    name
+    age
+    email
+
+    fn greet(self)
+        return "Hi, I'm " + self.name
+
+    fn is_adult(self)
+        return self.age >= 18
+
+# Create instances
+let p1 = Point(0.0, 0.0)
+let p2 = Point(3.0, 4.0)
+print("Distance: ", p1.distance(p2))
+
+let alice = Person("Alice", 30, "alice@pyro.dev")
+print(alice.greet())
+print("Is adult: ", alice.is_adult())

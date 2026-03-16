@@ -1,0 +1,14 @@
+async fn slow_compute(n)
+    let result = n * n * n
+    return result
+
+async fn main()
+    print("Starting async tasks...")
+    let a = slow_compute(10)
+    let b = slow_compute(20)
+    let c = slow_compute(30)
+
+    print("Result 1: {await a}")
+    print("Result 2: {await b}")
+    print("Result 3: {await c}")
+    print("All done!")

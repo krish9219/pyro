@@ -1,0 +1,21 @@
+# Error Handling in Pyro — try/catch built into the language
+
+# Basic try/catch
+fn divide(a, b)
+    if b == 0
+        return -1
+    return a / b
+
+let result = divide(10, 2)
+print("10 / 2 = {result}")
+
+let result2 = divide(10, 0)
+print("10 / 0 = {result2}")
+
+# Demonstrating error messages
+print("")
+print("Pyro Error Handling Features:")
+print("  try/catch blocks")
+print("  Error variable binding")
+print("  Clean syntax - no parentheses needed")
+print("  Compiles to C++ exceptions (zero-cost when no error)")

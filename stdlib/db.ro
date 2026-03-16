@@ -1,0 +1,270 @@
+# ============================================================================
+# Pyro Built-in Library: db
+# Created by Aravind Pilla
+# Database: SQL, NoSQL, ORM, migrations, pooling, transactions
+# ============================================================================
+
+import db
+
+# ── Connection ──────────────────────────────────────────────────────────────
+
+# db.connect(driver, config)
+# Opens a database connection
+# driver: "postgres", "mysql", "sqlite", "mongodb", "redis"
+# config: { host, port, database, user, password, ssl, pool_size }
+# Example:
+#   let conn = db.connect("postgres", {
+#     host: "localhost",
+#     port: 5432,
+#     database: "myapp",
+#     user: "admin",
+#     password: "secret",
+#     pool_size: 10
+#   })
+
+# db.sqlite(path)
+# Shorthand for opening an SQLite database
+# Example: let conn = db.sqlite("app.db")
+
+# db.sqlite_memory()
+# Creates an in-memory SQLite database
+# Example: let conn = db.sqlite_memory()
+
+# conn.close()
+# Closes the database connection and releases pool resources
+# Example: conn.close()
+
+# conn.ping()
+# Tests if the connection is alive
+# Example: conn.ping() -> true
+
+# conn.info()
+# Returns connection metadata: driver, host, database, pool stats
+# Example: conn.info() -> { driver: "postgres", pool_active: 3, pool_idle: 7 }
+
+# ── Raw Queries ─────────────────────────────────────────────────────────────
+
+# conn.query(sql, params)
+# Executes a SELECT query, returns list of row dicts
+# Uses parameterized queries to prevent SQL injection
+# Example:
+#   let users = conn.query(
+#     "SELECT * FROM users WHERE age > $1 AND city = $2",
+#     [18, "Portland"]
+#   )
+
+# conn.query_one(sql, params)
+# Returns a single row dict or nil if no results
+# Example:
+#   let user = conn.query_one("SELECT * FROM users WHERE id = $1", [42])
+
+# conn.execute(sql, params)
+# Executes INSERT, UPDATE, DELETE; returns { rows_affected, last_insert_id }
+# Example:
+#   let result = conn.execute(
+#     "INSERT INTO users (name, email) VALUES ($1, $2)",
+#     ["Alice", "alice@example.com"]
+#   )
+#   # result.rows_affected -> 1
+#   # result.last_insert_id -> 15
+
+# conn.execute_many(sql, params_list)
+# Executes a query for each parameter set in a batch
+# Example:
+#   conn.execute_many(
+#     "INSERT INTO logs (level, message) VALUES ($1, $2)",
+#     [["info", "started"], ["warn", "slow query"], ["error", "timeout"]]
+#   )
+
+# ── Transactions ────────────────────────────────────────────────────────────
+
+# conn.transaction(fn)
+# Executes a function within a transaction; auto-commits on success, rolls back on error
+# Example:
+#   conn.transaction(fn(tx)
+#     tx.execute("UPDATE accounts SET balance = balance - $1 WHERE id = $2", [100, 1])
+#     tx.execute("UPDATE accounts SET balance = balance + $1 WHERE id = $2", [100, 2])
+#   )
+
+# conn.begin()
+# Manually starts a transaction, returns a transaction object
+# Example:
+#   let tx = conn.begin()
+#   tx.execute("INSERT INTO orders (item) VALUES ($1)", ["widget"])
+#   tx.commit()
+#   # or tx.rollback()
+
+# tx.commit()        -> Commits the transaction
+# tx.rollback()      -> Rolls back the transaction
+# tx.savepoint(name) -> Creates a savepoint
+# tx.rollback_to(name) -> Rolls back to a savepoint
+
+# ── Query Builder ───────────────────────────────────────────────────────────
+
+# conn.table(name)
+# Returns a query builder for the given table
+# Supports chaining for readable query construction
+
+# conn.table("users").select("name", "email").where("age", ">", 18).all()
+# conn.table("users").select("*").where("id", "=", 5).first()
+# conn.table("users").insert({ name: "Bob", age: 30 })
+# conn.table("users").where("id", "=", 5).update({ name: "Robert" })
+# conn.table("users").where("id", "=", 5).delete()
+
+# Full query builder methods:
+# .select(columns...)      -> Columns to select
+# .where(col, op, val)     -> WHERE clause
+# .and_where(col, op, val) -> Additional AND condition
+# .or_where(col, op, val)  -> OR condition
+# .where_in(col, values)   -> WHERE col IN (...)
+# .where_null(col)         -> WHERE col IS NULL
+# .where_not_null(col)     -> WHERE col IS NOT NULL
+# .where_between(col, a, b) -> WHERE col BETWEEN a AND b
+# .join(table, on)         -> INNER JOIN
+# .left_join(table, on)    -> LEFT JOIN
+# .right_join(table, on)   -> RIGHT JOIN
+# .order_by(col, dir)      -> ORDER BY (dir: "asc" or "desc")
+# .group_by(columns...)    -> GROUP BY
+# .having(col, op, val)    -> HAVING clause
+# .limit(n)                -> LIMIT
+# .offset(n)               -> OFFSET
+# .distinct()              -> SELECT DISTINCT
+# .count()                 -> Returns count
+# .sum(col)                -> Returns sum
+# .avg(col)                -> Returns average
+# .min_val(col)            -> Returns min
+# .max_val(col)            -> Returns max
+# .all()                   -> Execute and return all rows
+# .first()                 -> Execute and return first row
+# .exists()                -> Returns true if any rows match
+# .to_sql()                -> Returns the generated SQL string
+
+# Example pipeline:
+#   let top_users = conn.table("users")
+#     .select("name", "score")
+#     .where("active", "=", true)
+#     .order_by("score", "desc")
+#     .limit(10)
+#     .all()
+
+# ── ORM (Object-Relational Mapping) ────────────────────────────────────────
+
+# db.model(name, schema, config)
+# Defines a model mapped to a database table
+# Example:
+#   let User = db.model("users", {
+#     id: { type: "int", primary: true, auto: true },
+#     name: { type: "string", required: true },
+#     email: { type: "string", unique: true },
+#     age: { type: "int", default: 0 },
+#     created_at: { type: "datetime", auto_now: true }
+#   }, { table: "users", timestamps: true })
+
+# Model.find(id)                  -> Find by primary key
+# Model.find_by(field, value)     -> Find first match
+# Model.where(conditions)         -> Query with conditions dict
+# Model.all()                     -> Get all records
+# Model.create(data)              -> Insert a new record
+# Model.update(id, data)          -> Update a record
+# Model.delete(id)                -> Delete a record
+# Model.count()                   -> Count all records
+# Model.exists(conditions)        -> Check if any match
+
+# Example:
+#   let user = User.create({ name: "Alice", email: "alice@example.com", age: 30 })
+#   let found = User.find(user.id)
+#   User.update(user.id, { age: 31 })
+#   let admins = User.where({ role: "admin" })
+
+# Relationships:
+# Model.has_many(other_model, foreign_key)
+# Model.belongs_to(other_model, foreign_key)
+# Model.has_one(other_model, foreign_key)
+# Model.many_to_many(other_model, join_table)
+
+# ── Migrations ──────────────────────────────────────────────────────────────
+
+# db.migration(name, up_fn, down_fn)
+# Defines a migration
+# Example:
+#   db.migration("create_users", fn(m)
+#     m.create_table("users", fn(t)
+#       t.int("id", { primary: true, auto: true })
+#       t.string("name", { required: true })
+#       t.string("email", { unique: true })
+#       t.int("age")
+#       t.datetime("created_at", { default: "now" })
+#     )
+#   , fn(m)
+#     m.drop_table("users")
+#   )
+
+# Migration methods:
+# m.create_table(name, fn)     -> Create a new table
+# m.drop_table(name)           -> Drop a table
+# m.rename_table(old, new)     -> Rename a table
+# m.add_column(table, name, type, opts)  -> Add a column
+# m.drop_column(table, name)   -> Remove a column
+# m.rename_column(table, old, new)       -> Rename a column
+# m.add_index(table, columns, opts)      -> Create an index
+# m.drop_index(name)           -> Drop an index
+# m.raw(sql)                   -> Execute raw SQL in migration
+
+# db.migrate(conn, direction)
+# Runs pending migrations
+# direction: "up" (default) or "down"
+# Example: db.migrate(conn, "up")
+
+# db.migrate_to(conn, version)
+# Migrates to a specific version
+# Example: db.migrate_to(conn, "20240101_create_users")
+
+# db.migration_status(conn)
+# Returns list of migrations with applied status
+
+# ── Connection Pooling ──────────────────────────────────────────────────────
+
+# Pool configuration is part of db.connect config:
+# pool_size: max connections (default 10)
+# pool_min: minimum idle connections (default 2)
+# pool_max_idle_time: max time a connection can be idle (default "5m")
+# pool_max_lifetime: max total lifetime of a connection (default "1h")
+# pool_acquire_timeout: max wait for a connection (default "30s")
+
+# conn.pool_stats()
+# Returns current pool statistics
+# Example: conn.pool_stats() -> { active: 3, idle: 7, total: 10, waiting: 0 }
+
+# ── NoSQL (MongoDB-style) ──────────────────────────────────────────────────
+
+# let mongo = db.connect("mongodb", { host: "localhost", database: "mydb" })
+
+# mongo.collection(name)
+# Returns a collection handle
+# Example: let users = mongo.collection("users")
+
+# users.insert(doc)              -> Insert one document
+# users.insert_many(docs)        -> Insert many documents
+# users.find(filter)             -> Find matching documents
+# users.find_one(filter)         -> Find first matching document
+# users.update(filter, changes)  -> Update matching documents
+# users.delete(filter)           -> Delete matching documents
+# users.count(filter)            -> Count matching documents
+# users.aggregate(pipeline)      -> Run aggregation pipeline
+# users.create_index(fields)     -> Create an index
+
+# Example:
+#   users.insert({ name: "Alice", tags: ["admin", "user"] })
+#   let admins = users.find({ tags: { "$in": ["admin"] } })
+
+# ── Redis ───────────────────────────────────────────────────────────────────
+
+# let redis = db.connect("redis", { host: "localhost", port: 6379 })
+# redis.get(key)           -> Get value by key
+# redis.set(key, val, ttl) -> Set with optional TTL in seconds
+# redis.del(key)           -> Delete a key
+# redis.exists(key)        -> Check if key exists
+# redis.keys(pattern)      -> List keys matching glob pattern
+# redis.incr(key)          -> Increment integer value
+# redis.expire(key, ttl)   -> Set expiry on a key
+# redis.ttl(key)           -> Get remaining TTL

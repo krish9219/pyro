@@ -1,0 +1,48 @@
+import math
+import io
+import json
+import crypto
+import validate
+
+# JSON parsing (real parser!)
+let json_str = "[1, 2, 3]"
+let arr = json.parse(json_str)
+print("Parsed JSON array: ", arr)
+
+let json_num = "42.5"
+let num = json.parse(json_num)
+print("Parsed number: ", num)
+
+# JSON stringify
+print("Stringify: ", json.stringify(100))
+
+# Crypto
+let token = crypto.random_token(16)
+print("Token: ", token)
+let id = crypto.uuid()
+print("UUID: ", id)
+let encrypted = crypto.encrypt("secret message", "mykey123")
+let decrypted = crypto.decrypt(encrypted, "mykey123")
+print("Encrypted: ", encrypted)
+print("Decrypted: ", decrypted)
+
+# SHA-256
+let hash_val = crypto.sha256("hello world")
+print("SHA256: ", hash_val)
+
+# Password hashing
+let hash = crypto.hash_password("mypassword")
+print("Hash: ", hash)
+
+# Validation
+print("Valid email: ", validate.email("user@example.com"))
+print("Invalid email: ", validate.email("not-an-email"))
+print("Valid URL: ", validate.url("https://pyro-lang.org"))
+print("Valid IP: ", validate.ip("192.168.1.1"))
+print("Sanitized: ", validate.sanitize("<script>alert(1)</script>"))
+print("Password strength: ", validate.password_strength("MyP@ss123!"))
+
+# Math
+print("sqrt(256) = ", math.sqrt(256))
+print("PI = ", math.PI)
+print("Random: ", math.random())

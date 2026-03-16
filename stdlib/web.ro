@@ -1,0 +1,255 @@
+# ============================================================================
+# Pyro Built-in Library: web
+# Created by Aravind Pilla
+# Web framework, HTTP server/client, WebSocket, SSE, GraphQL
+# ============================================================================
+
+import web
+
+# ── Server Creation ─────────────────────────────────────────────────────────
+
+# web.server(config)
+# Creates a new HTTP server
+# config: { host, port, workers, debug, static_dir, cors }
+# Example:
+#   let app = web.server({ port: 8080, debug: true })
+
+# app.listen(port, callback)
+# Starts the server listening on the given port
+# Example:
+#   app.listen(8080, fn()
+#     print("Server running on :8080")
+#   )
+
+# app.stop()
+# Gracefully shuts down the server
+
+# ── Routing ─────────────────────────────────────────────────────────────────
+
+# app.get(path, handler)
+# Registers a GET route
+# handler receives (req, res)
+# Example:
+#   app.get("/users", fn(req, res)
+#     res.json(get_all_users())
+#   )
+
+# app.post(path, handler)    -> Register POST route
+# app.put(path, handler)     -> Register PUT route
+# app.patch(path, handler)   -> Register PATCH route
+# app.delete(path, handler)  -> Register DELETE route
+# app.options(path, handler) -> Register OPTIONS route
+# app.head(path, handler)    -> Register HEAD route
+
+# Route parameters:
+#   app.get("/users/:id", fn(req, res)
+#     let id = req.params.id
+#     res.json(find_user(id))
+#   )
+
+# Wildcard routes:
+#   app.get("/files/*path", fn(req, res)
+#     let file_path = req.params.path
+#     res.send_file(file_path)
+#   )
+
+# app.route(path)
+# Returns a route builder for chaining methods on the same path
+# Example:
+#   app.route("/items")
+#     .get(list_items)
+#     .post(create_item)
+
+# app.group(prefix, fn)
+# Groups routes under a common prefix
+# Example:
+#   app.group("/api/v1", fn(g)
+#     g.get("/users", list_users)
+#     g.post("/users", create_user)
+#     g.get("/users/:id", get_user)
+#   )
+
+# ── Request Object (req) ───────────────────────────────────────────────────
+
+# req.method         -> HTTP method string ("GET", "POST", etc.)
+# req.path           -> Request path string
+# req.url            -> Full URL string
+# req.params         -> Route parameters dict
+# req.query          -> Query string parameters dict
+# req.headers        -> Request headers dict
+# req.body           -> Raw body string
+# req.json()         -> Parsed JSON body
+# req.form()         -> Parsed form data dict
+# req.files()        -> Uploaded files list
+# req.cookies        -> Cookies dict
+# req.ip             -> Client IP address
+# req.is_secure      -> true if HTTPS
+
+# ── Response Object (res) ──────────────────────────────────────────────────
+
+# res.status(code)
+# Sets the HTTP status code, returns res for chaining
+# Example: res.status(201).json({ id: new_id })
+
+# res.json(data)            -> Send JSON response
+# res.text(str)             -> Send plain text response
+# res.html(str)             -> Send HTML response
+# res.send_file(path)       -> Send a file as response
+# res.redirect(url, code)   -> Redirect (default 302)
+# res.set_header(k, v)      -> Set a response header
+# res.cookie(name, val, opts) -> Set a cookie
+# res.clear_cookie(name)    -> Remove a cookie
+# res.stream(readable)      -> Stream a response body
+# res.download(path, name)  -> Trigger file download
+
+# ── Middleware ──────────────────────────────────────────────────────────────
+
+# app.use(middleware)
+# Registers global middleware
+# Example:
+#   app.use(fn(req, res, next)
+#     print("Request:", req.method, req.path)
+#     next()
+#   )
+
+# app.use(path, middleware)
+# Registers middleware for a specific path prefix
+# Example: app.use("/api", auth_middleware)
+
+# Built-in middleware:
+# web.cors(config)        -> CORS headers ({ origins, methods, headers, credentials })
+# web.static(dir, opts)   -> Serve static files from directory
+# web.body_parser()       -> Parse JSON and form bodies
+# web.rate_limit(config)  -> Rate limiting ({ window_ms, max_requests })
+# web.compress()          -> Gzip/Brotli compression
+# web.helmet()            -> Security headers
+# web.logger(format)      -> Request logging ("combined", "short", "dev")
+# web.session(config)     -> Session management ({ secret, max_age, store })
+
+# Example:
+#   app.use(web.cors({ origins: ["https://example.com"] }))
+#   app.use(web.body_parser())
+#   app.use(web.rate_limit({ window_ms: 60000, max_requests: 100 }))
+
+# ── HTTP Client ─────────────────────────────────────────────────────────────
+
+# web.fetch(url, options)
+# Makes an HTTP request, returns a Response
+# options: { method, headers, body, timeout, follow_redirects }
+# Example:
+#   let resp = await web.fetch("https://api.example.com/data", {
+#     method: "POST",
+#     headers: { "Content-Type": "application/json" },
+#     body: json.stringify({ name: "Pyro" }),
+#     timeout: 5000
+#   })
+#   let data = resp.json()
+
+# web.get(url, headers)         -> Shorthand GET request
+# web.post(url, body, headers)  -> Shorthand POST request
+# web.put(url, body, headers)   -> Shorthand PUT request
+# web.delete(url, headers)      -> Shorthand DELETE request
+
+# Response object from fetch:
+# resp.status         -> HTTP status code
+# resp.headers        -> Response headers dict
+# resp.ok             -> true if status is 2xx
+# resp.text()         -> Body as string
+# resp.json()         -> Body as parsed JSON
+# resp.bytes()        -> Body as byte array
+# resp.stream()       -> Body as readable stream
+
+# web.download(url, dest_path, options)
+# Downloads a file to disk
+# Example: await web.download("https://example.com/file.zip", "/tmp/file.zip")
+
+# ── WebSocket ───────────────────────────────────────────────────────────────
+
+# app.ws(path, handler)
+# Registers a WebSocket endpoint
+# Example:
+#   app.ws("/chat", fn(socket)
+#     socket.on("message", fn(msg)
+#       socket.send("Echo: " + msg)
+#     )
+#     socket.on("close", fn()
+#       print("Client disconnected")
+#     )
+#   )
+
+# socket.send(data)           -> Send message to client
+# socket.broadcast(data)      -> Send to all connected clients
+# socket.close(code, reason)  -> Close the connection
+# socket.on(event, handler)   -> Listen for events: "message", "close", "error"
+# socket.id                   -> Unique socket identifier
+# socket.rooms                -> List of rooms this socket is in
+# socket.join(room)           -> Join a named room
+# socket.leave(room)          -> Leave a named room
+# socket.to(room).send(data)  -> Send to all clients in a room
+
+# web.ws_client(url)
+# Creates a WebSocket client connection
+# Example:
+#   let ws = await web.ws_client("wss://example.com/feed")
+#   ws.on("message", fn(msg) print(msg))
+#   ws.send("hello")
+
+# ── Server-Sent Events (SSE) ───────────────────────────────────────────────
+
+# app.sse(path, handler)
+# Registers an SSE endpoint
+# Example:
+#   app.sse("/events", fn(client)
+#     client.send("connected", { status: "ok" })
+#     let timer = time.interval(1000, fn()
+#       client.send("tick", { time: time.now() })
+#     )
+#     client.on("close", fn()
+#       timer.stop()
+#     )
+#   )
+
+# client.send(event, data)    -> Send named event with data
+# client.close()              -> Close SSE connection
+
+# ── GraphQL ─────────────────────────────────────────────────────────────────
+
+# web.graphql(schema, resolvers)
+# Creates a GraphQL handler from schema string and resolver dict
+# Example:
+#   let gql = web.graphql(
+#     "type Query { user(id: ID!): User }",
+#     {
+#       "Query": {
+#         "user": fn(parent, args, ctx) return find_user(args.id)
+#       }
+#     }
+#   )
+#   app.post("/graphql", gql.handler)
+
+# ── Template Engine ─────────────────────────────────────────────────────────
+
+# web.render(template_path, data)
+# Renders an HTML template with the given data
+# Template syntax: {{ variable }}, {% if cond %}, {% for item in list %}
+# Example: res.html(web.render("views/index.html", { title: "Home", items: items }))
+
+# web.set_template_dir(path)
+# Sets the directory for template files
+# Example: web.set_template_dir("./views")
+
+# ── Error Handling ──────────────────────────────────────────────────────────
+
+# app.on_error(handler)
+# Global error handler
+# Example:
+#   app.on_error(fn(err, req, res)
+#     res.status(500).json({ error: err.message })
+#   )
+
+# app.on_not_found(handler)
+# Custom 404 handler
+# Example:
+#   app.on_not_found(fn(req, res)
+#     res.status(404).html("<h1>Page not found</h1>")
+#   )

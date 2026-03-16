@@ -1,0 +1,232 @@
+# ============================================================================
+# Pyro Built-in Library: log
+# Created by Aravind Pilla
+# Logging: levels, formatters, file/console/remote, structured logging
+# ============================================================================
+
+import log
+
+# ── Basic Logging ───────────────────────────────────────────────────────────
+
+# log.debug(message, fields...)
+# Logs a debug-level message
+# Example: log.debug("Fetching user", { id: 42 })
+
+# log.info(message, fields...)
+# Logs an info-level message
+# Example: log.info("Server started", { port: 8080 })
+
+# log.warn(message, fields...)
+# Logs a warning-level message
+# Example: log.warn("Disk space low", { free_gb: 2.5 })
+
+# log.error(message, fields...)
+# Logs an error-level message
+# Example: log.error("Database connection failed", { host: "db.internal", error: err })
+
+# log.fatal(message, fields...)
+# Logs a fatal-level message and exits the process
+# Example: log.fatal("Cannot start: missing config file")
+
+# log.trace(message, fields...)
+# Logs a trace-level message (most verbose)
+# Example: log.trace("Entering function", { fn: "calculate_tax" })
+
+# ── Logger Configuration ───────────────────────────────────────────────────
+
+# log.config(options)
+# Configures the global logger
+# options: { level, format, output, timestamp, colors, caller }
+# level: "trace", "debug", "info", "warn", "error", "fatal" (default "info")
+# format: "text" (default), "json", "pretty"
+# output: "console" (default), file path, or list of outputs
+# timestamp: timestamp format or false to disable (default "ISO")
+# colors: colorize console output (default true)
+# caller: include file:line info (default false)
+# Example:
+#   log.config({
+#     level: "debug",
+#     format: "json",
+#     output: "console",
+#     timestamp: "YYYY-MM-DD HH:mm:ss",
+#     caller: true
+#   })
+
+# log.set_level(level)
+# Changes the minimum log level at runtime
+# Example: log.set_level("debug")
+
+# log.get_level()
+# Returns the current log level
+# Example: log.get_level() -> "info"
+
+# ── Named Loggers ──────────────────────────────────────────────────────────
+
+# log.create(name, config)
+# Creates a named logger with its own configuration
+# config: same options as log.config
+# Example:
+#   let db_log = log.create("database", {
+#     level: "warn",
+#     output: "logs/database.log"
+#   })
+#   db_log.info("Query executed", { sql: query, duration_ms: 45 })
+
+# log.get(name)
+# Retrieves an existing named logger
+# Example: let db_log = log.get("database")
+
+# ── Structured Logging ─────────────────────────────────────────────────────
+
+# log.with(fields)
+# Returns a new logger with persistent fields added to every message
+# Example:
+#   let request_log = log.with({ request_id: "abc-123", user_id: 42 })
+#   request_log.info("Processing request")
+#   # Output: {"level":"info","msg":"Processing request","request_id":"abc-123","user_id":42}
+
+# log.with_prefix(prefix)
+# Returns a logger that prefixes all messages
+# Example:
+#   let auth_log = log.with_prefix("[AUTH]")
+#   auth_log.info("Login successful") -> "[AUTH] Login successful"
+
+# ── Output Handlers ────────────────────────────────────────────────────────
+
+# log.console_handler(config)
+# Console output handler
+# config: { colors, level, format }
+# Example: let console = log.console_handler({ colors: true, format: "pretty" })
+
+# log.file_handler(path, config)
+# File output handler
+# config: { level, format, max_size, max_files, compress }
+# max_size: max file size before rotation (e.g. "10MB")
+# max_files: number of rotated files to keep (default 5)
+# compress: gzip old log files (default false)
+# Example:
+#   let file = log.file_handler("logs/app.log", {
+#     max_size: "50MB",
+#     max_files: 10,
+#     compress: true
+#   })
+
+# log.rotating_handler(path, config)
+# Time-based rotating file handler
+# config: { rotation, max_age, format }
+# rotation: "daily" (default), "hourly", "weekly"
+# max_age: how long to keep old files (e.g. "30d")
+# Example:
+#   let rotating = log.rotating_handler("logs/app.log", {
+#     rotation: "daily",
+#     max_age: "30d"
+#   })
+
+# log.remote_handler(url, config)
+# Sends logs to a remote endpoint (HTTP/HTTPS)
+# config: { method, headers, batch_size, flush_interval, format }
+# Example:
+#   let remote = log.remote_handler("https://logs.example.com/ingest", {
+#     headers: { "Authorization": "Bearer token" },
+#     batch_size: 100,
+#     flush_interval: 5000
+#   })
+
+# log.syslog_handler(config)
+# Sends logs to syslog
+# config: { host, port, facility, protocol }
+# protocol: "udp" (default), "tcp"
+# Example: let syslog = log.syslog_handler({ host: "localhost", facility: "local0" })
+
+# log.add_handler(handler)
+# Adds an output handler to the global logger
+# Example:
+#   log.add_handler(log.file_handler("app.log"))
+#   log.add_handler(log.remote_handler("https://logs.service.com"))
+
+# log.remove_handler(handler)
+# Removes an output handler
+
+# ── Formatters ──────────────────────────────────────────────────────────────
+
+# log.text_format(config)
+# Plain text formatter
+# config: { template, timestamp, colors }
+# template: format string with placeholders {level}, {msg}, {time}, {caller}
+# Example:
+#   log.text_format({ template: "{time} [{level}] {msg}" })
+
+# log.json_format(config)
+# JSON formatter for structured log output
+# config: { pretty, fields_key }
+# Example: log.json_format({ pretty: false })
+
+# log.custom_format(fn)
+# Custom formatter function
+# fn receives (level, message, fields, timestamp) and returns a string
+# Example:
+#   log.custom_format(fn(level, msg, fields, ts)
+#     return ts + " | " + level.upper() + " | " + msg
+#   )
+
+# ── Filtering ──────────────────────────────────────────────────────────────
+
+# log.filter(fn)
+# Adds a filter function; return false to suppress a log entry
+# fn receives (level, message, fields)
+# Example:
+#   log.filter(fn(level, msg, fields)
+#     # Suppress noisy health check logs
+#     return not msg.contains("health check")
+#   )
+
+# log.rate_limit(config)
+# Rate-limits log messages to prevent flooding
+# config: { max_per_second, burst }
+# Example: log.rate_limit({ max_per_second: 100, burst: 200 })
+
+# log.sample(rate)
+# Samples logs at the given rate (0.0 to 1.0)
+# Example: log.sample(0.1)  # only log 10% of messages
+
+# ── Context & Correlation ──────────────────────────────────────────────────
+
+# log.context(fields)
+# Sets context fields for the current async scope (propagated to child tasks)
+# Example:
+#   log.context({ trace_id: crypto.random_hex(16), span: "http_handler" })
+#   log.info("Handling request")
+
+# log.timed(label)
+# Creates a timer that logs duration when stopped
+# Example:
+#   let timer = log.timed("database_query")
+#   let result = db.query("SELECT * FROM users")
+#   timer.done()
+#   # Output: "database_query completed in 45ms"
+
+# timer.done(fields)       -> Stop timer and log with optional extra fields
+# timer.cancel()           -> Cancel without logging
+
+# ── Child Loggers ──────────────────────────────────────────────────────────
+
+# log.child(fields)
+# Creates a child logger that inherits parent config and adds fields
+# Example:
+#   let req_log = log.child({ method: "GET", path: "/api/users" })
+#   req_log.info("Request received")
+#   req_log.info("Response sent", { status: 200, duration_ms: 12 })
+
+# ── Utilities ───────────────────────────────────────────────────────────────
+
+# log.flush()
+# Flushes all buffered log entries to their handlers
+# Example: log.flush()
+
+# log.close()
+# Closes all handlers and flushes remaining logs
+# Example: log.close()
+
+# log.redirect_stdout()
+# Redirects all print() calls through the logger
+# Example: log.redirect_stdout()

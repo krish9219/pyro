@@ -1,0 +1,38 @@
+import math
+import io
+
+# Enums
+enum Color
+    Red
+    Green
+    Blue
+
+let c = Color.Red
+print("Color: {c}")
+
+# Dict/map literals
+let config = {"host": "localhost", "port": "8080", "debug": "true"}
+print("Config: {config}")
+
+# List comprehensions
+let squares = [x * x for x in 0..10]
+print("Squares: {squares}")
+
+let evens = [x for x in 0..20 if x % 2 == 0]
+print("Evens: {evens}")
+
+# Math stdlib
+print("PI = {math.PI}")
+print("sqrt(144) = {math.sqrt(144)}")
+print("sin(0) = {math.sin(0)}")
+print("Random: {math.random()}")
+print("Randint(1,100): {math.randint(1, 100)}")
+
+# IO stdlib
+let testpath = "/tmp/pyro_test.txt"
+io.write(testpath, "Hello from Pyro!")
+let content = io.read(testpath)
+print("File content: {content}")
+let fexists = io.exists(testpath)
+print("File exists: {fexists}")
+io.remove(testpath)

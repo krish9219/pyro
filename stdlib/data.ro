@@ -1,0 +1,296 @@
+# ============================================================================
+# Pyro Built-in Library: data
+# Created by Aravind Pilla
+# Data science toolkit: DataFrames, Series, I/O, aggregation, ML basics
+# ============================================================================
+
+import data
+
+# ── DataFrame Creation ──────────────────────────────────────────────────────
+
+# data.frame(columns)
+# Creates a DataFrame from a dict of column_name -> list
+# Example:
+#   let df = data.frame({
+#     "name": ["Alice", "Bob", "Carol"],
+#     "age": [30, 25, 35],
+#     "score": [88.5, 92.0, 76.3]
+#   })
+
+# data.frame_from_rows(rows, columns)
+# Creates a DataFrame from a list of row lists and column names
+# Example:
+#   let df = data.frame_from_rows(
+#     [["Alice", 30], ["Bob", 25]],
+#     ["name", "age"]
+#   )
+
+# data.series(name, values)
+# Creates a named Series (single column of data)
+# Example: let s = data.series("scores", [88.5, 92.0, 76.3])
+
+# ── Data I/O ────────────────────────────────────────────────────────────────
+
+# data.read_csv(path, delimiter, header, skip_rows)
+# Reads a CSV file into a DataFrame
+# delimiter: column separator (default ",")
+# header: true if first row is header (default true)
+# skip_rows: number of rows to skip (default 0)
+# Example: let df = data.read_csv("sales.csv")
+
+# data.write_csv(df, path, delimiter)
+# Writes a DataFrame to a CSV file
+# Example: data.write_csv(df, "output.csv")
+
+# data.read_json(path)
+# Reads a JSON file into a DataFrame (expects array of objects)
+# Example: let df = data.read_json("users.json")
+
+# data.write_json(df, path, pretty)
+# Writes a DataFrame to JSON
+# Example: data.write_json(df, "output.json", true)
+
+# data.read_parquet(path)
+# Reads a Parquet file into a DataFrame
+# Example: let df = data.read_parquet("large_dataset.parquet")
+
+# data.write_parquet(df, path, compression)
+# Writes a DataFrame to Parquet format
+# compression: "snappy", "gzip", "zstd", or "none" (default "snappy")
+# Example: data.write_parquet(df, "output.parquet", "zstd")
+
+# data.read_excel(path, sheet)
+# Reads an Excel sheet into a DataFrame
+# Example: let df = data.read_excel("report.xlsx", "Sheet1")
+
+# data.read_sql(query, connection)
+# Reads SQL query results into a DataFrame
+# Example: let df = data.read_sql("SELECT * FROM users", conn)
+
+# ── DataFrame Properties ────────────────────────────────────────────────────
+
+# df.shape         -> [rows, cols] tuple
+# df.columns       -> list of column names
+# df.dtypes        -> dict of column name to type
+# df.len           -> number of rows
+# df.is_empty      -> true if DataFrame has no rows
+
+# ── Selection & Indexing ────────────────────────────────────────────────────
+
+# df.col(name)
+# Returns a Series for the given column
+# Example: let ages = df.col("age")
+
+# df.row(index)
+# Returns a dict for the row at the given index
+# Example: let first = df.row(0)
+
+# df.select(columns)
+# Returns a new DataFrame with only the specified columns
+# Example: let subset = df.select(["name", "age"])
+
+# df.slice(start, end)
+# Returns rows from start to end (exclusive)
+# Example: let top5 = df.slice(0, 5)
+
+# df.head(n)
+# Returns the first n rows (default 5)
+# Example: df.head(10)
+
+# df.tail(n)
+# Returns the last n rows (default 5)
+# Example: df.tail(3)
+
+# df.sample(n, seed)
+# Returns n random rows
+# Example: let sample = df.sample(100, 42)
+
+# ── Filtering & Querying ───────────────────────────────────────────────────
+
+# df.filter(fn)
+# Filters rows using a predicate function
+# Example: let adults = df.filter(fn(row) return row.age >= 18)
+
+# df.where(column, op, value)
+# Filters rows where column matches condition
+# op: "==", "!=", ">", "<", ">=", "<=", "in", "contains", "starts_with"
+# Example: let seniors = df.where("age", ">=", 65)
+
+# df.query(expr)
+# Filters using a string expression
+# Example: let result = df.query("age > 25 and score >= 80")
+
+# df.unique(column)
+# Returns unique values in a column
+# Example: let cities = df.unique("city")
+
+# df.duplicated(columns)
+# Returns boolean Series marking duplicate rows
+# Example: let dupes = df.duplicated(["email"])
+
+# df.drop_duplicates(columns)
+# Removes duplicate rows
+# Example: let clean = df.drop_duplicates(["email"])
+
+# ── Transformation ──────────────────────────────────────────────────────────
+
+# df.add_col(name, values_or_fn)
+# Adds a new column from a list or a function applied per row
+# Example: let df2 = df.add_col("grade", fn(row) return row.score > 80)
+
+# df.rename(mapping)
+# Renames columns using a dict
+# Example: let df2 = df.rename({"old_name": "new_name"})
+
+# df.drop(columns)
+# Removes specified columns
+# Example: let df2 = df.drop(["temp_col", "debug_col"])
+
+# df.map(column, fn)
+# Applies a function to each value in a column
+# Example: let df2 = df.map("name", fn(n) return n.upper())
+
+# df.apply(fn)
+# Applies a function to each row, returning a new Series
+# Example: let bmi = df.apply(fn(r) return r.weight / (r.height * r.height))
+
+# df.replace(column, old_val, new_val)
+# Replaces values in a column
+# Example: let df2 = df.replace("status", "N/A", nil)
+
+# df.fill_na(value)
+# Replaces nil/NaN values with the given value
+# Example: let df2 = df.fill_na(0)
+
+# df.drop_na(columns)
+# Removes rows with nil/NaN in specified columns (or any column)
+# Example: let clean = df.drop_na(["age", "score"])
+
+# df.cast(column, type_name)
+# Casts a column to a different type: "int", "float", "str", "bool"
+# Example: let df2 = df.cast("age", "int")
+
+# ── Sorting & Ordering ─────────────────────────────────────────────────────
+
+# df.sort(column, descending)
+# Sorts by a column (descending defaults to false)
+# Example: let sorted = df.sort("score", true)
+
+# df.sort_by(columns, directions)
+# Multi-column sort
+# Example: let sorted = df.sort_by(["dept", "score"], [true, false])
+
+# df.reverse()
+# Reverses row order
+# Example: let rev = df.reverse()
+
+# ── Aggregation & Grouping ─────────────────────────────────────────────────
+
+# df.group_by(columns)
+# Groups the DataFrame by one or more columns, returns a GroupedFrame
+# Example: let groups = df.group_by(["department"])
+
+# grouped.agg(aggregations)
+# Applies aggregations to grouped data
+# aggregations: dict of column -> function name
+# Example:
+#   let summary = df.group_by(["dept"]).agg({
+#     "salary": "mean",
+#     "age": "max",
+#     "name": "count"
+#   })
+
+# df.pivot(index, columns, values, agg_fn)
+# Creates a pivot table
+# Example: let pivot = df.pivot("month", "product", "sales", "sum")
+
+# df.melt(id_cols, value_cols, var_name, value_name)
+# Unpivots a DataFrame from wide to long format
+# Example: let long = df.melt(["name"], ["math", "science"], "subject", "score")
+
+# df.count()           -> Number of non-nil values per column
+# df.sum(column)       -> Sum of a column
+# df.mean(column)      -> Mean of a column
+# df.median(column)    -> Median of a column
+# df.min_val(column)   -> Min of a column
+# df.max_val(column)   -> Max of a column
+# df.std(column)       -> Standard deviation
+# df.var(column)       -> Variance
+# df.describe()        -> Summary statistics for all numeric columns
+
+# ── Joining & Combining ────────────────────────────────────────────────────
+
+# data.join(left, right, on, how)
+# Joins two DataFrames
+# on: column name or list of column names
+# how: "inner", "left", "right", "outer", "cross"
+# Example: let result = data.join(orders, users, "user_id", "left")
+
+# data.concat(frames, axis)
+# Concatenates DataFrames vertically (axis=0) or horizontally (axis=1)
+# Example: let combined = data.concat([df1, df2, df3], 0)
+
+# data.merge(left, right, left_on, right_on, how)
+# Merges on different column names
+# Example: let merged = data.merge(df1, df2, "id", "user_id", "inner")
+
+# ── Window Functions ────────────────────────────────────────────────────────
+
+# df.rolling(column, window, fn)
+# Applies a rolling window function
+# Example: let ma = df.rolling("price", 7, "mean")
+
+# df.cumsum(column)         -> Cumulative sum
+# df.cumprod(column)        -> Cumulative product
+# df.cummax(column)         -> Cumulative max
+# df.cummin(column)         -> Cumulative min
+# df.shift(column, n)       -> Shift values by n positions
+# df.diff(column, n)        -> Difference between current and nth prior value
+# df.pct_change(column)     -> Percentage change from prior row
+# df.rank(column, method)   -> Rank values ("min", "max", "dense", "average")
+
+# ── Statistics & Correlation ────────────────────────────────────────────────
+
+# data.corr(df, columns)
+# Returns correlation matrix DataFrame
+# Example: let corr_matrix = data.corr(df, ["age", "salary", "experience"])
+
+# data.cov(df, columns)
+# Returns covariance matrix DataFrame
+
+# data.value_counts(series)
+# Returns a DataFrame of value frequencies
+# Example: let freq = data.value_counts(df.col("category"))
+
+# data.cross_tab(df, col1, col2)
+# Returns a cross-tabulation DataFrame
+# Example: let ct = data.cross_tab(df, "gender", "department")
+
+# ── ML Basics (Quick Access) ───────────────────────────────────────────────
+
+# data.normalize(df, columns, method)
+# Normalizes columns: "minmax", "zscore", "robust"
+# Example: let normed = data.normalize(df, ["salary", "age"], "minmax")
+
+# data.one_hot(df, columns)
+# One-hot encodes categorical columns
+# Example: let encoded = data.one_hot(df, ["color", "size"])
+
+# data.label_encode(df, column)
+# Encodes string labels as integers
+# Example: let encoded = data.label_encode(df, "category")
+
+# data.train_test_split(df, ratio, seed)
+# Splits data into training and test sets
+# ratio: fraction for training (default 0.8)
+# Returns [train_df, test_df]
+# Example: let [train, test] = data.train_test_split(df, 0.8, 42)
+
+# ── Pipeline Example ───────────────────────────────────────────────────────
+
+# let report = data.read_csv("sales.csv")
+#   |> data.filter(fn(r) return r.amount > 0)
+#   |> data.group_by(["region"])
+#   |> data.agg({"amount": "sum", "order_id": "count"})
+#   |> data.sort("amount", true)
+#   |> data.head(10)

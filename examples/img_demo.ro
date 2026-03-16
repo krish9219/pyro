@@ -1,0 +1,17 @@
+import img
+
+# Create an image and draw on it
+mut canvas = img.create(200, 200, 255, 255, 255)
+img.draw_rect(canvas, 10, 10, 180, 180, 0, 0, 0)
+img.draw_rect(canvas, 50, 50, 100, 100, 255, 0, 0)
+for x in 0..200
+    canvas.set_pixel(x, 100, 0, 128, 0)
+for y in 0..200
+    canvas.set_pixel(100, y, 0, 0, 255)
+img.save_ppm(canvas, "/tmp/pyro_image.ppm")
+print("Image saved: ", canvas)
+
+# Grayscale
+let gray = img.grayscale(canvas)
+img.save_ppm(gray, "/tmp/pyro_gray.ppm")
+print("Grayscale: ", gray)

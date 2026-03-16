@@ -1,0 +1,6 @@
+# test_circular.ro - verify circular imports don't loop forever
+import circular_a
+
+let x = from_a()
+let y = from_b()
+print("from_a = {x}, from_b = {y}")

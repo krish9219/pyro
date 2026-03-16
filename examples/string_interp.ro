@@ -1,0 +1,16 @@
+let name = "Aravind"
+let age = 25
+let lang = "Pyro"
+
+print("Hello {name}!")
+print("{name} is {age} years old")
+print("{lang} has only 18 keywords")
+
+# Expressions inside interpolation
+let x = 10
+let y = 20
+print("{x} + {y} = {x + y}")
+
+# Nested with method calls
+let nums = [1, 2, 3]
+print("List has {nums.len()} items")

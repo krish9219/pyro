@@ -1,0 +1,38 @@
+# Data Science with Nova (Built-in support)
+# No external libraries needed
+
+import data
+import viz
+
+# Load a dataset
+let df = data.read("sales.csv")
+
+# Basic operations
+print("Rows: ", df.rows())
+print("Columns: ", df.cols())
+print("First 5 rows:")
+df.head(5)
+
+# Column operations
+let revenue = df.col("revenue")
+print("Total revenue: ", revenue.sum())
+print("Average revenue: ", revenue.mean())
+print("Max revenue: ", revenue.max())
+print("Min revenue: ", revenue.min())
+
+# Filtering
+let high_sales = df.where("revenue > 10000")
+print("High sales count: ", high_sales.rows())
+
+# Grouping
+let by_region = df.group("region").agg("revenue", "sum")
+print(by_region)
+
+# Visualization
+viz.bar(df, "month", "revenue")
+viz.line(df, "date", "revenue")
+viz.scatter(df, "marketing_spend", "revenue")
+viz.pie(by_region, "region", "revenue")
+
+# Save results
+data.write(high_sales, "high_sales_output.csv")

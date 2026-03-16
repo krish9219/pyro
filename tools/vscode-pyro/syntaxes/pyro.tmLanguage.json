@@ -1,0 +1,155 @@
+{
+    "name": "Pyro",
+    "scopeName": "source.pyro",
+    "patterns": [
+        { "include": "#comments" },
+        { "include": "#strings" },
+        { "include": "#numbers" },
+        { "include": "#keywords" },
+        { "include": "#constants" },
+        { "include": "#operators" },
+        { "include": "#functions" },
+        { "include": "#types" },
+        { "include": "#identifiers" }
+    ],
+    "repository": {
+        "comments": {
+            "patterns": [
+                {
+                    "name": "comment.line.number-sign.pyro",
+                    "match": "#.*$"
+                }
+            ]
+        },
+        "strings": {
+            "patterns": [
+                {
+                    "name": "string.quoted.double.pyro",
+                    "begin": "\"",
+                    "end": "\"",
+                    "patterns": [
+                        {
+                            "name": "constant.character.escape.pyro",
+                            "match": "\\\\[nrtv\\\\\"']"
+                        },
+                        {
+                            "name": "meta.embedded.expression.pyro",
+                            "begin": "\\{",
+                            "end": "\\}",
+                            "patterns": [
+                                { "include": "$self" }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "string.quoted.single.pyro",
+                    "begin": "'",
+                    "end": "'",
+                    "patterns": [
+                        {
+                            "name": "constant.character.escape.pyro",
+                            "match": "\\\\[nrtv\\\\\"']"
+                        }
+                    ]
+                }
+            ]
+        },
+        "numbers": {
+            "patterns": [
+                {
+                    "name": "constant.numeric.float.pyro",
+                    "match": "\\b\\d[\\d_]*\\.\\d[\\d_]*\\b"
+                },
+                {
+                    "name": "constant.numeric.integer.pyro",
+                    "match": "\\b\\d[\\d_]*\\b"
+                }
+            ]
+        },
+        "keywords": {
+            "patterns": [
+                {
+                    "name": "keyword.control.pyro",
+                    "match": "\\b(if|else|for|in|while|return|match|try|catch|import|break|continue)\\b"
+                },
+                {
+                    "name": "keyword.declaration.pyro",
+                    "match": "\\b(fn|let|mut|struct|enum|pub|async|await)\\b"
+                },
+                {
+                    "name": "keyword.operator.logical.pyro",
+                    "match": "\\b(and|or|not)\\b"
+                }
+            ]
+        },
+        "constants": {
+            "patterns": [
+                {
+                    "name": "constant.language.pyro",
+                    "match": "\\b(true|false|nil)\\b"
+                }
+            ]
+        },
+        "operators": {
+            "patterns": [
+                {
+                    "name": "keyword.operator.pipe.pyro",
+                    "match": "\\|>"
+                },
+                {
+                    "name": "keyword.operator.arrow.pyro",
+                    "match": "->"
+                },
+                {
+                    "name": "keyword.operator.range.pyro",
+                    "match": "\\.\\."
+                },
+                {
+                    "name": "keyword.operator.comparison.pyro",
+                    "match": "(==|!=|<=|>=|<|>)"
+                },
+                {
+                    "name": "keyword.operator.assignment.pyro",
+                    "match": "="
+                },
+                {
+                    "name": "keyword.operator.arithmetic.pyro",
+                    "match": "[+\\-*/%]"
+                }
+            ]
+        },
+        "functions": {
+            "patterns": [
+                {
+                    "name": "entity.name.function.pyro",
+                    "match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)\\s*(?=\\()"
+                },
+                {
+                    "name": "support.function.builtin.pyro",
+                    "match": "\\b(print|len|str|range|type|input|sorted|reversed|push|pop|map|filter|reduce|find|contains|join|sum)\\b"
+                }
+            ]
+        },
+        "types": {
+            "patterns": [
+                {
+                    "name": "support.type.pyro",
+                    "match": "\\b(int|float|str|bool|list|map|void)\\b"
+                },
+                {
+                    "name": "entity.name.type.pyro",
+                    "match": "\\b[A-Z][a-zA-Z0-9_]*\\b"
+                }
+            ]
+        },
+        "identifiers": {
+            "patterns": [
+                {
+                    "name": "variable.other.pyro",
+                    "match": "\\b[a-z_][a-zA-Z0-9_]*\\b"
+                }
+            ]
+        }
+    }
+}

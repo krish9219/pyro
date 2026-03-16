@@ -1,0 +1,299 @@
+# ============================================================================
+# Pyro Built-in Library: math
+# Created by Aravind Pilla
+# Standard mathematical functions, constants, and utilities
+# ============================================================================
+
+import math
+
+# ── Constants ───────────────────────────────────────────────────────────────
+# math.PI          -> 3.141592653589793
+# math.E           -> 2.718281828459045
+# math.TAU         -> 6.283185307179586
+# math.INF         -> Infinity
+# math.NEG_INF     -> Negative infinity
+# math.NAN         -> Not a number
+# math.PHI         -> 1.618033988749895 (golden ratio)
+# math.SQRT2       -> 1.4142135623730951
+
+# ── Basic Arithmetic ────────────────────────────────────────────────────────
+
+# math.abs(x)
+# Returns the absolute value of x
+# Example: math.abs(-5) -> 5
+
+# math.ceil(x)
+# Rounds x up to the nearest integer
+# Example: math.ceil(3.2) -> 4
+
+# math.floor(x)
+# Rounds x down to the nearest integer
+# Example: math.floor(3.9) -> 3
+
+# math.round(x, decimals)
+# Rounds x to the given number of decimal places (default 0)
+# Example: math.round(3.14159, 2) -> 3.14
+
+# math.trunc(x)
+# Truncates x to an integer, removing the fractional part
+# Example: math.trunc(-3.7) -> -3
+
+# math.clamp(x, low, high)
+# Constrains x to the range [low, high]
+# Example: math.clamp(15, 0, 10) -> 10
+
+# math.sign(x)
+# Returns -1, 0, or 1 indicating the sign of x
+# Example: math.sign(-42) -> -1
+
+# math.min(a, b, ...)
+# Returns the smallest of the given values
+# Example: math.min(3, 1, 4, 1, 5) -> 1
+
+# math.max(a, b, ...)
+# Returns the largest of the given values
+# Example: math.max(3, 1, 4, 1, 5) -> 5
+
+# math.sum(list)
+# Returns the sum of all elements in the list
+# Example: math.sum([1, 2, 3, 4]) -> 10
+
+# math.prod(list)
+# Returns the product of all elements in the list
+# Example: math.prod([2, 3, 4]) -> 24
+
+# ── Powers & Logarithms ────────────────────────────────────────────────────
+
+# math.pow(base, exp)
+# Returns base raised to the power of exp
+# Example: math.pow(2, 10) -> 1024
+
+# math.sqrt(x)
+# Returns the square root of x
+# Example: math.sqrt(144) -> 12.0
+
+# math.cbrt(x)
+# Returns the cube root of x
+# Example: math.cbrt(27) -> 3.0
+
+# math.log(x)
+# Returns the natural logarithm (base e) of x
+# Example: math.log(math.E) -> 1.0
+
+# math.log2(x)
+# Returns the base-2 logarithm of x
+# Example: math.log2(1024) -> 10.0
+
+# math.log10(x)
+# Returns the base-10 logarithm of x
+# Example: math.log10(1000) -> 3.0
+
+# math.log_base(x, base)
+# Returns the logarithm of x with the given base
+# Example: math.log_base(81, 3) -> 4.0
+
+# math.exp(x)
+# Returns e raised to the power x
+# Example: math.exp(1) -> 2.718281828459045
+
+# math.hypot(a, b)
+# Returns sqrt(a^2 + b^2) without intermediate overflow
+# Example: math.hypot(3, 4) -> 5.0
+
+# ── Trigonometry ────────────────────────────────────────────────────────────
+
+# math.sin(x)       -> Sine of x (radians)
+# math.cos(x)       -> Cosine of x (radians)
+# math.tan(x)       -> Tangent of x (radians)
+# math.asin(x)      -> Arc sine, returns radians
+# math.acos(x)      -> Arc cosine, returns radians
+# math.atan(x)      -> Arc tangent, returns radians
+# math.atan2(y, x)  -> Arc tangent of y/x, returns radians in correct quadrant
+# math.sinh(x)      -> Hyperbolic sine
+# math.cosh(x)      -> Hyperbolic cosine
+# math.tanh(x)      -> Hyperbolic tangent
+# math.asinh(x)     -> Inverse hyperbolic sine
+# math.acosh(x)     -> Inverse hyperbolic cosine
+# math.atanh(x)     -> Inverse hyperbolic tangent
+
+# math.deg_to_rad(degrees)
+# Converts degrees to radians
+# Example: math.deg_to_rad(180) -> 3.141592653589793
+
+# math.rad_to_deg(radians)
+# Converts radians to degrees
+# Example: math.rad_to_deg(math.PI) -> 180.0
+
+# ── Combinatorics ───────────────────────────────────────────────────────────
+
+# math.factorial(n)
+# Returns n! (n factorial)
+# Example: math.factorial(5) -> 120
+
+# math.gcd(a, b)
+# Returns greatest common divisor of a and b
+# Example: math.gcd(12, 8) -> 4
+
+# math.lcm(a, b)
+# Returns least common multiple of a and b
+# Example: math.lcm(4, 6) -> 12
+
+# math.comb(n, k)
+# Returns number of ways to choose k items from n (binomial coefficient)
+# Example: math.comb(10, 3) -> 120
+
+# math.perm(n, k)
+# Returns number of permutations of k items from n
+# Example: math.perm(5, 3) -> 60
+
+# math.fib(n)
+# Returns the nth Fibonacci number
+# Example: math.fib(10) -> 55
+
+# math.is_prime(n)
+# Returns true if n is a prime number
+# Example: math.is_prime(17) -> true
+
+# ── Statistics ──────────────────────────────────────────────────────────────
+
+# math.mean(list)
+# Returns the arithmetic mean of the list
+# Example: math.mean([2, 4, 6, 8]) -> 5.0
+
+# math.median(list)
+# Returns the median value of the list
+# Example: math.median([1, 3, 5, 7, 9]) -> 5
+
+# math.mode(list)
+# Returns the most common value in the list
+# Example: math.mode([1, 2, 2, 3, 3, 3]) -> 3
+
+# math.stdev(list)
+# Returns the standard deviation of the list
+# Example: math.stdev([2, 4, 4, 4, 5, 5, 7, 9]) -> 2.0
+
+# math.variance(list)
+# Returns the variance of the list
+# Example: math.variance([2, 4, 4, 4, 5, 5, 7, 9]) -> 4.0
+
+# math.percentile(list, p)
+# Returns the p-th percentile of the list (0-100)
+# Example: math.percentile([1, 2, 3, 4, 5], 75) -> 4
+
+# math.zscore(x, mean, stdev)
+# Returns the z-score of x given the mean and standard deviation
+# Example: math.zscore(85, 80, 5) -> 1.0
+
+# math.correlation(xs, ys)
+# Returns the Pearson correlation coefficient between two lists
+# Example: math.correlation([1,2,3], [2,4,6]) -> 1.0
+
+# math.covariance(xs, ys)
+# Returns the covariance between two lists
+# Example: math.covariance([1,2,3], [2,4,6]) -> 2.0
+
+# ── Random Numbers ──────────────────────────────────────────────────────────
+
+# math.random()
+# Returns a random float in [0.0, 1.0)
+# Example: math.random() -> 0.7291...
+
+# math.rand_int(low, high)
+# Returns a random integer in [low, high] inclusive
+# Example: math.rand_int(1, 6) -> 4
+
+# math.rand_float(low, high)
+# Returns a random float in [low, high)
+# Example: math.rand_float(0.0, 100.0) -> 42.37...
+
+# math.rand_choice(list)
+# Returns a random element from the list
+# Example: math.rand_choice(["red", "green", "blue"]) -> "green"
+
+# math.rand_shuffle(list)
+# Returns a new list with elements in random order
+# Example: math.rand_shuffle([1, 2, 3, 4, 5]) -> [3, 1, 5, 2, 4]
+
+# math.rand_sample(list, n)
+# Returns n unique random elements from the list
+# Example: math.rand_sample([1,2,3,4,5], 3) -> [2, 5, 1]
+
+# math.rand_normal(mean, stdev)
+# Returns a random float from a normal distribution
+# Example: math.rand_normal(0, 1) -> -0.432...
+
+# math.rand_seed(seed)
+# Seeds the random number generator for reproducible results
+# Example: math.rand_seed(42)
+
+# ── Complex Numbers ─────────────────────────────────────────────────────────
+
+# math.complex(real, imag)
+# Creates a complex number
+# Example: let z = math.complex(3, 4)
+
+# math.complex_add(a, b)       -> Sum of two complex numbers
+# math.complex_mul(a, b)       -> Product of two complex numbers
+# math.complex_conj(z)         -> Conjugate of z
+# math.complex_abs(z)          -> Magnitude of z (|z|)
+# math.complex_phase(z)        -> Phase angle in radians
+# math.complex_real(z)         -> Real part of z
+# math.complex_imag(z)         -> Imaginary part of z
+
+# ── Linear Algebra ──────────────────────────────────────────────────────────
+
+# math.vec(list)
+# Creates a vector from a list
+# Example: let v = math.vec([1, 2, 3])
+
+# math.mat(rows)
+# Creates a matrix from a list of row lists
+# Example: let m = math.mat([[1,0],[0,1]])
+
+# math.dot(a, b)
+# Returns the dot product of two vectors
+# Example: math.dot(math.vec([1,2,3]), math.vec([4,5,6])) -> 32
+
+# math.cross(a, b)
+# Returns the cross product of two 3D vectors
+# Example: math.cross(math.vec([1,0,0]), math.vec([0,1,0])) -> vec([0,0,1])
+
+# math.mat_mul(a, b)           -> Matrix multiplication
+# math.mat_transpose(m)        -> Transpose of matrix m
+# math.mat_det(m)              -> Determinant of matrix m
+# math.mat_inv(m)              -> Inverse of matrix m
+# math.mat_identity(n)         -> n x n identity matrix
+# math.mat_zeros(rows, cols)   -> Matrix of zeros
+# math.mat_ones(rows, cols)    -> Matrix of ones
+# math.mat_eigenvalues(m)      -> List of eigenvalues
+# math.mat_eigenvectors(m)     -> List of eigenvectors
+# math.mat_solve(a, b)         -> Solves the system Ax = b
+# math.vec_norm(v)             -> Euclidean norm of vector v
+# math.vec_normalize(v)        -> Unit vector in direction of v
+
+# ── Interpolation & Numerical ──────────────────────────────────────────────
+
+# math.lerp(a, b, t)
+# Linear interpolation between a and b at parameter t
+# Example: math.lerp(0, 100, 0.5) -> 50.0
+
+# math.map_range(x, in_low, in_high, out_low, out_high)
+# Maps x from input range to output range
+# Example: math.map_range(5, 0, 10, 0, 100) -> 50.0
+
+# math.integrate(fn, a, b, steps)
+# Numerical integration of fn from a to b
+# Example: math.integrate(fn(x) return x * x, 0, 1, 1000) -> 0.333...
+
+# math.derivative(fn, x, h)
+# Numerical derivative of fn at x with step size h
+# Example: math.derivative(fn(x) return x * x, 3, 0.0001) -> 6.0
+
+# ── Utility ─────────────────────────────────────────────────────────────────
+
+# math.is_nan(x)       -> true if x is NaN
+# math.is_inf(x)       -> true if x is infinity
+# math.is_finite(x)    -> true if x is neither NaN nor infinity
+# math.is_even(x)      -> true if x is even
+# math.is_odd(x)       -> true if x is odd
+# math.approx(a, b, tolerance)  -> true if |a - b| < tolerance
