@@ -128,6 +128,7 @@ void print_usage() {
     std::cout << "  pyro tokens <file.ro>        Show lexer tokens\n";
     std::cout << "  pyro init                    Create pyro.toml\n";
     std::cout << "  pyro install <package>       Install a package\n";
+    std::cout << "  pyro update                  Update Pyro to latest version\n";
     std::cout << "  pyro version                 Show version info\n";
     std::cout << "  pyro help                    Show this help\n";
 }
@@ -766,6 +767,25 @@ int main(int argc, char* argv[]) {
 
     if (command == "help" || command == "--help" || command == "-h") {
         print_usage();
+        return 0;
+    }
+
+    if (command == "update") {
+        std::cout << "Updating Pyro..." << std::endl;
+#ifdef _WIN32
+        std::string cmd = "powershell -ExecutionPolicy Bypass -Command \""
+            "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; "
+            "$ProgressPreference = 'SilentlyContinue'; "
+            "$dest = (Get-Process -Id $PID).Path; "
+            "$tmp = \\\"$env:TEMP\\\\pyro_update.exe\\\"; "
+            "Invoke-WebRequest -Uri 'https://aravindlabs.tech/pyro-lang/bin/pyro-windows-x86_64.exe' -OutFile $tmp -UseBasicParsing; "
+            "Copy-Item $tmp $dest -Force; "
+            "Remove-Item $tmp -Force; "
+            "Write-Host 'Updated successfully!'\"";
+        std::system(cmd.c_str());
+#else
+        std::system("curl -fsSL https://aravindlabs.tech/pyro-lang/install.sh | bash");
+#endif
         return 0;
     }
 
