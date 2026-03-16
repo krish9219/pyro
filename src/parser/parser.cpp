@@ -776,6 +776,17 @@ ExprPtr Parser::parse_lambda() {
         }
     }
     expect(TokenType::RPAREN, "Expected ')'");
+
+    // Check if this is a block lambda (followed by newline+indent) or expression lambda (followed by =)
+    if (check(TokenType::NEWLINE) || check(TokenType::INDENT)) {
+        // Block lambda: fn() \n INDENT stmts DEDENT
+        std::vector<StmtPtr> body = parse_block();
+        BlockLambdaExpr lambda;
+        lambda.params = params;
+        lambda.body = std::move(body);
+        return std::make_shared<Expression>(std::move(lambda));
+    }
+
     expect(TokenType::ASSIGN, "Expected '=' in lambda expression");
 
     ExprPtr body = parse_expression();

@@ -1,0 +1,26 @@
+import test
+
+test.run("math basics", fn()
+    test.eq(2 + 2, 4)
+    test.eq(10 * 3, 30)
+    test.neq(1, 2)
+)
+
+test.run("comparisons", fn()
+    test.gt(10, 5)
+    test.lt(3, 8)
+    test.gte(5, 5)
+    test.lte(3, 5)
+    test.ok(true)
+)
+
+test.run("strings", fn()
+    test.eq("hello", "hello")
+    test.neq("hello", "world")
+)
+
+test.run("intentional fail", fn()
+    test.eq(1, 2)
+)
+
+test.summary()

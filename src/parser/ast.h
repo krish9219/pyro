@@ -80,6 +80,11 @@ struct LambdaExpr {
     ExprPtr body;
 };
 
+struct BlockLambdaExpr {
+    std::vector<std::pair<std::string, std::string>> params; // name, optional type
+    std::vector<StmtPtr> body;
+};
+
 struct ListCompExpr {
     ExprPtr element;       // the expression to produce (x * x)
     std::string var_name;  // iteration variable (x)
@@ -92,7 +97,7 @@ struct Expression {
         IntLiteral, FloatLiteral, StringLiteral, BoolLiteral, NilLiteral,
         Identifier, BinaryExpr, UnaryExpr, CallExpr, MemberExpr,
         IndexExpr, ListExpr, MapExpr, RangeExpr, AwaitExpr, LambdaExpr,
-        PipeExpr, StringInterpExpr, ListCompExpr
+        BlockLambdaExpr, PipeExpr, StringInterpExpr, ListCompExpr
     > node;
 
     template<typename T>

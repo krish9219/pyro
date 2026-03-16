@@ -1172,10 +1172,13 @@ TEST(codegen_test_import) {
     CodeGenerator codegen;
     std::string cpp = codegen.generate(program);
     ASSERT(cpp.find("namespace pyro_test") != std::string::npos);
-    ASSERT(cpp.find("void assert_true(") != std::string::npos);
-    ASSERT(cpp.find("void assert_eq(") != std::string::npos);
-    ASSERT(cpp.find("void describe(") != std::string::npos);
+    ASSERT(cpp.find("void eq(") != std::string::npos);
+    ASSERT(cpp.find("void neq(") != std::string::npos);
+    ASSERT(cpp.find("void ok(") != std::string::npos);
+    ASSERT(cpp.find("void run(") != std::string::npos);
     ASSERT(cpp.find("void summary()") != std::string::npos);
+    ASSERT(cpp.find("void gt(") != std::string::npos);
+    ASSERT(cpp.find("void lt(") != std::string::npos);
 }
 
 TEST(codegen_test_member) {

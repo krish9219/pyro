@@ -88,6 +88,28 @@ std::vector<pyro::StmtPtr> resolve_imports(
 #endif
             file.open(file_path);
         }
+        // Try pyro_modules directory
+        if (!file.is_open()) {
+            file_path = "pyro_modules/" + rel_path + "/main.ro";
+            file.open(file_path);
+        }
+        if (!file.is_open()) {
+            file_path = "pyro_modules/" + rel_path + "/" + rel_path + ".ro";
+            file.open(file_path);
+        }
+        if (!file.is_open()) {
+            // Search recursively in pyro_modules for the file
+            std::string search = rel_path + ".ro";
+            try {
+                for (const auto& e : fs::recursive_directory_iterator("pyro_modules")) {
+                    if (e.path().filename().string() == search) {
+                        file_path = e.path().string();
+                        file.open(file_path);
+                        break;
+                    }
+                }
+            } catch (...) {}
+        }
         if (!file.is_open()) {
             std::cerr << "Warning: Cannot find module '" << imp->module << "'\n";
             continue;
@@ -143,8 +165,10 @@ void print_usage() {
     std::cout << "  pyro tokens <file.ro>        Show lexer tokens\n";
     std::cout << "  pyro new <type> <name>       Create new project (webapp, api, cli)\n";
     std::cout << "  pyro init                    Create pyro.toml\n";
-    std::cout << "  pyro install <package>       Install a package\n";
+    std::cout << "  pyro install <package>       Install package from GitHub\n";
+    std::cout << "  pyro install                 Install all dependencies from pyro.toml\n";
     std::cout << "  pyro watch <file.ro>         Watch and auto-restart on changes\n";
+    std::cout << "  pyro deploy <platform> <file> Deploy (docker, binary)\n";
     std::cout << "  pyro update                  Update Pyro to latest version\n";
     std::cout << "  pyro version                 Show version info\n";
     std::cout << "  pyro help                    Show this help\n";
@@ -425,61 +449,122 @@ void cmd_init() {
 }
 
 void cmd_install(const std::string& package) {
-    fs::create_directories("pyro_packages");
-
-    std::string pkg_name = package;
-    std::string version = "latest";
-    auto at = package.find('@');
-    if (at != std::string::npos) {
-        pkg_name = package.substr(0, at);
-        version = package.substr(at + 1);
-    }
-
-    if (package.find("http") == 0 || package.find("github.com") != std::string::npos) {
-        std::string url = pkg_name;  // Use name without version
-        std::string dir_name = fs::path(url).stem().string();
-        std::string dest = "pyro_packages/" + dir_name;
-
-        if (fs::exists(dest)) {
-            std::cout << "Updating " << dir_name << "...\n";
-            std::system(("cd " + dest + " && git pull 2>&1").c_str());
-        } else {
-            std::cout << "Installing " << url << "...\n";
-            int ret = std::system(("git clone " + url + " " + dest + " 2>&1").c_str());
-            if (ret != 0) { std::cerr << "Failed to install\n"; return; }
-        }
-
-        // Write to lock file
-        std::ofstream lock("pyro.lock", std::ios::app);
-        lock << dir_name << " = " << version << " # " << url << "\n";
-
-        std::cout << "Installed " << dir_name << " (" << version << ")\n";
-    } else if (package == "--all" || package == ".") {
-        // Install all dependencies from pyro.toml
+    // If no package specified, install from pyro.toml
+    if (package.empty()) {
         if (!fs::exists("pyro.toml")) {
             std::cerr << "No pyro.toml found. Run 'pyro init' first.\n";
             return;
         }
-        std::ifstream f("pyro.toml"); std::string line;
+        std::ifstream tf("pyro.toml");
+        std::string line;
         bool in_deps = false;
-        while (std::getline(f, line)) {
-            if (line == "[dependencies]") { in_deps = true; continue; }
-            if (!line.empty() && line[0] == '[') { in_deps = false; continue; }
+        while (std::getline(tf, line)) {
+            if (line.find("[dependencies]") != std::string::npos) { in_deps = true; continue; }
+            if (line.find("[") != std::string::npos && in_deps) break;
             if (in_deps && !line.empty() && line[0] != '#') {
-                auto eq = line.find('=');
+                auto eq = line.find("=");
                 if (eq != std::string::npos) {
-                    std::string dep_url = line.substr(eq + 1);
-                    while (!dep_url.empty() && (dep_url[0]==' '||dep_url[0]=='"')) dep_url.erase(0,1);
-                    while (!dep_url.empty() && (dep_url.back()==' '||dep_url.back()=='"')) dep_url.pop_back();
-                    cmd_install(dep_url);
+                    std::string dep = line.substr(eq + 1);
+                    // Trim quotes and spaces
+                    while (!dep.empty() && (dep[0] == ' ' || dep[0] == '"')) dep.erase(0, 1);
+                    while (!dep.empty() && (dep.back() == ' ' || dep.back() == '"')) dep.pop_back();
+                    if (!dep.empty()) {
+                        cmd_install(dep); // Recursive install
+                    }
                 }
             }
         }
+        return;
+    }
+
+    fs::create_directories("pyro_modules");
+
+    std::string pkg = package;
+    std::string version = "";
+
+    // Parse version: github.com/user/repo@v1.0
+    auto at = pkg.find('@');
+    if (at != std::string::npos) {
+        version = pkg.substr(at + 1);
+        pkg = pkg.substr(0, at);
+    }
+
+    // Normalize URL
+    std::string url = pkg;
+    if (url.find("http") != 0 && url.find("github.com") != std::string::npos) {
+        url = "https://" + url;
+    } else if (url.find("http") != 0 && url.find("/") != std::string::npos) {
+        url = "https://github.com/" + url; // shorthand: user/repo
+    }
+
+    std::string repo_name = fs::path(url).stem().string();
+    std::string dest = "pyro_modules/" + repo_name;
+
+    if (fs::exists(dest)) {
+        std::cout << "Updating " << repo_name << "...\n";
+        std::system(("cd " + dest + " && git pull -q 2>&1").c_str());
+        if (!version.empty()) {
+            std::system(("cd " + dest + " && git checkout -q " + version + " 2>&1").c_str());
+        }
+        std::cout << "Updated " << repo_name << "\n";
     } else {
-        std::cout << "Usage:\n";
-        std::cout << "  pyro install <git-url>           Install from git\n";
-        std::cout << "  pyro install <git-url>@<version>  Install specific version\n";
-        std::cout << "  pyro install --all               Install all from pyro.toml\n";
+        std::cout << "Installing " << repo_name << "...\n";
+        std::string clone_cmd = "git clone -q";
+        if (!version.empty()) {
+            clone_cmd += " --branch " + version;
+        }
+        clone_cmd += " --depth 1 " + url + ".git " + dest + " 2>&1";
+        int ret = std::system(clone_cmd.c_str());
+        if (ret != 0) {
+            // Try without .git extension
+            clone_cmd = "git clone -q";
+            if (!version.empty()) clone_cmd += " --branch " + version;
+            clone_cmd += " --depth 1 " + url + " " + dest + " 2>&1";
+            ret = std::system(clone_cmd.c_str());
+        }
+        if (ret != 0) {
+            std::cerr << "Error: Failed to install " << pkg << "\n";
+            return;
+        }
+        std::cout << "Installed " << repo_name << "\n";
+    }
+
+    // Count .ro files
+    int ro_count = 0;
+    try {
+        for (const auto& e : fs::recursive_directory_iterator(dest)) {
+            if (e.path().extension() == ".ro") ro_count++;
+        }
+    } catch (...) {}
+    std::cout << "  " << ro_count << " .ro files found\n";
+
+    // Add to pyro.toml if it exists
+    if (fs::exists("pyro.toml")) {
+        std::ifstream check("pyro.toml");
+        std::string content((std::istreambuf_iterator<char>(check)), std::istreambuf_iterator<char>());
+        check.close();
+
+        if (content.find(repo_name) == std::string::npos) {
+            // Add dependency
+            if (content.find("[dependencies]") == std::string::npos) {
+                std::ofstream append("pyro.toml", std::ios::app);
+                append << "\n[dependencies]\n";
+                append << repo_name << " = \"" << pkg << (version.empty() ? "" : "@" + version) << "\"\n";
+            } else {
+                // Insert after [dependencies]
+                auto pos = content.find("[dependencies]");
+                auto next_section = content.find("[", pos + 1);
+                std::string insert = repo_name + " = \"" + pkg + (version.empty() ? "" : "@" + version) + "\"\n";
+                if (next_section != std::string::npos) {
+                    content.insert(next_section, insert);
+                } else {
+                    content += insert;
+                }
+                std::ofstream out("pyro.toml");
+                out << content;
+            }
+            std::cout << "  Added to pyro.toml\n";
+        }
     }
 }
 
@@ -1116,6 +1201,118 @@ void cmd_new(const std::string& type, const std::string& name) {
     }
 }
 
+void cmd_deploy(const std::string& platform, const std::string& source_path) {
+    std::string base = fs::path(source_path).stem().string();
+
+    if (platform == "docker" || platform == "--docker") {
+        // Generate Dockerfile
+        std::cout << "Generating Dockerfile...\n";
+
+        std::ofstream df("Dockerfile");
+        df << "# Generated by Pyro\n"
+           << "FROM gcc:latest AS builder\n"
+           << "WORKDIR /build\n"
+           << "COPY . .\n"
+           << "# Download and install Pyro\n"
+           << "RUN curl -fsSL https://aravindlabs.tech/pyro-lang/install.sh | bash\n"
+           << "RUN export PATH=\"$HOME/.pyro/bin:$PATH\" && pyro build " << source_path << "\n\n"
+           << "FROM debian:bookworm-slim\n"
+           << "WORKDIR /app\n"
+           << "COPY --from=builder /build/" << base << " /app/" << base << "\n";
+
+        // Copy static directories if they exist
+        if (fs::exists("pages")) df << "COPY pages/ /app/pages/\n";
+        if (fs::exists("static")) df << "COPY static/ /app/static/\n";
+        if (fs::exists("templates")) df << "COPY templates/ /app/templates/\n";
+
+        df << "EXPOSE 3000\n"
+           << "CMD [\"/app/" << base << "\"]\n";
+        df.close();
+
+        // Generate .dockerignore
+        std::ofstream di(".dockerignore");
+        di << "pyro_modules/\n"
+           << "build/\n"
+           << "*.cpp\n"
+           << "*.o\n"
+           << ".git/\n"
+           << "Dockerfile\n"
+           << ".dockerignore\n";
+        di.close();
+
+        std::cout << "Created Dockerfile and .dockerignore\n\n";
+        std::cout << "Build and run:\n";
+        std::cout << "  docker build -t " << base << " .\n";
+        std::cout << "  docker run -p 3000:3000 " << base << "\n";
+
+        // Try to build the image if docker is available
+#ifdef _WIN32
+        if (std::system("where docker > NUL 2>&1") == 0) {
+#else
+        if (std::system("which docker > /dev/null 2>&1") == 0) {
+#endif
+            std::cout << "\nDocker found! Building image...\n";
+            int ret = std::system(("docker build -t " + base + " . 2>&1").c_str());
+            if (ret == 0) {
+                std::cout << "\nImage built: " << base << "\n";
+                std::cout << "Run: docker run -p 3000:3000 " << base << "\n";
+            }
+        }
+
+    } else if (platform == "binary" || platform == "--binary") {
+        std::cout << "Building production binary...\n";
+
+        std::string source = read_source(source_path);
+        std::string cpp_code = compile_to_cpp(source, source_path);
+
+        std::string tmp_cpp = get_temp_dir() + "pyro_deploy_" + base + ".cpp";
+#ifdef _WIN32
+        std::string output = base + ".exe";
+#else
+        std::string output = base;
+#endif
+
+        std::ofstream tmp(tmp_cpp);
+        tmp << cpp_code;
+        tmp.close();
+
+        std::string compiler = detect_compiler();
+        std::string cmd = compiler + " -std=c++20 -O3 -DNDEBUG -o " + output + " " + tmp_cpp + detect_link_flags(cpp_code);
+#ifdef _WIN32
+        cmd += " -static -static-libgcc -static-libstdc++";
+#else
+        cmd += " -static-libgcc -static-libstdc++";
+#endif
+        cmd += " 2>&1";
+
+        std::cout << "Compiling with maximum optimizations (-O3)...\n";
+        int ret = std::system(cmd.c_str());
+        fs::remove(tmp_cpp);
+
+        if (ret != 0) {
+            std::cerr << "Build failed.\n";
+            return;
+        }
+
+        auto size = fs::file_size(output);
+        std::cout << "Built: " << output << " (" << (size / 1024) << " KB)\n";
+        std::cout << "\nThis binary is fully self-contained.\n";
+        std::cout << "Copy it to any machine and run it directly.\n";
+        if (fs::exists("pages") || fs::exists("static")) {
+            std::cout << "\nNote: Copy the pages/ and static/ folders alongside the binary.\n";
+        }
+
+    } else {
+        std::cout << "Usage: pyro deploy <platform> <file.ro>\n\n";
+        std::cout << "Platforms:\n";
+        std::cout << "  docker    Generate Dockerfile and build image\n";
+        std::cout << "  binary    Build optimized production binary (-O3, static linked)\n";
+        std::cout << "\nExamples:\n";
+        std::cout << "  pyro deploy docker server.ro\n";
+        std::cout << "  pyro deploy binary server.ro\n";
+    }
+}
+
 int main(int argc, char* argv[]) {
     if (argc < 2) {
         cmd_repl();
@@ -1171,6 +1368,25 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
+    if (command == "deploy") {
+        if (argc < 3) {
+            cmd_deploy("", "");
+            return 0;
+        }
+        if (argc == 3) {
+            // Could be: pyro deploy docker (no file - show help)
+            // or: pyro deploy server.ro (default deploy)
+            if (fs::exists(argv[2])) {
+                cmd_deploy("binary", argv[2]);
+            } else {
+                cmd_deploy(argv[2], "");
+            }
+            return 0;
+        }
+        cmd_deploy(argv[2], argv[3]);
+        return 0;
+    }
+
     if (command == "new") {
         if (argc < 3) {
             std::cerr << "Usage: pyro new <type> <name>\n";
@@ -1195,8 +1411,8 @@ int main(int argc, char* argv[]) {
 
     if (command == "install") {
         if (argc < 3) {
-            std::cerr << "Usage: pyro install <package-or-url>\n";
-            return 1;
+            cmd_install(""); // Install from pyro.toml
+            return 0;
         }
         cmd_install(argv[2]);
         return 0;
