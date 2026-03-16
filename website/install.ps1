@@ -1,12 +1,21 @@
 # Pyro Programming Language - Windows Installer
 # P.Y.R.O - Performance You Really Own
 # Created by Aravind Pilla
+#
+# This script handles EVERYTHING automatically:
+# 1. Installs Git (if missing)
+# 2. Installs CMake (if missing)
+# 3. Installs Visual Studio Build Tools + C++ workload (if missing)
+# 4. Clones, builds, and installs Pyro
+# 5. Adds to PATH
 
 $ErrorActionPreference = "Continue"
 
 Write-Host ""
-Write-Host "  Pyro Installer for Windows" -ForegroundColor Yellow
-Write-Host "  P.Y.R.O - Performance You Really Own" -ForegroundColor DarkYellow
+Write-Host "  ========================================" -ForegroundColor DarkYellow
+Write-Host "    Pyro Installer for Windows" -ForegroundColor Yellow
+Write-Host "    P.Y.R.O - Performance You Really Own" -ForegroundColor DarkYellow
+Write-Host "  ========================================" -ForegroundColor DarkYellow
 Write-Host ""
 
 $REPO = "krish9219/pyro"
@@ -17,76 +26,150 @@ if (-not (Test-Path $INSTALL_DIR)) {
     New-Item -ItemType Directory -Force -Path $INSTALL_DIR | Out-Null
 }
 
-# Check if git is available
+# ============================================
+# STEP 1: Check and install Git
+# ============================================
+Write-Host "  [1/5] Checking Git..." -ForegroundColor Cyan
 $hasGit = Get-Command git -ErrorAction SilentlyContinue
-if (-not $hasGit) {
-    Write-Host "  Installing Git..." -ForegroundColor Cyan
+if ($hasGit) {
+    Write-Host "        Found: $(git --version)" -ForegroundColor Green
+} else {
+    Write-Host "        Installing Git..." -ForegroundColor Yellow
     winget install Git.Git --accept-source-agreements --accept-package-agreements -h
     $env:PATH += ";C:\Program Files\Git\bin"
+    Write-Host "        Git installed." -ForegroundColor Green
 }
 
-# Check if cmake is available
+# ============================================
+# STEP 2: Check and install CMake
+# ============================================
+Write-Host "  [2/5] Checking CMake..." -ForegroundColor Cyan
 $hasCmake = Get-Command cmake -ErrorAction SilentlyContinue
 if (-not $hasCmake) {
-    $cmakePath = "C:\Program Files\CMake\bin"
-    if (Test-Path "$cmakePath\cmake.exe") {
-        $env:PATH += ";$cmakePath"
+    # Check common install location
+    if (Test-Path "C:\Program Files\CMake\bin\cmake.exe") {
+        $env:PATH += ";C:\Program Files\CMake\bin"
         $hasCmake = $true
     }
 }
-if (-not $hasCmake) {
-    Write-Host "  Installing CMake..." -ForegroundColor Cyan
+if ($hasCmake) {
+    Write-Host "        Found: $(cmake --version | Select-Object -First 1)" -ForegroundColor Green
+} else {
+    Write-Host "        Installing CMake..." -ForegroundColor Yellow
     winget install Kitware.CMake --accept-source-agreements --accept-package-agreements -h
     $env:PATH += ";C:\Program Files\CMake\bin"
+    Write-Host "        CMake installed." -ForegroundColor Green
 }
 
-# Check for Visual Studio Build Tools
+# ============================================
+# STEP 3: Check and install C++ compiler
+# ============================================
+Write-Host "  [3/5] Checking C++ compiler..." -ForegroundColor Cyan
+
+# Find vswhere
 $hasVS = $false
 $vsWherePath = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
 if (Test-Path $vsWherePath) {
     $vsPath = & $vsWherePath -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath 2>$null
-    if ($vsPath) { $hasVS = $true }
+    if ($vsPath) {
+        $hasVS = $true
+        Write-Host "        Found: Visual Studio C++ at $vsPath" -ForegroundColor Green
+    }
 }
 
-# Check for MinGW g++
+# Check MinGW as alternative
 $hasGpp = Get-Command g++ -ErrorAction SilentlyContinue
+if ($hasGpp) {
+    Write-Host "        Found: $(g++ --version | Select-Object -First 1)" -ForegroundColor Green
+}
 
 if (-not $hasVS -and -not $hasGpp) {
-    Write-Host "  No C++ compiler found." -ForegroundColor Yellow
-    Write-Host "  Installing Visual Studio Build Tools..." -ForegroundColor Cyan
-    Write-Host "  This may take several minutes." -ForegroundColor Gray
-    winget install Microsoft.VisualStudio.2022.BuildTools --override "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --quiet" --accept-source-agreements --accept-package-agreements -h
+    Write-Host "        No C++ compiler found. Installing..." -ForegroundColor Yellow
     Write-Host ""
-    Write-Host "  Visual Studio Build Tools installed." -ForegroundColor Green
-    Write-Host "  Please RESTART PowerShell and run this script again." -ForegroundColor Yellow
+    Write-Host "        This installs Visual Studio Build Tools with C++ support." -ForegroundColor Gray
+    Write-Host "        It may take 5-10 minutes. Please be patient." -ForegroundColor Gray
     Write-Host ""
-    Read-Host "  Press Enter to close"
-    return
+
+    # First install the base Build Tools
+    $setupExe = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\setup.exe"
+    if (Test-Path $setupExe) {
+        # Build Tools installer exists, just add C++ workload
+        Write-Host "        Adding C++ workload to existing Build Tools..." -ForegroundColor Yellow
+        $installPath = "${env:ProgramFiles}\Microsoft Visual Studio\2022\BuildTools"
+        Start-Process $setupExe -ArgumentList "modify --installPath `"$installPath`" --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --quiet --wait" -Wait
+    } else {
+        # No installer at all, use winget
+        Write-Host "        Installing Visual Studio Build Tools + C++..." -ForegroundColor Yellow
+        winget install Microsoft.VisualStudio.2022.BuildTools --override "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --quiet --wait" --accept-source-agreements --accept-package-agreements
+    }
+
+    # Verify it worked
+    Start-Sleep -Seconds 3
+    if (Test-Path $vsWherePath) {
+        $vsPath = & $vsWherePath -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath 2>$null
+        if ($vsPath) {
+            $hasVS = $true
+            Write-Host "        C++ compiler installed successfully!" -ForegroundColor Green
+        }
+    }
+
+    if (-not $hasVS) {
+        Write-Host ""
+        Write-Host "        C++ compiler installation may need a restart." -ForegroundColor Yellow
+        Write-Host "        Please:" -ForegroundColor Yellow
+        Write-Host "          1. Close this window" -ForegroundColor White
+        Write-Host "          2. Restart your computer" -ForegroundColor White
+        Write-Host "          3. Run this installer again" -ForegroundColor White
+        Write-Host ""
+        Read-Host "  Press Enter to close"
+        return
+    }
 }
 
-Write-Host "  Cloning Pyro..." -ForegroundColor Cyan
+# ============================================
+# STEP 4: Clone and Build Pyro
+# ============================================
+Write-Host "  [4/5] Building Pyro..." -ForegroundColor Cyan
+
 $buildDir = "$env:TEMP\pyro-build"
 if (Test-Path $buildDir) {
     Remove-Item -Recurse -Force $buildDir
 }
+
+Write-Host "        Cloning repository..." -ForegroundColor Gray
 git clone --depth 1 "https://github.com/$REPO.git" $buildDir 2>&1 | Out-Null
 
-Write-Host "  Building Pyro..." -ForegroundColor Cyan
 Push-Location $buildDir
 $bld = "$buildDir\build"
-if (-not (Test-Path $bld)) {
-    New-Item -ItemType Directory -Force -Path $bld | Out-Null
-}
+New-Item -ItemType Directory -Force -Path $bld | Out-Null
 Set-Location $bld
 
 $exePath = $null
 if ($hasVS) {
-    Write-Host "  Using Visual Studio compiler..." -ForegroundColor Gray
-    cmake .. -G "Visual Studio 17 2022" -DCMAKE_BUILD_TYPE=Release 2>&1 | Out-Null
-    cmake --build . --config Release 2>&1 | Out-Null
-    $exePath = "$bld\Release\pyro.exe"
+    # Find vcvarsall.bat to set up the compiler environment
+    $vcvarsPath = & $vsWherePath -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -find "VC\Auxiliary\Build\vcvarsall.bat" 2>$null
+    if ($vcvarsPath) {
+        Write-Host "        Configuring Visual Studio environment..." -ForegroundColor Gray
+        # Use cmd to run vcvarsall and then cmake
+        $cmdScript = "@echo off`r`ncall `"$vcvarsPath`" x64 >nul 2>&1`r`ncmake .. -DCMAKE_BUILD_TYPE=Release >nul 2>&1`r`ncmake --build . --config Release"
+        $cmdFile = "$bld\build_pyro.bat"
+        Set-Content -Path $cmdFile -Value $cmdScript
+        Write-Host "        Compiling (this takes 1-2 minutes)..." -ForegroundColor Gray
+        $process = Start-Process "cmd.exe" -ArgumentList "/c $cmdFile" -WorkingDirectory $bld -Wait -NoNewWindow -PassThru
+        $exePath = "$bld\Release\pyro.exe"
+        if (-not (Test-Path $exePath)) {
+            $exePath = "$bld\pyro.exe"
+        }
+    } else {
+        # Fallback: try cmake directly with VS generator
+        Write-Host "        Configuring with CMake..." -ForegroundColor Gray
+        cmake .. -G "Visual Studio 17 2022" -DCMAKE_BUILD_TYPE=Release 2>&1 | Out-Null
+        Write-Host "        Compiling (this takes 1-2 minutes)..." -ForegroundColor Gray
+        cmake --build . --config Release 2>&1 | Out-Null
+        $exePath = "$bld\Release\pyro.exe"
+    }
 } elseif ($hasGpp) {
-    Write-Host "  Using MinGW compiler..." -ForegroundColor Gray
+    Write-Host "        Using MinGW..." -ForegroundColor Gray
     cmake .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release 2>&1 | Out-Null
     cmake --build . 2>&1 | Out-Null
     $exePath = "$bld\pyro.exe"
@@ -94,11 +177,15 @@ if ($hasVS) {
 
 if ($exePath -and (Test-Path $exePath)) {
     Copy-Item $exePath "$INSTALL_DIR\pyro.exe" -Force
-    Write-Host "  Built successfully!" -ForegroundColor Green
+    Write-Host "        Build successful!" -ForegroundColor Green
 } else {
+    Write-Host ""
     Write-Host "  Build failed." -ForegroundColor Red
-    Write-Host "  Make sure Visual Studio Build Tools with C++ workload are installed." -ForegroundColor Yellow
-    Write-Host "  Then restart PowerShell and try again." -ForegroundColor Yellow
+    Write-Host "  Try using 'Developer Command Prompt for VS 2022' instead:" -ForegroundColor Yellow
+    Write-Host "    cd $env:USERPROFILE\pyro\build" -ForegroundColor White
+    Write-Host "    cmake .." -ForegroundColor White
+    Write-Host "    cmake --build . --config Release" -ForegroundColor White
+    Write-Host ""
     Pop-Location
     Read-Host "  Press Enter to close"
     return
@@ -107,28 +194,37 @@ if ($exePath -and (Test-Path $exePath)) {
 Pop-Location
 Remove-Item -Recurse -Force $buildDir -ErrorAction SilentlyContinue
 
-# Add to PATH
+# ============================================
+# STEP 5: Add to PATH
+# ============================================
+Write-Host "  [5/5] Setting up PATH..." -ForegroundColor Cyan
 $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
 if (-not ($userPath -like "*.pyro*")) {
     [Environment]::SetEnvironmentVariable("Path", "$userPath;$INSTALL_DIR", "User")
     $env:PATH += ";$INSTALL_DIR"
-    Write-Host "  Added to PATH" -ForegroundColor Green
+    Write-Host "        Added to PATH." -ForegroundColor Green
+} else {
+    Write-Host "        Already in PATH." -ForegroundColor Green
 }
 
-# Verify
+# ============================================
+# DONE
+# ============================================
+Write-Host ""
+Write-Host "  ========================================" -ForegroundColor Green
+Write-Host "    Pyro installed successfully!" -ForegroundColor Green
+Write-Host "  ========================================" -ForegroundColor Green
 Write-Host ""
 try {
     & "$INSTALL_DIR\pyro.exe" version
 } catch {
-    Write-Host "  Warning: Could not verify installation" -ForegroundColor Yellow
+    Write-Host "  Installed to: $INSTALL_DIR\pyro.exe" -ForegroundColor Gray
 }
 Write-Host ""
-Write-Host "  Pyro installed successfully!" -ForegroundColor Green
-Write-Host "  Location: $INSTALL_DIR" -ForegroundColor Gray
-Write-Host ""
-Write-Host "  Try it:" -ForegroundColor Cyan
+Write-Host "  Quick start:" -ForegroundColor Cyan
+Write-Host '    echo "print(""Hello from Pyro!"")" > hello.ro' -ForegroundColor White
 Write-Host "    pyro run hello.ro" -ForegroundColor White
 Write-Host ""
-Write-Host "  Restart PowerShell for PATH to take effect." -ForegroundColor Yellow
+Write-Host "  Restart PowerShell for PATH changes." -ForegroundColor Yellow
 Write-Host ""
 Read-Host "  Press Enter to close"
