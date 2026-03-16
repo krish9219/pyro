@@ -8,7 +8,7 @@ import ssl
 
 NVIDIA_API_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
 NVIDIA_API_KEY = "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"
-NVIDIA_MODEL = "z-ai/glm4.7"
+NVIDIA_MODEL = "meta/llama-3.3-70b-instruct"
 PORT = 9877
 
 class ChatHandler(BaseHTTPRequestHandler):

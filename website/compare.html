@@ -8,6 +8,24 @@
   <link rel="stylesheet" href="css/style.css">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔥</text></svg>">
   <style>
+    .pyro-tagline { text-align: center; font-size: 1.2rem; color: var(--accent); font-weight: 700; letter-spacing: 2px; margin-bottom: 8px; }
+    .pyro-tagline-sub { text-align: center; font-size: 0.95rem; color: var(--text-secondary); margin-bottom: 40px; }
+
+    .compare-controls { display: flex; gap: 16px; align-items: center; justify-content: center; flex-wrap: wrap; margin: 0 0 32px; padding: 24px; background: var(--bg-card); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; }
+    .compare-controls label { font-weight: 600; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 4px; display: block; }
+    .compare-controls select {
+      background: var(--bg-primary); color: var(--text-primary); border: 1px solid rgba(255,255,255,0.15);
+      padding: 10px 14px; border-radius: 8px; font-size: 0.95rem; font-family: inherit; cursor: pointer; min-width: 160px;
+    }
+    .compare-controls select:disabled { opacity: 0.5; cursor: not-allowed; }
+    .compare-controls select:focus { border-color: var(--accent); outline: none; }
+    .compare-btn {
+      background: var(--accent); color: #fff; border: none; padding: 12px 32px; border-radius: 8px;
+      font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.2s, transform 0.1s; align-self: flex-end;
+    }
+    .compare-btn:hover { background: #e55a2b; }
+    .compare-btn:active { transform: scale(0.96); }
+
     .compare-table { width: 100%; border-collapse: collapse; margin: 32px 0; font-size: 0.9rem; }
     .compare-table th, .compare-table td { padding: 12px 16px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.06); }
     .compare-table th { background: var(--bg-card); color: var(--accent); font-weight: 600; position: sticky; top: 0; z-index: 2; }
@@ -21,6 +39,7 @@
     .score-6 { color: #e74c3c; }
     .score-low { color: #c0392b; }
     .overall-row td { border-top: 2px solid var(--accent); font-weight: 700; font-size: 1.05rem; }
+    .row-winner { text-decoration: underline; text-underline-offset: 3px; }
     .table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); }
     .legend { display: flex; gap: 20px; flex-wrap: wrap; margin: 16px 0 32px; font-size: 0.85rem; color: var(--text-secondary); }
     .legend span { display: flex; align-items: center; gap: 6px; }
@@ -36,11 +55,17 @@
     .vs-code { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 12px 0; }
     .vs-code pre { background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; font-size: 0.82rem; margin: 0; overflow-x: auto; }
     .vs-code .label { font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 4px; font-weight: 600; }
+
+    #comparison-result { display: none; }
+    #comparison-result.visible { display: block; }
+
     @media (max-width: 768px) {
       .compare-table { font-size: 0.8rem; }
       .compare-table th, .compare-table td { padding: 8px 10px; }
       .vs-code { grid-template-columns: 1fr; }
       .vs-grid { grid-template-columns: 1fr; }
+      .compare-controls { flex-direction: column; align-items: stretch; }
+      .compare-controls select { min-width: auto; width: 100%; }
     }
   </style>
 </head>
@@ -67,236 +92,46 @@
     <div class="section-header">
       <h1>Pyro vs <span class="text-gradient">The World</span></h1>
     </div>
+    <div class="pyro-tagline">P.Y.R.O &mdash; Performance You Really Own</div>
     <p class="section-intro">
-      An honest, category-by-category comparison of Pyro against the 10 most popular programming languages in the world.
-      Scored 1-10 in each category. Community excluded since Pyro is new.
+      An honest, category-by-category comparison of Pyro against 18 programming languages.
+      Select up to two languages to compare side-by-side with Pyro. Scored 1-10 in each category.
     </p>
 
+    <!-- Dropdown Controls -->
+    <div class="compare-controls">
+      <div>
+        <label for="lang1">Language 1</label>
+        <select id="lang1" disabled>
+          <option value="pyro">Pyro (locked)</option>
+        </select>
+      </div>
+      <div>
+        <label for="lang2">Language 2</label>
+        <select id="lang2"></select>
+      </div>
+      <div>
+        <label for="lang3">Language 3</label>
+        <select id="lang3"></select>
+      </div>
+      <button class="compare-btn" onclick="runComparison()">Compare</button>
+    </div>
+
     <div class="legend">
-      <span><span class="legend-dot" style="background:#2ecc71"></span> 10 — Best in class</span>
-      <span><span class="legend-dot" style="background:#a8e6a3"></span> 9 — Excellent</span>
-      <span><span class="legend-dot" style="background:#f1c40f"></span> 8 — Great</span>
-      <span><span class="legend-dot" style="background:#e67e22"></span> 7 — Good</span>
+      <span><span class="legend-dot" style="background:#2ecc71"></span> 10 &mdash; Best in class</span>
+      <span><span class="legend-dot" style="background:#a8e6a3"></span> 9 &mdash; Excellent</span>
+      <span><span class="legend-dot" style="background:#f1c40f"></span> 8 &mdash; Great</span>
+      <span><span class="legend-dot" style="background:#e67e22"></span> 7 &mdash; Good</span>
       <span><span class="legend-dot" style="background:#e74c3c"></span> 6 or below</span>
     </div>
 
-    <div class="table-wrap">
-      <table class="compare-table">
-        <thead>
-          <tr>
-            <th>Category</th>
-            <th class="pyro-col">🔥 Pyro</th>
-            <th>Python</th>
-            <th>JavaScript</th>
-            <th>Java</th>
-            <th>C++</th>
-            <th>Go</th>
-            <th>Rust</th>
-            <th>TypeScript</th>
-            <th>C#</th>
-            <th>Kotlin</th>
-            <th>Swift</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Syntax Simplicity</td>
-            <td class="pyro-col score-10">10</td>
-            <td class="score-8">8</td>
-            <td class="score-7">7</td>
-            <td class="score-low">4</td>
-            <td class="score-low">3</td>
-            <td class="score-7">7</td>
-            <td class="score-low">5</td>
-            <td class="score-7">7</td>
-            <td class="score-low">5</td>
-            <td class="score-7">7</td>
-            <td class="score-7">7</td>
-          </tr>
-          <tr>
-            <td>Execution Speed</td>
-            <td class="pyro-col score-10">10</td>
-            <td class="score-low">3</td>
-            <td class="score-6">6</td>
-            <td class="score-7">7</td>
-            <td class="score-10">10</td>
-            <td class="score-8">8</td>
-            <td class="score-10">10</td>
-            <td class="score-6">6</td>
-            <td class="score-7">7</td>
-            <td class="score-7">7</td>
-            <td class="score-8">8</td>
-          </tr>
-          <tr>
-            <td>Standard Library</td>
-            <td class="pyro-col score-10">10</td>
-            <td class="score-10">10</td>
-            <td class="score-8">8</td>
-            <td class="score-9">9</td>
-            <td class="score-6">6</td>
-            <td class="score-9">9</td>
-            <td class="score-7">7</td>
-            <td class="score-8">8</td>
-            <td class="score-9">9</td>
-            <td class="score-8">8</td>
-            <td class="score-8">8</td>
-          </tr>
-          <tr>
-            <td>Error Handling</td>
-            <td class="pyro-col score-10">10</td>
-            <td class="score-8">8</td>
-            <td class="score-7">7</td>
-            <td class="score-8">8</td>
-            <td class="score-6">6</td>
-            <td class="score-7">7</td>
-            <td class="score-10">10</td>
-            <td class="score-7">7</td>
-            <td class="score-8">8</td>
-            <td class="score-8">8</td>
-            <td class="score-8">8</td>
-          </tr>
-          <tr>
-            <td>Built-in Security</td>
-            <td class="pyro-col score-10">10</td>
-            <td class="score-low">5</td>
-            <td class="score-6">6</td>
-            <td class="score-7">7</td>
-            <td class="score-low">5</td>
-            <td class="score-7">7</td>
-            <td class="score-9">9</td>
-            <td class="score-6">6</td>
-            <td class="score-7">7</td>
-            <td class="score-7">7</td>
-            <td class="score-7">7</td>
-          </tr>
-          <tr>
-            <td>Web Development</td>
-            <td class="pyro-col score-10">10</td>
-            <td class="score-8">8</td>
-            <td class="score-10">10</td>
-            <td class="score-8">8</td>
-            <td class="score-low">3</td>
-            <td class="score-10">10</td>
-            <td class="score-7">7</td>
-            <td class="score-10">10</td>
-            <td class="score-8">8</td>
-            <td class="score-8">8</td>
-            <td class="score-6">6</td>
-          </tr>
-          <tr>
-            <td>Data Science</td>
-            <td class="pyro-col score-10">10</td>
-            <td class="score-10">10</td>
-            <td class="score-low">3</td>
-            <td class="score-low">5</td>
-            <td class="score-low">3</td>
-            <td class="score-low">3</td>
-            <td class="score-low">5</td>
-            <td class="score-low">3</td>
-            <td class="score-low">5</td>
-            <td class="score-low">5</td>
-            <td class="score-low">4</td>
-          </tr>
-          <tr>
-            <td>Tooling</td>
-            <td class="pyro-col score-10">10</td>
-            <td class="score-9">9</td>
-            <td class="score-9">9</td>
-            <td class="score-9">9</td>
-            <td class="score-8">8</td>
-            <td class="score-10">10</td>
-            <td class="score-10">10</td>
-            <td class="score-9">9</td>
-            <td class="score-9">9</td>
-            <td class="score-9">9</td>
-            <td class="score-9">9</td>
-          </tr>
-          <tr>
-            <td>Concurrency</td>
-            <td class="pyro-col score-10">10</td>
-            <td class="score-6">6</td>
-            <td class="score-8">8</td>
-            <td class="score-7">7</td>
-            <td class="score-6">6</td>
-            <td class="score-10">10</td>
-            <td class="score-9">9</td>
-            <td class="score-8">8</td>
-            <td class="score-8">8</td>
-            <td class="score-8">8</td>
-            <td class="score-8">8</td>
-          </tr>
-          <tr>
-            <td>Type System</td>
-            <td class="pyro-col score-9">9</td>
-            <td class="score-6">6</td>
-            <td class="score-low">4</td>
-            <td class="score-8">8</td>
-            <td class="score-8">8</td>
-            <td class="score-7">7</td>
-            <td class="score-10">10</td>
-            <td class="score-9">9</td>
-            <td class="score-8">8</td>
-            <td class="score-9">9</td>
-            <td class="score-9">9</td>
-          </tr>
-          <tr>
-            <td>Learning Curve</td>
-            <td class="pyro-col score-10">10</td>
-            <td class="score-9">9</td>
-            <td class="score-7">7</td>
-            <td class="score-low">5</td>
-            <td class="score-low">3</td>
-            <td class="score-7">7</td>
-            <td class="score-low">4</td>
-            <td class="score-7">7</td>
-            <td class="score-6">6</td>
-            <td class="score-7">7</td>
-            <td class="score-7">7</td>
-          </tr>
-          <tr>
-            <td>Language Features</td>
-            <td class="pyro-col score-10">10</td>
-            <td class="score-8">8</td>
-            <td class="score-7">7</td>
-            <td class="score-6">6</td>
-            <td class="score-8">8</td>
-            <td class="score-6">6</td>
-            <td class="score-9">9</td>
-            <td class="score-8">8</td>
-            <td class="score-8">8</td>
-            <td class="score-9">9</td>
-            <td class="score-8">8</td>
-          </tr>
-          <tr>
-            <td>No External Deps</td>
-            <td class="pyro-col score-10">10</td>
-            <td class="score-low">4</td>
-            <td class="score-low">3</td>
-            <td class="score-low">5</td>
-            <td class="score-low">5</td>
-            <td class="score-8">8</td>
-            <td class="score-low">5</td>
-            <td class="score-low">3</td>
-            <td class="score-low">5</td>
-            <td class="score-low">5</td>
-            <td class="score-low">5</td>
-          </tr>
-          <tr class="overall-row">
-            <td>OVERALL (avg)</td>
-            <td class="pyro-col score-10">9.9</td>
-            <td class="score-7">7.2</td>
-            <td class="score-6">6.5</td>
-            <td class="score-7">6.8</td>
-            <td class="score-low">5.7</td>
-            <td class="score-7">7.5</td>
-            <td class="score-8">8.0</td>
-            <td class="score-7">6.8</td>
-            <td class="score-7">7.2</td>
-            <td class="score-7">7.5</td>
-            <td class="score-7">7.2</td>
-          </tr>
-        </tbody>
-      </table>
+    <div id="comparison-result">
+      <div class="table-wrap">
+        <table class="compare-table" id="compare-table">
+          <thead id="compare-thead"></thead>
+          <tbody id="compare-tbody"></tbody>
+        </table>
+      </div>
     </div>
 
     <!-- Side-by-side code comparisons -->
@@ -319,7 +154,7 @@ scores = [95, 87, 92]</code></pre></div>
       <div class="vs-card">
         <h3>Functions</h3>
         <div class="vs-code">
-          <div><div class="label winner">Pyro — 2 chars shorter</div><pre><code>fn greet(name)
+          <div><div class="label winner">Pyro &mdash; 2 chars shorter</div><pre><code>fn greet(name)
     return "Hello {name}"
 
 fn double(x) = x * 2</code></pre></div>
@@ -334,7 +169,7 @@ double = lambda x: x * 2</code></pre></div>
       <div class="vs-card">
         <h3>Loops</h3>
         <div class="vs-code">
-          <div><div class="label winner">Pyro — no range(), no colon</div><pre><code>for i in 0..10
+          <div><div class="label winner">Pyro &mdash; no range(), no colon</div><pre><code>for i in 0..10
     print(i)
 
 for item in list
@@ -350,9 +185,9 @@ for item in list:
       <div class="vs-card">
         <h3>Pipe Operator</h3>
         <div class="vs-code">
-          <div><div class="label winner">Pyro — left-to-right</div><pre><code>result = 5 |> double |> add_ten
+          <div><div class="label winner">Pyro &mdash; left-to-right</div><pre><code>result = 5 |> double |> add_ten
 data |> transform |> validate |> save</code></pre></div>
-          <div><div class="label loser">Python — inside-out nesting</div><pre><code>result = add_ten(double(5))
+          <div><div class="label loser">Python &mdash; inside-out nesting</div><pre><code>result = add_ten(double(5))
 save(validate(transform(data)))</code></pre></div>
         </div>
       </div>
@@ -360,9 +195,9 @@ save(validate(transform(data)))</code></pre></div>
       <div class="vs-card">
         <h3>String Interpolation</h3>
         <div class="vs-code">
-          <div><div class="label winner">Pyro — no f-prefix</div><pre><code>msg = "Hello {name}, age {age}"
+          <div><div class="label winner">Pyro &mdash; no f-prefix</div><pre><code>msg = "Hello {name}, age {age}"
 print("Sum: {a + b}")</code></pre></div>
-          <div><div class="label">Python — needs f""</div><pre><code>msg = f"Hello {name}, age {age}"
+          <div><div class="label">Python &mdash; needs f""</div><pre><code>msg = f"Hello {name}, age {age}"
 print(f"Sum: {a + b}")</code></pre></div>
         </div>
       </div>
@@ -370,11 +205,11 @@ print(f"Sum: {a + b}")</code></pre></div>
       <div class="vs-card">
         <h3>Web Server</h3>
         <div class="vs-code">
-          <div><div class="label winner">Pyro — built-in, 5 lines</div><pre><code>import web
+          <div><div class="label winner">Pyro &mdash; built-in, 5 lines</div><pre><code>import web
 app = web.app()
 app.get("/", fn(r) = web.html("Hi!"))
 app.listen(8080)</code></pre></div>
-          <div><div class="label loser">Python — needs pip install</div><pre><code>from flask import Flask # pip install flask
+          <div><div class="label loser">Python &mdash; needs pip install</div><pre><code>from flask import Flask # pip install flask
 app = Flask(__name__)
 @app.route("/")
 def home(): return "Hi!"
@@ -385,11 +220,11 @@ app.run(port=8080)</code></pre></div>
       <div class="vs-card">
         <h3>Crypto / Security</h3>
         <div class="vs-code">
-          <div><div class="label winner">Pyro — real OpenSSL built-in</div><pre><code>import crypto
+          <div><div class="label winner">Pyro &mdash; real OpenSSL built-in</div><pre><code>import crypto
 hash = crypto.sha256("data")
 encrypted = crypto.encrypt("secret", "key")
 token = crypto.uuid()</code></pre></div>
-          <div><div class="label loser">Python — needs pip install</div><pre><code># pip install cryptography pyjwt
+          <div><div class="label loser">Python &mdash; needs pip install</div><pre><code># pip install cryptography pyjwt
 from cryptography.fernet import Fernet
 import hashlib
 h = hashlib.sha256(b"data").hexdigest()</code></pre></div>
@@ -399,7 +234,7 @@ h = hashlib.sha256(b"data").hexdigest()</code></pre></div>
       <div class="vs-card">
         <h3>Error Handling</h3>
         <div class="vs-code">
-          <div><div class="label winner">Pyro — try/catch/finally + Result</div><pre><code>try
+          <div><div class="label winner">Pyro &mdash; try/catch/finally + Result</div><pre><code>try
     result = risky()
 catch err
     print("Error: {err}")
@@ -421,39 +256,24 @@ finally:
       </div>
     </div>
 
-    <!-- Why Pyro Wins -->
-    <div class="highlight-box">
-      <h3>Why Pyro Scores Higher Than Every Language</h3>
-      <ul style="color:var(--text-secondary);line-height:2;padding-left:20px;">
-        <li><strong>vs Python:</strong> Same simplicity + 10-100x faster + 76 built-in modules (no pip) + pipe operator + immutable by default</li>
-        <li><strong>vs JavaScript/TypeScript:</strong> Simpler syntax + native speed + real crypto + no node_modules</li>
-        <li><strong>vs Java:</strong> 23 keywords vs 67 + no boilerplate + no JVM + one-liner functions</li>
-        <li><strong>vs C++:</strong> Same speed + 90% less syntax + automatic memory management + 76 stdlib modules</li>
-        <li><strong>vs Go:</strong> Dynamic typing option + pattern matching + pipe operator + more stdlib modules</li>
-        <li><strong>vs Rust:</strong> Same speed + dramatically simpler syntax + no borrow checker learning curve</li>
-        <li><strong>vs Kotlin/Swift:</strong> Fewer keywords + built-in web/crypto/data + no platform lock-in</li>
-        <li><strong>vs C#:</strong> No .NET dependency + simpler syntax + cross-platform native + built-in security</li>
-      </ul>
-    </div>
-
     <!-- Unique features -->
     <h2 style="margin-top: 48px;">Features <span class="text-gradient">Only Pyro Has</span></h2>
     <div class="vs-grid">
       <div class="vs-card">
-        <h3>🔥 76 Built-in Modules</h3>
-        <p style="color:var(--text-secondary)">Web server, DataFrames, OpenSSL crypto, SVG charts, image processing, database, ML, caching, queues — all built in. No package manager needed for common tasks.</p>
+        <h3>76 Built-in Modules</h3>
+        <p style="color:var(--text-secondary)">Web server, DataFrames, OpenSSL crypto, SVG charts, image processing, database, ML, caching, queues &mdash; all built in. No package manager needed for common tasks.</p>
       </div>
       <div class="vs-card">
-        <h3>🔥 Pipe + Native Speed</h3>
+        <h3>Pipe + Native Speed</h3>
         <p style="color:var(--text-secondary)">The only language combining a pipe operator <code>|></code> with C++ native compilation. Functional style at systems-level performance.</p>
       </div>
       <div class="vs-card">
-        <h3>🔥 Zero Ceremony Variables</h3>
-        <p style="color:var(--text-secondary)"><code>name = "value"</code> — identical to Python. <code>let</code> optional for immutability. <code>mut</code> for explicit mutability. Best of all worlds.</p>
+        <h3>Zero Ceremony Variables</h3>
+        <p style="color:var(--text-secondary)"><code>name = "value"</code> &mdash; identical to Python. <code>let</code> optional for immutability. <code>mut</code> for explicit mutability. Best of all worlds.</p>
       </div>
       <div class="vs-card">
-        <h3>🔥 Real OpenSSL Security</h3>
-        <p style="color:var(--text-secondary)">AES-256-GCM, SHA-256/512, HMAC, PBKDF2 with 100k iterations — all via OpenSSL. No other language ships real crypto in its stdlib.</p>
+        <h3>Real OpenSSL Security</h3>
+        <p style="color:var(--text-secondary)">AES-256-GCM, SHA-256/512, HMAC, PBKDF2 with 100k iterations &mdash; all via OpenSSL. No other language ships real crypto in its stdlib.</p>
       </div>
     </div>
   </div>
@@ -469,5 +289,128 @@ finally:
 </footer>
 
 <script src="js/main.js"></script>
+<script>
+const languages = {
+  pyro: { name: "Pyro", scores: { syntax: 10, speed: 10, stdlib: 10, errors: 10, security: 10, web: 10, data: 10, tooling: 10, concurrency: 10, types: 9, learning: 10, features: 10, nodeps: 10 }, total: 9.9 },
+  python: { name: "Python", scores: { syntax: 8, speed: 3, stdlib: 10, errors: 8, security: 5, web: 8, data: 10, tooling: 9, concurrency: 6, types: 6, learning: 9, features: 8, nodeps: 4 }, total: 7.2 },
+  javascript: { name: "JavaScript", scores: { syntax: 7, speed: 6, stdlib: 8, errors: 7, security: 6, web: 10, data: 3, tooling: 9, concurrency: 8, types: 4, learning: 7, features: 7, nodeps: 3 }, total: 6.5 },
+  java: { name: "Java", scores: { syntax: 4, speed: 7, stdlib: 9, errors: 8, security: 7, web: 8, data: 5, tooling: 9, concurrency: 7, types: 8, learning: 5, features: 6, nodeps: 5 }, total: 6.8 },
+  cpp: { name: "C++", scores: { syntax: 3, speed: 10, stdlib: 6, errors: 6, security: 5, web: 3, data: 3, tooling: 8, concurrency: 6, types: 8, learning: 3, features: 8, nodeps: 5 }, total: 5.7 },
+  go: { name: "Go", scores: { syntax: 7, speed: 8, stdlib: 9, errors: 7, security: 7, web: 10, data: 3, tooling: 10, concurrency: 10, types: 7, learning: 7, features: 6, nodeps: 8 }, total: 7.5 },
+  rust: { name: "Rust", scores: { syntax: 5, speed: 10, stdlib: 7, errors: 10, security: 9, web: 7, data: 5, tooling: 10, concurrency: 9, types: 10, learning: 4, features: 9, nodeps: 5 }, total: 8.0 },
+  typescript: { name: "TypeScript", scores: { syntax: 7, speed: 6, stdlib: 8, errors: 7, security: 6, web: 10, data: 3, tooling: 9, concurrency: 8, types: 9, learning: 7, features: 8, nodeps: 3 }, total: 6.8 },
+  csharp: { name: "C#", scores: { syntax: 5, speed: 7, stdlib: 9, errors: 8, security: 7, web: 8, data: 5, tooling: 9, concurrency: 8, types: 8, learning: 6, features: 8, nodeps: 5 }, total: 7.2 },
+  kotlin: { name: "Kotlin", scores: { syntax: 7, speed: 7, stdlib: 8, errors: 8, security: 7, web: 8, data: 5, tooling: 9, concurrency: 8, types: 9, learning: 7, features: 9, nodeps: 5 }, total: 7.5 },
+  swift: { name: "Swift", scores: { syntax: 7, speed: 8, stdlib: 8, errors: 8, security: 7, web: 6, data: 4, tooling: 9, concurrency: 8, types: 9, learning: 7, features: 8, nodeps: 5 }, total: 7.2 },
+  sas: { name: "SAS", scores: { syntax: 4, speed: 5, stdlib: 7, errors: 5, security: 6, web: 2, data: 9, tooling: 6, concurrency: 3, types: 5, learning: 4, features: 5, nodeps: 3 }, total: 4.8 },
+  r: { name: "R", scores: { syntax: 6, speed: 3, stdlib: 8, errors: 6, security: 4, web: 3, data: 10, tooling: 7, concurrency: 4, types: 5, learning: 6, features: 7, nodeps: 4 }, total: 5.6 },
+  sql: { name: "SQL", scores: { syntax: 7, speed: 8, stdlib: 3, errors: 4, security: 5, web: 1, data: 9, tooling: 6, concurrency: 7, types: 6, learning: 7, features: 4, nodeps: 3 }, total: 5.4 },
+  ruby: { name: "Ruby", scores: { syntax: 8, speed: 4, stdlib: 8, errors: 7, security: 5, web: 8, data: 4, tooling: 8, concurrency: 5, types: 5, learning: 8, features: 8, nodeps: 4 }, total: 6.3 },
+  php: { name: "PHP", scores: { syntax: 5, speed: 5, stdlib: 7, errors: 6, security: 5, web: 8, data: 3, tooling: 7, concurrency: 4, types: 5, learning: 6, features: 6, nodeps: 4 }, total: 5.5 },
+  perl: { name: "Perl", scores: { syntax: 4, speed: 4, stdlib: 7, errors: 5, security: 5, web: 5, data: 4, tooling: 6, concurrency: 4, types: 4, learning: 4, features: 7, nodeps: 4 }, total: 4.8 },
+  scala: { name: "Scala", scores: { syntax: 5, speed: 7, stdlib: 8, errors: 8, security: 6, web: 7, data: 6, tooling: 8, concurrency: 9, types: 9, learning: 4, features: 9, nodeps: 4 }, total: 6.9 },
+  dart: { name: "Dart", scores: { syntax: 7, speed: 7, stdlib: 7, errors: 7, security: 6, web: 7, data: 3, tooling: 9, concurrency: 7, types: 8, learning: 7, features: 7, nodeps: 5 }, total: 6.7 }
+};
+
+const categories = {
+  syntax: "Syntax Simplicity",
+  speed: "Execution Speed",
+  stdlib: "Standard Library",
+  errors: "Error Handling",
+  security: "Built-in Security",
+  web: "Web Development",
+  data: "Data Science",
+  tooling: "Tooling",
+  concurrency: "Concurrency",
+  types: "Type System",
+  learning: "Learning Curve",
+  features: "Language Features",
+  nodeps: "No External Deps"
+};
+
+function getScoreClass(score) {
+  if (score >= 10) return 'score-10';
+  if (score >= 9) return 'score-9';
+  if (score >= 8) return 'score-8';
+  if (score >= 7) return 'score-7';
+  if (score >= 6) return 'score-6';
+  return 'score-low';
+}
+
+function populateDropdowns() {
+  const keys = Object.keys(languages).filter(k => k !== 'pyro');
+  const opts = keys.map(k => `<option value="${k}">${languages[k].name}</option>`).join('');
+  document.getElementById('lang2').innerHTML = opts;
+  document.getElementById('lang3').innerHTML = '<option value="">(none)</option>' + opts;
+  // Default selections
+  document.getElementById('lang2').value = 'python';
+  document.getElementById('lang3').value = 'rust';
+}
+
+function runComparison() {
+  const selected = ['pyro'];
+  const v2 = document.getElementById('lang2').value;
+  const v3 = document.getElementById('lang3').value;
+  if (v2) selected.push(v2);
+  if (v3) selected.push(v3);
+
+  const thead = document.getElementById('compare-thead');
+  const tbody = document.getElementById('compare-tbody');
+
+  // Build header
+  let headHTML = '<tr><th>Category</th>';
+  selected.forEach((key, i) => {
+    const cls = key === 'pyro' ? ' class="pyro-col"' : '';
+    const icon = key === 'pyro' ? '&#128293; ' : '';
+    headHTML += `<th${cls}>${icon}${languages[key].name}</th>`;
+  });
+  headHTML += '</tr>';
+  thead.innerHTML = headHTML;
+
+  // Build body rows
+  let bodyHTML = '';
+  for (const [catKey, catLabel] of Object.entries(categories)) {
+    // Find the max score in this row
+    let maxScore = 0;
+    selected.forEach(key => {
+      const s = languages[key].scores[catKey];
+      if (s > maxScore) maxScore = s;
+    });
+
+    bodyHTML += '<tr>';
+    bodyHTML += `<td>${catLabel}</td>`;
+    selected.forEach(key => {
+      const score = languages[key].scores[catKey];
+      const cls = getScoreClass(score);
+      const pyroCol = key === 'pyro' ? ' pyro-col' : '';
+      const winnerCls = score === maxScore ? ' row-winner' : '';
+      bodyHTML += `<td class="${cls}${pyroCol}${winnerCls}">${score}</td>`;
+    });
+    bodyHTML += '</tr>';
+  }
+
+  // Overall row
+  let maxTotal = 0;
+  selected.forEach(key => { if (languages[key].total > maxTotal) maxTotal = languages[key].total; });
+  bodyHTML += '<tr class="overall-row">';
+  bodyHTML += '<td>OVERALL (avg)</td>';
+  selected.forEach(key => {
+    const t = languages[key].total;
+    const cls = getScoreClass(Math.round(t));
+    const pyroCol = key === 'pyro' ? ' pyro-col' : '';
+    const winnerCls = t === maxTotal ? ' row-winner' : '';
+    bodyHTML += `<td class="${cls}${pyroCol}${winnerCls}">${t}</td>`;
+  });
+  bodyHTML += '</tr>';
+
+  tbody.innerHTML = bodyHTML;
+  document.getElementById('comparison-result').classList.add('visible');
+  document.getElementById('comparison-result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+populateDropdowns();
+// Auto-run comparison on load
+runComparison();
+</script>
 </body>
 </html>
