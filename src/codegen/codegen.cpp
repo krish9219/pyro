@@ -1770,7 +1770,11 @@ void CodeGenerator::emit_import(const ImportStmt& stmt) {
         indent();
         emit_line("if (req.path.find(prefix) == 0) {");
         indent();
-        emit_line("std::string file_path = dir + req.path.substr(prefix.size());");
+        emit_line("std::string rel = req.path.substr(prefix.size());");
+        emit_line("if (rel.empty() || rel == \"/\") rel = \"index.html\";");
+        emit_line("if (rel[0] == '/') rel = rel.substr(1);");
+        emit_line("std::string sep = (dir.back()=='/' || dir.back()=='\\\\') ? \"\" : \"/\";");
+        emit_line("std::string file_path = dir + sep + rel;");
         emit_line("std::ifstream file(file_path, std::ios::binary);");
         emit_line("if (file.is_open()) {");
         indent();

@@ -1,0 +1,11 @@
+import web
+
+mut app = web.app()
+
+# Serve static files from current directory
+app.serve_static("/", ".")
+
+print("Static file server running!")
+print("Open http://localhost:3000")
+print("Serving files from current directory")
+app.listen(3000)
