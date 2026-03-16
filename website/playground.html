@@ -329,6 +329,7 @@
         <button class="example-btn" onclick="loadExample('tensor')">Tensor</button>
         <button class="example-btn" onclick="loadExample('test')">Testing</button>
         <button class="example-btn" onclick="loadExample('ai')">AI Chat</button>
+        <button class="example-btn" onclick="loadExample('viz')">Viz Charts</button>
       </div>
     </div>
 
@@ -626,15 +627,17 @@ test.summary()`,
 import ai
 
 # Default: NVIDIA (works out of the box)
-response = ai.chat("What is 2+2? One word answer.")
+response = ai.chat("What is 2+2? Answer in one word.")
 print("AI says: {response}")
 
 # Switch provider — just 1 line:
 # ai.provider("openai", "sk-your-key")
 # ai.provider("gemini", "your-key")
 # ai.provider("grok", "your-key")
-# ai.provider("ollama", "")  # local, no key needed
-# ai.provider("openrouter", "your-key", "model-name")
+# ai.provider("ollama", "")  # local, no key
+# ai.provider("groq", "your-key")
+# ai.provider("mistral", "your-key")
+# ai.provider("deepseek", "your-key")
 
 # AI utilities — all one-liners
 french = ai.translate("Hello, how are you?", "French")
@@ -643,10 +646,38 @@ print("French: {french}")
 label = ai.classify("Pyro is amazing!", ["positive", "negative", "neutral"])
 print("Sentiment: {label}")
 
-# Generate Pyro code (NOT Python!)
-code = ai.generate_code("fibonacci function")
-print("Generated:")
-print(code)`
+summary = ai.summarize("Pyro is a compiled programming language that transpiles to C++ for native performance. It has 23 keywords and 76 built-in modules.", 20)
+print("Summary: {summary}")`,
+
+  viz: `# Visualization — SVG charts, zero matplotlib
+# Generates SVG files viewable in any browser
+import viz
+
+# Bar chart
+labels = ["Pyro", "Python", "Java", "Go", "Rust"]
+speeds = [79.0, 1.0, 15.0, 30.0, 85.0]
+svg = viz.bar_chart(labels, speeds, "Speed Comparison")
+viz.save("bar.svg", svg)
+
+# Pie chart
+langs = ["Python", "JavaScript", "Pyro", "Go"]
+usage = [35.0, 25.0, 20.0, 20.0]
+svg = viz.pie_chart(langs, usage, "Language Usage")
+viz.save("pie.svg", svg)
+
+# Line chart
+x = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0]
+y = [10.0, 25.0, 40.0, 35.0, 60.0, 55.0, 80.0]
+svg = viz.line_chart(x, y, "Growth Over Time")
+viz.save("line.svg", svg)
+
+# Scatter plot
+ages = [20.0, 25.0, 30.0, 35.0, 40.0, 45.0]
+scores = [60.0, 70.0, 85.0, 80.0, 90.0, 95.0]
+svg = viz.scatter(ages, scores, "Age vs Score")
+viz.save("scatter.svg", svg)
+
+print("4 charts generated as SVG files!")`
 };
 
 const editor = document.getElementById('code-editor');
