@@ -52,16 +52,22 @@ Pyro requires a **C++20-compatible compiler** and CMake to build. C++20 is requi
 ### Linux / macOS (One-Line Install)
 
 ```bash
-curl -sSL https://pyro-lang.org/install.sh | bash
+curl -fsSL https://aravindlabs.tech/pyro-lang/install.sh | bash
 ```
 
-This downloads, builds, and installs Pyro to `/usr/local/bin/pyro`. You may be prompted for your password to install system-wide.
+Downloads a pre-built binary to `~/.pyro/bin/` and adds it to your PATH.
 
 ### Windows (PowerShell)
 
 ```powershell
-irm https://pyro-lang.org/install.ps1 | iex
+irm https://aravindlabs.tech/pyro-lang/install.ps1 | iex
 ```
+
+This downloads:
+- `pyro.exe` — the Pyro compiler (pre-built, statically linked)
+- MinGW g++ toolchain (~79 MB) — so `pyro run` and `pyro build` work immediately
+
+No Visual Studio, no restarts, no admin needed. Installs to `%LOCALAPPDATA%\Pyro\`.
 
 ---
 
@@ -197,69 +203,36 @@ pyro version
 
 ## Windows
 
-### Option 1: Visual Studio Build Tools (Recommended)
+### Recommended: One-Line Install (PowerShell)
 
-1. **Download Visual Studio Build Tools** from [visualstudio.microsoft.com](https://visualstudio.microsoft.com/downloads/)
-2. In the installer, select **"Desktop development with C++"** (ensure C++20 support is included)
-3. Install **CMake** from [cmake.org](https://cmake.org/download/) (or it is included with Visual Studio)
-4. Install **Git** from [git-scm.com](https://git-scm.com/download/win)
-
-Then open **Developer Command Prompt for Visual Studio** and run:
-
-```cmd
-git clone https://github.com/krish9219/pyro.git
-cd pyro
-install.bat
+```powershell
+irm https://aravindlabs.tech/pyro-lang/install.ps1 | iex
 ```
 
-### Option 2: MinGW-w64
+This installs everything automatically:
+- **Pyro compiler** — pre-built, statically linked binary (no DLL dependencies)
+- **MinGW g++ toolchain** (~79 MB) — so `pyro run` and `pyro build` work immediately
+- Adds both to your user PATH
 
-1. Install **MSYS2** from [msys2.org](https://www.msys2.org/)
-2. Open MSYS2 terminal:
-
-```bash
-pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake git make
-git clone https://github.com/krish9219/pyro.git
-cd pyro
-mkdir build && cd build
-cmake .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
-mingw32-make -j%NUMBER_OF_PROCESSORS%
-```
-
-3. Copy `build\pyro.exe` to a directory in your PATH.
-
-### Option 3: WSL (Windows Subsystem for Linux)
-
-This gives you a full Linux environment on Windows:
-
-```bash
-# In PowerShell (admin), install WSL
-wsl --install
-
-# Restart, then open Ubuntu terminal
-sudo apt update
-sudo apt install -y g++-10 cmake git build-essential
-
-git clone https://github.com/krish9219/pyro.git
-cd pyro
-./install.sh
-```
-
-### Option 4: Chocolatey
-
-```cmd
-choco install git cmake visualstudio2022-workload-vctools
-git clone https://github.com/krish9219/pyro.git
-cd pyro
-install.bat
-```
+No Visual Studio, no restarts, no admin needed. Open a **new** PowerShell window after install.
 
 ### Verify on Windows
 
-Open Command Prompt or PowerShell:
+```powershell
+pyro --version
+# Pyro Programming Language v1.0.0
+```
 
-```cmd
-pyro version
+### Build from Source (advanced)
+
+Only needed if you want to modify Pyro itself. Requires Git, CMake, and a C++ compiler.
+
+```powershell
+git clone https://github.com/krish9219/pyro.git
+cd pyro
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+cmake --build . --config Release
 ```
 
 ---

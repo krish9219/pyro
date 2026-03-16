@@ -1,0 +1,13 @@
+import web
+
+mut app = web.app()
+
+# Route 1: Home page
+app.get("/", fn(req) = web.html("<html><head><title>Pyro Web App</title></head><body style='font-family:sans-serif;max-width:700px;margin:60px auto;padding:0 20px;background:#0a0a1a;color:#e0e0e0'><h1 style='color:#ff6b35'>Pyro Web Server</h1><p>This page is served by a Pyro web app - compiled to native C++.</p><h3>Available Routes:</h3><ul><li><a href='/' style='color:#ff8c42'>/ </a> - This page (HTML)</li><li><a href='/api/status' style='color:#ff8c42'>/api/status</a> - JSON API</li></ul><p>Built with <strong>P.Y.R.O</strong> - Performance You Really Own</p></body></html>"))
+
+# Route 2: JSON API
+app.get("/api/status", fn(req) = web.json("[\"status\", \"running\", \"language\", \"Pyro\", \"version\", \"1.0.0\", \"modules\", 76]"))
+
+print("Pyro web server running!")
+print("Open http://localhost:3000 in your browser")
+app.listen(3000)

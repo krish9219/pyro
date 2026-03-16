@@ -77,24 +77,33 @@
 
     <!-- ===== Getting Started ===== -->
     <h2 id="installation">Installation</h2>
-    <p>Install Pyro on your system in under a minute.</p>
+    <p>Install Pyro on your system in under a minute. Pre-built binaries — no compilers or build tools needed.</p>
 
-    <h3>Linux</h3>
+    <h3>Linux / macOS</h3>
     <pre><button class="copy-btn">Copy</button><code>curl -fsSL https://aravindlabs.tech/pyro-lang/install.sh | bash</code></pre>
 
-    <h3>Build from Source (all platforms)</h3>
-    <pre><button class="copy-btn">Copy</button><code>git clone https://github.com/krish9219/pyro.git
-cd pyro
-make build
-sudo make install</code></pre>
+    <h3>Windows (PowerShell)</h3>
+    <pre><button class="copy-btn">Copy</button><code>irm https://aravindlabs.tech/pyro-lang/install.ps1 | iex</code></pre>
+    <p style="color: var(--text-secondary); font-size: 0.9rem;">Downloads Pyro + MinGW C++ toolchain automatically. No Visual Studio, no restarts, no admin needed.</p>
 
-    <p>Verify the installation:</p>
+    <h3>Build from Source (advanced)</h3>
+    <details>
+      <summary style="cursor: pointer; color: var(--text-secondary);">Only needed if you want to modify Pyro itself</summary>
+      <pre style="margin-top: 12px;"><button class="copy-btn">Copy</button><code>git clone https://github.com/krish9219/pyro.git
+cd pyro
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+make -j$(nproc)
+sudo make install</code></pre>
+    </details>
+
+    <p style="margin-top: 16px;">Verify the installation:</p>
     <pre><button class="copy-btn">Copy</button><code>pyro --version
-<span class="cm"># Pyro 1.0.0 (built from 7,045 lines of C++)</span></code></pre>
+<span class="cm"># Pyro Programming Language v1.0.0</span></code></pre>
 
     <h2 id="hello-world">Hello World</h2>
     <p>Create a file called <code>hello.ro</code>:</p>
-    <pre><button class="copy-btn">Copy</button><code><span class="cm">// No main() needed — just write code</span>
+    <pre><button class="copy-btn">Copy</button><code><span class="cm"># No main() needed — just write code</span>
 <span class="bi">print</span>(<span class="str">"Hello, World!"</span>)</code></pre>
     <p>Run it:</p>
     <pre><button class="copy-btn">Copy</button><code>pyro run hello.ro</code></pre>

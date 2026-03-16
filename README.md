@@ -24,15 +24,22 @@ Pyro is a modern, blazing-fast programming language that compiles to native C++ 
 | Package manager needed | **No** | Yes (pip) |
 | File extension | `.ro` | `.py` |
 
-## Quick Start
+## Quick Install
 
+**Linux / macOS:**
 ```bash
-# Build from source
-git clone https://github.com/krish9219/pyro.git
-cd pyro
-./build.sh
+curl -fsSL https://aravindlabs.tech/pyro-lang/install.sh | bash
+```
 
-# Run your first program
+**Windows (PowerShell):**
+```powershell
+irm https://aravindlabs.tech/pyro-lang/install.ps1 | iex
+```
+Downloads pre-built binary + C++ toolchain. No Visual Studio, no restarts, no admin needed.
+
+**Then run:**
+```bash
+pyro --version
 echo 'print("Hello, Pyro!")' > hello.ro
 pyro run hello.ro
 ```

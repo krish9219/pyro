@@ -699,14 +699,15 @@ results |&gt; <span class="fn">each</span>(|r| <span class="bi">print</span>(<sp
           </div>
           <div class="tab-content" data-tab-content="macos">
             <div class="install-cmd">
-              <code>brew install aravindlabs/tap/pyro</code>
+              <code>curl -fsSL https://aravindlabs.tech/pyro-lang/install.sh | bash</code>
               <button class="copy-inline">Copy</button>
             </div>
           </div>
           <div class="tab-content" data-tab-content="windows">
             <div class="install-cmd">
-              <code>winget install AravindLabs.Pyro</code>
+              <code>irm https://aravindlabs.tech/pyro-lang/install.ps1 | iex</code>
               <button class="copy-inline">Copy</button>
+              <p style="font-size:0.8rem;color:var(--text-secondary);margin-top:6px;">Pre-built binary + C++ toolchain. No Visual Studio, no restarts.</p>
             </div>
           </div>
         </div>

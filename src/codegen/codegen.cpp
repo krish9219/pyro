@@ -587,9 +587,16 @@ std::string CodeGenerator::generate(const Program& program, const std::string& s
         }
     }
     if (imports_.count("web")) {
+        emit_line("#include <fstream>");
+        emit_line("#include <filesystem>");
+#ifdef _WIN32
+        emit_line("#include <winsock2.h>");
+        emit_line("#include <ws2tcpip.h>");
+#else
         emit_line("#include <sys/socket.h>");
         emit_line("#include <netinet/in.h>");
         emit_line("#include <unistd.h>");
+#endif
     }
     if (imports_.count("crypto")) {
         emit_line("#include <random>");
@@ -3969,7 +3976,7 @@ std::string CodeGenerator::emit_call(const CallExpr& expr) {
             "upper", "lower", "split", "trim", "starts_with", "ends_with",
             "replace", "slice", "repeat", "chars",
             // Map methods
-            "keys", "values", "has", "get", "size"
+            "keys", "values", "has", "size"
         };
         if (is_simple && intercepted_methods.count(method)) {
             return emit_method_call(obj, method, expr.args);
@@ -4022,7 +4029,7 @@ std::string CodeGenerator::emit_method_call(const std::string& object, const std
     if (method == "keys") return "pyro::keys(" + object + ")";
     if (method == "values") return "pyro::values(" + object + ")";
     if (method == "has") return "pyro::has(" + object + args_str + ")";
-    if (method == "get") return "pyro::get(" + object + args_str + ")";
+    if (method == "get" && args.size() == 2) return "pyro::get(" + object + args_str + ")";
     if (method == "size") return "pyro::map_size(" + object + ")";
 
     // Fallback: regular method call
