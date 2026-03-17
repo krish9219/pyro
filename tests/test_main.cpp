@@ -431,8 +431,10 @@ TEST(codegen_try_catch) {
     CodeGenerator codegen;
     std::string cpp = codegen.generate(program);
     ASSERT(cpp.find("try {") != std::string::npos);
+    ASSERT(cpp.find("} catch (const pyro::PyroError& _pyro_ex) {") != std::string::npos);
+    ASSERT(cpp.find("pyro::CatchError err{_pyro_ex.what(), _pyro_ex.type};") != std::string::npos);
     ASSERT(cpp.find("} catch (const std::exception& _ex) {") != std::string::npos);
-    ASSERT(cpp.find("auto err = std::string(_ex.what());") != std::string::npos);
+    ASSERT(cpp.find("pyro::CatchError err{_ex.what(), \"Error\"};") != std::string::npos);
 }
 
 // ---- Phase 2 Tests ----

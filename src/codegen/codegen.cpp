@@ -333,6 +333,17 @@ void CodeGenerator::emit_headers() {
     emit_line("};");
     emit_line("");
 
+    // --- Catch error wrapper (for try/catch variable with .type and .message) ---
+    emit_line("struct CatchError {");
+    indent();
+    emit_line("std::string message;");
+    emit_line("std::string type;");
+    emit_line("operator std::string() const { return message; }");
+    emit_line("friend std::ostream& operator<<(std::ostream& os, const CatchError& e) { return os << e.message; }");
+    dedent();
+    emit_line("};");
+    emit_line("");
+
     // --- Nil coalescing ---
     emit_line("template<typename T, typename U>");
     emit_line("auto nil_coalesce(const T& val, const U& def) { return val; }");
@@ -5765,6 +5776,48 @@ void CodeGenerator::emit_import(const ImportStmt& stmt) {
         dedent();
         emit_line("} // namespace pyro_nlp");
         emit_line("");
+    } else if (stmt.module == "async") {
+        emit_line("namespace pyro_async {");
+        indent();
+
+        // async.run(fn) — run function in background, return future
+        emit_line("template<typename F>");
+        emit_line("auto run(F func) { return std::async(std::launch::async, func); }");
+        emit_line("");
+
+        // async.all(functions) — run all functions concurrently, return results
+        emit_line("template<typename... Fs>");
+        emit_line("auto all(Fs... funcs) {");
+        indent();
+        emit_line("return std::make_tuple(std::async(std::launch::async, funcs).get()...);");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // async.parallel(vec_of_functions) — run vector of functions in parallel
+        emit_line("template<typename F>");
+        emit_line("std::vector<std::string> parallel(const std::vector<F>& funcs) {");
+        indent();
+        emit_line("std::vector<std::future<std::string>> futures;");
+        emit_line("for(auto& f : funcs) futures.push_back(std::async(std::launch::async, f));");
+        emit_line("std::vector<std::string> results;");
+        emit_line("for(auto& f : futures) results.push_back(f.get());");
+        emit_line("return results;");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // async.sleep(ms) — non-blocking sleep
+        emit_line("void sleep(int64_t ms) { std::this_thread::sleep_for(std::chrono::milliseconds(ms)); }");
+        emit_line("");
+
+        // async.spawn(fn) — fire and forget
+        emit_line("template<typename F>");
+        emit_line("void spawn(F func) { std::thread(func).detach(); }");
+
+        dedent();
+        emit_line("} // namespace pyro_async");
+        emit_line("");
     }
 }
 
@@ -5798,15 +5851,23 @@ void CodeGenerator::emit_try_catch(const TryCatchStmt& stmt) {
     // Register catch variable as declared
     declared_vars_.insert(stmt.catch_var);
 
+    // Helper struct so catch variable has .type, .message, and is printable as string
+    std::string var = stmt.catch_var;
+
     if (stmt.finally_body.empty()) {
         // Simple try/catch without finally
         emit_line("try {");
         indent();
         for (const auto& s : stmt.try_body) emit_statement(s);
         dedent();
+        emit_line("} catch (const pyro::PyroError& _pyro_ex) {");
+        indent();
+        emit_line("pyro::CatchError " + var + "{_pyro_ex.what(), _pyro_ex.type};");
+        for (const auto& s : stmt.catch_body) emit_statement(s);
+        dedent();
         emit_line("} catch (const std::exception& _ex) {");
         indent();
-        emit_line("auto " + stmt.catch_var + " = std::string(_ex.what());");
+        emit_line("pyro::CatchError " + var + "{_ex.what(), \"Error\"};");
         for (const auto& s : stmt.catch_body) emit_statement(s);
         dedent();
         emit_line("}");
@@ -5815,15 +5876,21 @@ void CodeGenerator::emit_try_catch(const TryCatchStmt& stmt) {
         emit_line("{");
         indent();
         emit_line("bool _had_exception = false;");
-        emit_line("std::string " + stmt.catch_var + ";");
+        emit_line("pyro::CatchError " + var + ";");
         emit_line("try {");
         indent();
         for (const auto& s : stmt.try_body) emit_statement(s);
         dedent();
+        emit_line("} catch (const pyro::PyroError& _pyro_ex) {");
+        indent();
+        emit_line("_had_exception = true;");
+        emit_line(var + " = pyro::CatchError{_pyro_ex.what(), _pyro_ex.type};");
+        for (const auto& s : stmt.catch_body) emit_statement(s);
+        dedent();
         emit_line("} catch (const std::exception& _ex) {");
         indent();
         emit_line("_had_exception = true;");
-        emit_line(stmt.catch_var + " = std::string(_ex.what());");
+        emit_line(var + " = pyro::CatchError{_ex.what(), \"Error\"};");
         for (const auto& s : stmt.catch_body) emit_statement(s);
         dedent();
         emit_line("}");
@@ -5839,7 +5906,7 @@ void CodeGenerator::emit_expr_stmt(const ExprStmt& stmt) {
 }
 
 void CodeGenerator::emit_throw(const ThrowStmt& stmt) {
-    emit_line("throw std::runtime_error(pyro::to_str(" + emit_expr(stmt.message) + "));");
+    emit_line("throw pyro::PyroError(pyro::to_str(" + emit_expr(stmt.message) + "));");
 }
 
 void CodeGenerator::emit_enum(const EnumDef& e) {
@@ -6224,6 +6291,7 @@ std::string CodeGenerator::emit_member(const MemberExpr& expr) {
         if (id->name == "tensor") return "pyro_tensor::" + expr.member;
         if (id->name == "nn") return "pyro_nn::" + expr.member;
         if (id->name == "nlp") return "pyro_nlp::" + expr.member;
+        if (id->name == "async") return "pyro_async::" + expr.member;
         if (id->name == "plot") return "pyro_plot::" + expr.member;
         if (enum_names_.count(id->name)) return id->name + "::" + expr.member;
         // db Row field access: row.name -> row.get("name")

@@ -7,6 +7,20 @@
     "engines": {
         "vscode": "^1.70.0"
     },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/krish9219/pyro"
+    },
+    "icon": "icon.png",
+    "keywords": [
+        "pyro",
+        "ro",
+        "compiled",
+        "transpiler",
+        "c++",
+        "syntax highlighting",
+        "programming language"
+    ],
     "categories": [
         "Programming Languages"
     ],

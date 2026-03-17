@@ -106,7 +106,7 @@ StmtPtr Parser::parse_statement() {
         }
         auto s = parse_fn(); s->line = line_at_start; return s;
     }
-    if (check(TokenType::ASYNC)) {
+    if (check(TokenType::ASYNC) && peek(1).type == TokenType::FN) {
         advance();
         auto s = parse_fn(true); s->line = line_at_start; return s;
     }
@@ -281,7 +281,12 @@ StmtPtr Parser::parse_return() {
 StmtPtr Parser::parse_import() {
     expect(TokenType::IMPORT, "Expected 'import'");
     ImportStmt stmt;
-    stmt.module = expect(TokenType::IDENTIFIER, "Expected module name").value;
+    // Allow 'async' keyword as a module name
+    if (check(TokenType::ASYNC)) {
+        stmt.module = advance().value;
+    } else {
+        stmt.module = expect(TokenType::IDENTIFIER, "Expected module name").value;
+    }
 
     // import foo.bar
     while (match(TokenType::DOT)) {
@@ -707,7 +712,7 @@ ExprPtr Parser::parse_primary() {
         advance();
         return std::make_shared<Expression>(NilLiteral{});
     }
-    if (check(TokenType::IDENTIFIER)) {
+    if (check(TokenType::IDENTIFIER) || check(TokenType::ASYNC)) {
         Identifier id;
         id.name = advance().value;
         return std::make_shared<Expression>(std::move(id));

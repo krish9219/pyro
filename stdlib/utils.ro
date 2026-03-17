@@ -1,0 +1,44 @@
+# Pyro Standard Library — Utilities
+# These functions are written in Pyro itself
+
+# Range to list
+pub fn range_list(start, end_val)
+    mut result = []
+    for i in start..end_val
+        result.push(i)
+    return result
+
+# Repeat a function N times
+pub fn repeat(n, func)
+    for i in 0..n
+        func(i)
+
+# Flatten a nested list
+pub fn flatten(lists)
+    mut result = []
+    for sublist in lists
+        for item in sublist
+            result.push(item)
+    return result
+
+# Zip two lists
+pub fn zip(a, b)
+    mut result = []
+    mut i = 0
+    while i < a.len() and i < b.len()
+        result.push([a[i], b[i]])
+        i = i + 1
+    return result
+
+# Chunk a list into groups of N
+pub fn chunk(list, size)
+    mut result = []
+    mut current = []
+    for item in list
+        current.push(item)
+        if current.len() == size
+            result.push(current)
+            current = []
+    if current.len() > 0
+        result.push(current)
+    return result

@@ -57,7 +57,8 @@ static const std::set<std::string> BUILTIN_MODULES = {
     "ai",
     "tensor",
     "nn",
-    "nlp"
+    "nlp",
+    "async"
 };
 
 std::vector<pyro::StmtPtr> resolve_imports(
@@ -454,15 +455,50 @@ void cmd_run(const std::string& source_path, const std::string& source) {
     std::string tmp_bin = get_temp_dir() + "pyro_" + base_name;
 #endif
 
+    // Check if cached binary exists and source hasn't changed
+    std::string cache_dir = get_temp_dir() + "pyro_cache/";
+    fs::create_directories(cache_dir);
+    std::string cache_bin = cache_dir + base_name;
+#ifdef _WIN32
+    cache_bin += ".exe";
+#endif
+
+    // Hash the source to detect changes
+    std::hash<std::string> hasher;
+    size_t source_hash = hasher(source);
+    std::string hash_file = cache_dir + base_name + ".hash";
+
+    // Check cache
+    bool cache_valid = false;
+    if (fs::exists(cache_bin) && fs::exists(hash_file)) {
+        std::ifstream hf(hash_file);
+        size_t cached_hash;
+        hf >> cached_hash;
+        if (cached_hash == source_hash) {
+            cache_valid = true;
+        }
+    }
+
+    if (cache_valid) {
+        // Run cached binary directly — no compilation needed
+        int ret = std::system(cache_bin.c_str());
+        if (ret != 0) {
+            exit(WEXITSTATUS(ret));
+        }
+        exit(0);
+    }
+
     std::ofstream tmp(tmp_cpp);
     tmp << cpp_code;
     tmp.close();
 
-    // Compile and run
+    // Compile with -O0 for fast development builds
     std::string compiler = detect_compiler();
     std::string err_file = get_temp_dir() + "pyro_err_" + base_name + ".txt";
-    std::string compile_cmd = compiler + " -std=c++20 -O2 -o " + tmp_bin + " " + tmp_cpp + detect_link_flags(cpp_code) + " 2>" + err_file;
+    auto compile_start = std::chrono::high_resolution_clock::now();
+    std::string compile_cmd = compiler + " -std=c++20 -O0 -o " + tmp_bin + " " + tmp_cpp + detect_link_flags(cpp_code) + " 2>" + err_file;
     int ret = std::system(compile_cmd.c_str());
+    auto compile_end = std::chrono::high_resolution_clock::now();
     if (ret != 0) {
         std::cerr << "Error: Compilation failed." << std::endl;
         show_friendly_errors(err_file, source_path, source);
@@ -471,6 +507,21 @@ void cmd_run(const std::string& source_path, const std::string& source) {
         exit(1);
     }
     std::remove(err_file.c_str());
+
+    // Show compilation time if > 1 second
+    double compile_ms = std::chrono::duration<double, std::milli>(compile_end - compile_start).count();
+    if (compile_ms > 1000) {
+        std::cerr << "[compiled in " << (int)(compile_ms/1000) << "." << (int)(compile_ms)%1000/100 << "s]" << std::endl;
+    }
+
+    // Save compiled binary to cache for next run
+    try {
+        fs::copy(tmp_bin, cache_bin, fs::copy_options::overwrite_existing);
+        std::ofstream hf(hash_file);
+        hf << source_hash;
+    } catch (...) {
+        // Cache write failure is non-fatal
+    }
 
     // Run
     ret = std::system(tmp_bin.c_str());
