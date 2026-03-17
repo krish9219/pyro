@@ -1,0 +1,1814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pyro by Example — Learn Pyro Step by Step</title>
+  <meta name="description" content="Learn Pyro programming language step by step with 30+ runnable examples. From Hello World to AI, web servers, and machine learning.">
+  <base href="/pyro-lang/">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔥</text></svg>">
+  <style>
+    .learn-layout {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: 0;
+      min-height: calc(100vh - var(--nav-height));
+    }
+
+    /* Sidebar TOC */
+    .learn-sidebar {
+      position: sticky;
+      top: var(--nav-height);
+      height: calc(100vh - var(--nav-height));
+      overflow-y: auto;
+      padding: 32px 20px;
+      background: rgba(10, 10, 20, 0.95);
+      border-right: 1px solid var(--border);
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.1) transparent;
+    }
+
+    .learn-sidebar::-webkit-scrollbar { width: 4px; }
+    .learn-sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+    .learn-sidebar h4 {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--accent);
+      margin: 24px 0 10px;
+      padding-left: 4px;
+    }
+
+    .learn-sidebar h4:first-child { margin-top: 0; }
+
+    .learn-sidebar a {
+      display: block;
+      padding: 5px 10px;
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      border-radius: 6px;
+      transition: all 0.2s;
+      line-height: 1.5;
+    }
+
+    .learn-sidebar a:hover {
+      color: #fff;
+      background: rgba(255, 107, 53, 0.1);
+    }
+
+    .learn-sidebar a.active {
+      color: var(--accent);
+      background: var(--accent-dim);
+    }
+
+    /* Main content */
+    .learn-content {
+      padding: 40px 48px 80px;
+      max-width: 900px;
+    }
+
+    .learn-content .section-header {
+      margin-bottom: 40px;
+    }
+
+    .learn-content .section-header h1 {
+      font-size: 2.2rem;
+      margin-bottom: 8px;
+    }
+
+    .learn-content .section-header p {
+      color: var(--text-secondary);
+      font-size: 1.05rem;
+    }
+
+    /* Section dividers */
+    .section-divider {
+      margin: 56px 0 32px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+      font-size: 1.4rem;
+      font-weight: 700;
+    }
+
+    /* Example blocks */
+    .example {
+      margin-bottom: 48px;
+      scroll-margin-top: calc(var(--nav-height) + 24px);
+    }
+
+    .example h3 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: #fff;
+    }
+
+    .example h3 .ex-num {
+      color: var(--accent);
+      margin-right: 6px;
+    }
+
+    .example > p {
+      color: var(--text-secondary);
+      font-size: 0.92rem;
+      margin-bottom: 14px;
+      line-height: 1.6;
+    }
+
+    .example pre {
+      background: #0d0d1a;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      overflow-x: auto;
+      margin-bottom: 0;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      line-height: 1.65;
+      color: #e0e0e0;
+    }
+
+    .example pre code {
+      font-family: inherit;
+      font-size: inherit;
+    }
+
+    /* Syntax highlighting */
+    .example pre .cm { color: #6a6a8a; font-style: italic; }
+    .example pre .kw { color: #c792ea; }
+    .example pre .fn { color: #82aaff; }
+    .example pre .bi { color: #ffcb6b; }
+    .example pre .str { color: #c3e88d; }
+    .example pre .num { color: #f78c6c; }
+    .example pre .op { color: #89ddff; }
+
+    /* Output box */
+    .output {
+      background: rgba(46, 204, 113, 0.06);
+      border: 1px solid rgba(46, 204, 113, 0.2);
+      border-top: none;
+      border-radius: 0 0 var(--radius) var(--radius);
+      padding: 12px 20px;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      line-height: 1.65;
+      color: #a8e6a3;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .output::before {
+      content: "Output";
+      display: block;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: rgba(46, 204, 113, 0.5);
+      margin-bottom: 6px;
+      font-family: var(--font-body);
+      font-weight: 600;
+    }
+
+    /* When output follows pre, merge borders */
+    .example pre + .output {
+      border-top: 1px dashed rgba(46, 204, 113, 0.15);
+    }
+
+    .example pre:has(+ .output) {
+      border-radius: var(--radius) var(--radius) 0 0;
+    }
+
+    /* Try button */
+    .try-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 12px;
+      padding: 7px 18px;
+      background: var(--accent-dim);
+      color: var(--accent);
+      border: 1px solid rgba(255, 107, 53, 0.25);
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+
+    .try-btn:hover {
+      background: rgba(255, 107, 53, 0.25);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    /* Mobile responsive */
+    @media (max-width: 900px) {
+      .learn-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .learn-sidebar {
+        position: relative;
+        top: 0;
+        height: auto;
+        max-height: 300px;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .learn-content {
+        padding: 24px 20px 60px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar" role="navigation" aria-label="Main navigation">
+  <div class="container">
+    <a href="index.html" class="nav-brand text-gradient">Pyro<span>lang</span></a>
+    <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="docs.html">Docs</a>
+      <a href="examples.html">Examples</a>
+      <a href="learn.html" class="active">Learn</a>
+      <a href="install.html">Install</a>
+      <a href="compare.html">Compare</a>
+      <a href="chatbot.html">PyroBot</a>
+      <a href="https://github.com/krish9219/pyro" class="btn btn-sm btn-outline">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<div class="learn-layout" style="padding-top: var(--nav-height);">
+
+  <!-- Sidebar TOC -->
+  <aside class="learn-sidebar" role="complementary" aria-label="Examples navigation">
+    <h4>Basics</h4>
+    <a href="#ex-1">1. Hello World</a>
+    <a href="#ex-2">2. Variables</a>
+    <a href="#ex-3">3. String Interpolation</a>
+    <a href="#ex-4">4. Functions</a>
+    <a href="#ex-5">5. If / Else</a>
+    <a href="#ex-6">6. For Loops</a>
+    <a href="#ex-7">7. While Loops</a>
+    <a href="#ex-8">8. Lists</a>
+    <a href="#ex-9">9. Maps / Dicts</a>
+    <a href="#ex-10">10. Pipes &amp; Lambdas</a>
+
+    <h4>Intermediate</h4>
+    <a href="#ex-11">11. String Methods</a>
+    <a href="#ex-12">12. List Operations</a>
+    <a href="#ex-13">13. Multiline Strings</a>
+    <a href="#ex-14">14. Error Handling</a>
+    <a href="#ex-15">15. Importing Modules</a>
+    <a href="#ex-16">16. Math Module</a>
+    <a href="#ex-17">17. JSON Parsing</a>
+    <a href="#ex-18">18. File I/O</a>
+    <a href="#ex-19">19. Regular Expressions</a>
+    <a href="#ex-20">20. Testing</a>
+
+    <h4>Advanced</h4>
+    <a href="#ex-21">21. Web Server</a>
+    <a href="#ex-22">22. Database</a>
+    <a href="#ex-23">23. HTTP Client</a>
+    <a href="#ex-24">24. AI Chat</a>
+    <a href="#ex-25">25. Machine Learning</a>
+    <a href="#ex-26">26. NLP</a>
+    <a href="#ex-27">27. Visualization</a>
+    <a href="#ex-28">28. Benchmarking</a>
+    <a href="#ex-29">29. Environment Variables</a>
+    <a href="#ex-30">30. Form Validation</a>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="learn-content">
+    <div class="section-header">
+      <h1>Pyro by <span class="text-gradient">Example</span></h1>
+      <p>Learn Pyro step by step with 30 runnable programs. Every example uses correct Pyro syntax and can be copied straight into the playground.</p>
+    </div>
+
+    <!-- ==================== BASICS ==================== -->
+    <div class="section-divider text-gradient">Basics</div>
+
+    <!-- 1. Hello World -->
+    <div class="example" id="ex-1">
+      <h3><span class="ex-num">1.</span> Hello World</h3>
+      <p>The simplest Pyro program. No main function, no imports, no semicolons. Just write code and it runs.</p>
+      <pre><code><span class="bi">print</span>(<span class="str">"Hello, World!"</span>)</code></pre>
+      <div class="output">Hello, World!</div>
+      <a class="try-btn" data-code='print("Hello, World!")'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- 2. Variables -->
+    <div class="example" id="ex-2">
+      <h3><span class="ex-num">2.</span> Variables</h3>
+      <p>Bare assignment creates an immutable variable. Use <code>mut</code> for mutable, <code>let</code> for explicit immutable. No type annotations needed.</p>
+      <pre><code><span class="cm"># Bare assignment — immutable by default</span>
+name = <span class="str">"Pyro"</span>
+version = <span class="num">1.0</span>
+active = <span class="kw">true</span>
+
+<span class="cm"># mut — mutable variable</span>
+<span class="kw">mut</span> counter = <span class="num">0</span>
+counter = counter + <span class="num">1</span>
+<span class="bi">print</span>(<span class="str">"counter = {counter}"</span>)
+
+<span class="cm"># let — explicit immutable</span>
+<span class="kw">let</span> pi = <span class="num">3.14159</span>
+<span class="bi">print</span>(<span class="str">"name={name}, version={version}, pi={pi}"</span>)</code></pre>
+      <div class="output">counter = 1
+name=Pyro, version=1.0, pi=3.14159</div>
+      <a class="try-btn" data-code='# Bare assignment — immutable by default
+name = "Pyro"
+version = 1.0
+active = true
+
+# mut — mutable variable
+mut counter = 0
+counter = counter + 1
+print("counter = {counter}")
+
+# let — explicit immutable
+let pi = 3.14159
+print("name={name}, version={version}, pi={pi}")'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- 3. String Interpolation -->
+    <div class="example" id="ex-3">
+      <h3><span class="ex-num">3.</span> String Interpolation</h3>
+      <p>Embed variables and expressions inside strings with <code>{var}</code>. No f-prefix like Python — it just works.</p>
+      <pre><code>name = <span class="str">"Aravind"</span>
+lang = <span class="str">"Pyro"</span>
+age = <span class="num">20</span>
+
+<span class="cm"># Variable interpolation</span>
+<span class="bi">print</span>(<span class="str">"Hello, {name}!"</span>)
+<span class="bi">print</span>(<span class="str">"{name} created {lang}"</span>)
+
+<span class="cm"># Expression interpolation</span>
+<span class="bi">print</span>(<span class="str">"2 + 2 = {2 + 2}"</span>)
+<span class="bi">print</span>(<span class="str">"Next year: {age + 1}"</span>)
+<span class="bi">print</span>(<span class="str">"{lang} is {79}x faster!"</span>)</code></pre>
+      <div class="output">Hello, Aravind!
+Aravind created Pyro
+2 + 2 = 4
+Next year: 21
+Pyro is 79x faster!</div>
+      <a class="try-btn" data-code='name = "Aravind"
+lang = "Pyro"
+age = 20
+
+# Variable interpolation
+print("Hello, {name}!")
+print("{name} created {lang}")
+
+# Expression interpolation
+print("2 + 2 = {2 + 2}")
+print("Next year: {age + 1}")
+print("{lang} is {79}x faster!")'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- 4. Functions -->
+    <div class="example" id="ex-4">
+      <h3><span class="ex-num">4.</span> Functions</h3>
+      <p>Define functions with <code>fn</code> (not <code>def</code>). No colons, no type hints. Indentation-based blocks.</p>
+      <pre><code><span class="cm"># Simple function</span>
+<span class="kw">fn</span> <span class="fn">add</span>(a, b)
+    <span class="kw">return</span> a + b
+
+<span class="bi">print</span>(<span class="str">"3 + 5 = {add(3, 5)}"</span>)
+
+<span class="cm"># Function with default value</span>
+<span class="kw">fn</span> <span class="fn">greet</span>(name, greeting = <span class="str">"Hello"</span>)
+    <span class="kw">return</span> <span class="str">"{greeting}, {name}!"</span>
+
+<span class="bi">print</span>(greet(<span class="str">"World"</span>))
+<span class="bi">print</span>(greet(<span class="str">"Pyro"</span>, <span class="str">"Welcome"</span>))
+
+<span class="cm"># Functions can call other functions</span>
+<span class="kw">fn</span> <span class="fn">square</span>(x)
+    <span class="kw">return</span> x * x
+
+<span class="kw">fn</span> <span class="fn">sum_of_squares</span>(a, b)
+    <span class="kw">return</span> square(a) + square(b)
+
+<span class="bi">print</span>(<span class="str">"3^2 + 4^2 = {sum_of_squares(3, 4)}"</span>)</code></pre>
+      <div class="output">3 + 5 = 8
+Hello, World!
+Welcome, Pyro!
+3^2 + 4^2 = 25</div>
+      <a class="try-btn" data-code='# Simple function
+fn add(a, b)
+    return a + b
+
+print("3 + 5 = {add(3, 5)}")
+
+# Function with default value
+fn greet(name, greeting = "Hello")
+    return "{greeting}, {name}!"
+
+print(greet("World"))
+print(greet("Pyro", "Welcome"))
+
+# Functions can call other functions
+fn square(x)
+    return x * x
+
+fn sum_of_squares(a, b)
+    return square(a) + square(b)
+
+print("3^2 + 4^2 = {sum_of_squares(3, 4)}")'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- 5. If/Else -->
+    <div class="example" id="ex-5">
+      <h3><span class="ex-num">5.</span> If / Else</h3>
+      <p>Conditional blocks use <code>if</code>, <code>elif</code>, <code>else</code> with no colons. Indentation defines the block.</p>
+      <pre><code>age = <span class="num">18</span>
+
+<span class="kw">if</span> age >= <span class="num">18</span>
+    <span class="bi">print</span>(<span class="str">"You can vote!"</span>)
+<span class="kw">else</span>
+    <span class="bi">print</span>(<span class="str">"Too young to vote."</span>)
+
+<span class="cm"># elif chains</span>
+score = <span class="num">85</span>
+
+<span class="kw">if</span> score >= <span class="num">90</span>
+    grade = <span class="str">"A"</span>
+<span class="kw">elif</span> score >= <span class="num">80</span>
+    grade = <span class="str">"B"</span>
+<span class="kw">elif</span> score >= <span class="num">70</span>
+    grade = <span class="str">"C"</span>
+<span class="kw">else</span>
+    grade = <span class="str">"F"</span>
+
+<span class="bi">print</span>(<span class="str">"Score {score} = Grade {grade}"</span>)
+
+<span class="cm"># Nested conditions</span>
+x = <span class="num">15</span>
+<span class="kw">if</span> x > <span class="num">10</span>
+    <span class="kw">if</span> x % <span class="num">2</span> == <span class="num">0</span>
+        <span class="bi">print</span>(<span class="str">"{x} is big and even"</span>)
+    <span class="kw">else</span>
+        <span class="bi">print</span>(<span class="str">"{x} is big and odd"</span>)</code></pre>
+      <div class="output">You can vote!
+Score 85 = Grade B
+15 is big and odd</div>
+      <a class="try-btn" data-code='age = 18
+
+if age >= 18
+    print("You can vote!")
+else
+    print("Too young to vote.")
+
+# elif chains
+score = 85
+
+if score >= 90
+    grade = "A"
+elif score >= 80
+    grade = "B"
+elif score >= 70
+    grade = "C"
+else
+    grade = "F"
+
+print("Score {score} = Grade {grade}")
+
+# Nested conditions
+x = 15
+if x > 10
+    if x % 2 == 0
+        print("{x} is big and even")
+    else
+        print("{x} is big and odd")'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- 6. For Loops -->
+    <div class="example" id="ex-6">
+      <h3><span class="ex-num">6.</span> For Loops</h3>
+      <p>Use <code>0..10</code> ranges (not <code>range(10)</code>). Iterate over lists directly. No colons needed.</p>
+      <pre><code><span class="cm"># Range loop: 0..5 gives [0, 1, 2, 3, 4]</span>
+<span class="kw">for</span> i <span class="kw">in</span> <span class="num">0</span><span class="op">..</span><span class="num">5</span>
+    <span class="bi">print</span>(<span class="str">"i = {i}"</span>)
+
+<span class="cm"># Iterate over a list</span>
+fruits = [<span class="str">"apple"</span>, <span class="str">"banana"</span>, <span class="str">"cherry"</span>]
+<span class="kw">for</span> fruit <span class="kw">in</span> fruits
+    <span class="bi">print</span>(<span class="str">"I like {fruit}"</span>)
+
+<span class="cm"># Accumulator pattern</span>
+<span class="kw">mut</span> total = <span class="num">0</span>
+<span class="kw">for</span> n <span class="kw">in</span> <span class="num">1</span><span class="op">..</span><span class="num">11</span>
+    total = total + n
+<span class="bi">print</span>(<span class="str">"Sum 1..10 = {total}"</span>)</code></pre>
+      <div class="output">i = 0
+i = 1
+i = 2
+i = 3
+i = 4
+I like apple
+I like banana
+I like cherry
+Sum 1..10 = 55</div>
+      <a class="try-btn" data-code='# Range loop: 0..5 gives [0, 1, 2, 3, 4]
+for i in 0..5
+    print("i = {i}")
+
+# Iterate over a list
+fruits = ["apple", "banana", "cherry"]
+for fruit in fruits
+    print("I like {fruit}")
+
+# Accumulator pattern
+mut total = 0
+for n in 1..11
+    total = total + n
+print("Sum 1..10 = {total}")'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- 7. While Loops -->
+    <div class="example" id="ex-7">
+      <h3><span class="ex-num">7.</span> While Loops</h3>
+      <p>Loop while a condition is true. Use <code>mut</code> for the counter since it changes each iteration.</p>
+      <pre><code><span class="cm"># Countdown</span>
+<span class="kw">mut</span> counter = <span class="num">5</span>
+<span class="kw">while</span> counter > <span class="num">0</span>
+    <span class="bi">print</span>(<span class="str">"T-minus {counter}"</span>)
+    counter = counter - <span class="num">1</span>
+<span class="bi">print</span>(<span class="str">"Liftoff!"</span>)
+
+<span class="cm"># Find first power of 2 above 1000</span>
+<span class="kw">mut</span> val = <span class="num">1</span>
+<span class="kw">while</span> val <= <span class="num">1000</span>
+    val = val * <span class="num">2</span>
+<span class="bi">print</span>(<span class="str">"First power of 2 > 1000: {val}"</span>)</code></pre>
+      <div class="output">T-minus 5
+T-minus 4
+T-minus 3
+T-minus 2
+T-minus 1
+Liftoff!
+First power of 2 > 1000: 1024</div>
+      <a class="try-btn" data-code='# Countdown
+mut counter = 5
+while counter > 0
+    print("T-minus {counter}")
+    counter = counter - 1
+print("Liftoff!")
+
+# Find first power of 2 above 1000
+mut val = 1
+while val <= 1000
+    val = val * 2
+print("First power of 2 > 1000: {val}")'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- 8. Lists -->
+    <div class="example" id="ex-8">
+      <h3><span class="ex-num">8.</span> Lists</h3>
+      <p>Lists are dynamic arrays with built-in methods: <code>push</code>, <code>len</code>, <code>sum</code>, <code>min</code>, <code>max</code>. Zero-indexed.</p>
+      <pre><code><span class="cm"># Create and access</span>
+nums = [<span class="num">10</span>, <span class="num">20</span>, <span class="num">30</span>, <span class="num">40</span>, <span class="num">50</span>]
+<span class="bi">print</span>(<span class="str">"First: {nums[0]}"</span>)
+<span class="bi">print</span>(<span class="str">"Last:  {nums[4]}"</span>)
+
+<span class="cm"># Modify with mut</span>
+<span class="kw">mut</span> colors = [<span class="str">"red"</span>, <span class="str">"green"</span>]
+colors.push(<span class="str">"blue"</span>)
+<span class="bi">print</span>(<span class="str">"Colors: {colors}"</span>)
+
+<span class="cm"># Built-in aggregations</span>
+scores = [<span class="num">95</span>, <span class="num">87</span>, <span class="num">92</span>, <span class="num">78</span>, <span class="num">100</span>]
+<span class="bi">print</span>(<span class="str">"Length: {scores.len()}"</span>)
+<span class="bi">print</span>(<span class="str">"Sum:    {scores.sum()}"</span>)
+<span class="bi">print</span>(<span class="str">"Min:    {scores.min()}"</span>)
+<span class="bi">print</span>(<span class="str">"Max:    {scores.max()}"</span>)</code></pre>
+      <div class="output">First: 10
+Last:  50
+Colors: [red, green, blue]
+Length: 5
+Sum:    452
+Min:    78
+Max:    100</div>
+      <a class="try-btn" data-code='# Create and access
+nums = [10, 20, 30, 40, 50]
+print("First: {nums[0]}")
+print("Last:  {nums[4]}")
+
+# Modify with mut
+mut colors = ["red", "green"]
+colors.push("blue")
+print("Colors: {colors}")
+
+# Built-in aggregations
+scores = [95, 87, 92, 78, 100]
+print("Length: {scores.len()}")
+print("Sum:    {scores.sum()}")
+print("Min:    {scores.min()}")
+print("Max:    {scores.max()}")'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- 9. Maps/Dicts -->
+    <div class="example" id="ex-9">
+      <h3><span class="ex-num">9.</span> Maps / Dicts</h3>
+      <p>Key-value dictionaries with <code>{"key": "value"}</code> syntax. Access with dot or bracket notation.</p>
+      <pre><code><span class="cm"># Create a map</span>
+person = {<span class="str">"name"</span>: <span class="str">"Aravind"</span>, <span class="str">"age"</span>: <span class="num">20</span>, <span class="str">"lang"</span>: <span class="str">"Pyro"</span>}
+
+<span class="cm"># Access values</span>
+<span class="bi">print</span>(<span class="str">"Name: {person[\"name\"]}"</span>)
+<span class="bi">print</span>(<span class="str">"Age:  {person[\"age\"]}"</span>)
+
+<span class="cm"># Get keys and values</span>
+<span class="bi">print</span>(<span class="str">"Keys:   {person.keys()}"</span>)
+<span class="bi">print</span>(<span class="str">"Values: {person.values()}"</span>)
+
+<span class="cm"># Iterate over map</span>
+scores = {<span class="str">"math"</span>: <span class="num">95</span>, <span class="str">"science"</span>: <span class="num">88</span>, <span class="str">"english"</span>: <span class="num">92</span>}
+<span class="kw">for</span> key <span class="kw">in</span> scores.keys()
+    <span class="bi">print</span>(<span class="str">"{key}: {scores[key]}"</span>)</code></pre>
+      <div class="output">Name: Aravind
+Age:  20
+Keys:   [name, age, lang]
+Values: [Aravind, 20, Pyro]
+math: 95
+science: 88
+english: 92</div>
+      <a class="try-btn" data-code='# Create a map
+person = {"name": "Aravind", "age": 20, "lang": "Pyro"}
+
+# Access values
+print("Name: {person[\"name\"]}")
+print("Age:  {person[\"age\"]}")
+
+# Get keys and values
+print("Keys:   {person.keys()}")
+print("Values: {person.values()}")
+
+# Iterate over map
+scores = {"math": 95, "science": 88, "english": 92}
+for key in scores.keys()
+    print("{key}: {scores[key]}")'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- 10. Pipes & Lambdas -->
+    <div class="example" id="ex-10">
+      <h3><span class="ex-num">10.</span> Pipes &amp; Lambdas</h3>
+      <p>The pipe operator <code>|&gt;</code> chains data left-to-right. Lambdas use <code>|x| expr</code> syntax — shorter than Python's <code>lambda x:</code>.</p>
+      <pre><code>nums = [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>, <span class="num">6</span>, <span class="num">7</span>, <span class="num">8</span>, <span class="num">9</span>, <span class="num">10</span>]
+
+<span class="cm"># Pipe to filter</span>
+evens = nums <span class="op">|&gt;</span> <span class="fn">filter</span>(|x| x % <span class="num">2</span> == <span class="num">0</span>)
+<span class="bi">print</span>(<span class="str">"Evens: {evens}"</span>)
+
+<span class="cm"># Pipe to map</span>
+doubled = nums <span class="op">|&gt;</span> <span class="fn">map</span>(|x| x * <span class="num">2</span>)
+<span class="bi">print</span>(<span class="str">"Doubled: {doubled}"</span>)
+
+<span class="cm"># Chain pipes — reads like English</span>
+result = nums <span class="op">|&gt;</span> <span class="fn">filter</span>(|x| x > <span class="num">5</span>)
+             <span class="op">|&gt;</span> <span class="fn">map</span>(|x| x * x)
+<span class="bi">print</span>(<span class="str">"Filter >5, square: {result}"</span>)
+
+<span class="cm"># Lambda as variable</span>
+triple = |x| x * <span class="num">3</span>
+<span class="bi">print</span>(<span class="str">"7 tripled = {triple(7)}"</span>)</code></pre>
+      <div class="output">Evens: [2, 4, 6, 8, 10]
+Doubled: [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+Filter >5, square: [36, 49, 64, 81, 100]
+7 tripled = 21</div>
+      <a class="try-btn" data-code='nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+# Pipe to filter
+evens = nums |> filter(|x| x % 2 == 0)
+print("Evens: {evens}")
+
+# Pipe to map
+doubled = nums |> map(|x| x * 2)
+print("Doubled: {doubled}")
+
+# Chain pipes
+result = nums |> filter(|x| x > 5)
+             |> map(|x| x * x)
+print("Filter >5, square: {result}")
+
+# Lambda as variable
+triple = |x| x * 3
+print("7 tripled = {triple(7)}")'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- ==================== INTERMEDIATE ==================== -->
+    <div class="section-divider text-gradient">Intermediate</div>
+
+    <!-- 11. String Methods -->
+    <div class="example" id="ex-11">
+      <h3><span class="ex-num">11.</span> String Methods</h3>
+      <p>Built-in string methods for transformation, splitting, trimming, replacing, and repeating.</p>
+      <pre><code>msg = <span class="str">"  Hello, Pyro!  "</span>
+
+<span class="bi">print</span>(<span class="str">"upper:   {msg.upper()}"</span>)
+<span class="bi">print</span>(<span class="str">"lower:   {msg.lower()}"</span>)
+<span class="bi">print</span>(<span class="str">"trim:    [{msg.trim()}]"</span>)
+<span class="bi">print</span>(<span class="str">"replace: {msg.trim().replace(\"Pyro\", \"World\")}"</span>)
+
+<span class="cm"># Split and join</span>
+csv = <span class="str">"a,b,c,d,e"</span>
+parts = csv.split(<span class="str">","</span>)
+<span class="bi">print</span>(<span class="str">"Split: {parts}"</span>)
+
+<span class="cm"># Repeat</span>
+star = <span class="str">"*"</span>.repeat(<span class="num">20</span>)
+<span class="bi">print</span>(star)
+
+<span class="cm"># Contains, starts_with, ends_with</span>
+path = <span class="str">"src/main.pyro"</span>
+<span class="bi">print</span>(<span class="str">"Contains main: {path.contains(\"main\")}"</span>)
+<span class="bi">print</span>(<span class="str">"Ends with .pyro: {path.ends_with(\".pyro\")}"</span>)</code></pre>
+      <div class="output">upper:   HELLO, PYRO!
+lower:   hello, pyro!
+trim:    [Hello, Pyro!]
+replace: Hello, World!
+Split: [a, b, c, d, e]
+********************
+Contains main: true
+Ends with .pyro: true</div>
+      <a class="try-btn" data-code='msg = "  Hello, Pyro!  "
+
+print("upper:   {msg.upper()}")
+print("lower:   {msg.lower()}")
+print("trim:    [{msg.trim()}]")
+print("replace: {msg.trim().replace(\"Pyro\", \"World\")}")
+
+# Split and join
+csv = "a,b,c,d,e"
+parts = csv.split(",")
+print("Split: {parts}")
+
+# Repeat
+star = "*".repeat(20)
+print(star)
+
+# Contains, starts_with, ends_with
+path = "src/main.pyro"
+print("Contains main: {path.contains(\"main\")}")
+print("Ends with .pyro: {path.ends_with(\".pyro\")}")'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- 12. List Operations -->
+    <div class="example" id="ex-12">
+      <h3><span class="ex-num">12.</span> List Operations</h3>
+      <p>Use <code>map</code> and <code>filter</code> with lambdas to transform and select list elements functionally.</p>
+      <pre><code>numbers = [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>, <span class="num">6</span>, <span class="num">7</span>, <span class="num">8</span>, <span class="num">9</span>, <span class="num">10</span>]
+
+<span class="cm"># Map: transform every element</span>
+squares = numbers <span class="op">|&gt;</span> <span class="fn">map</span>(|x| x * x)
+<span class="bi">print</span>(<span class="str">"Squares: {squares}"</span>)
+
+<span class="cm"># Filter: keep elements matching condition</span>
+odds = numbers <span class="op">|&gt;</span> <span class="fn">filter</span>(|x| x % <span class="num">2</span> != <span class="num">0</span>)
+<span class="bi">print</span>(<span class="str">"Odds: {odds}"</span>)
+
+<span class="cm"># Chain: filter then map</span>
+result = numbers <span class="op">|&gt;</span> <span class="fn">filter</span>(|x| x >= <span class="num">5</span>)
+                 <span class="op">|&gt;</span> <span class="fn">map</span>(|x| x * <span class="num">10</span>)
+<span class="bi">print</span>(<span class="str">">=5 then *10: {result}"</span>)
+
+<span class="cm"># Sorting</span>
+names = [<span class="str">"Charlie"</span>, <span class="str">"Alice"</span>, <span class="str">"Bob"</span>]
+<span class="bi">print</span>(<span class="str">"Sorted: {names.sort()}"</span>)</code></pre>
+      <div class="output">Squares: [1, 4, 9, 16, 25, 36, 49, 64, 81, 100]
+Odds: [1, 3, 5, 7, 9]
+>=5 then *10: [50, 60, 70, 80, 90, 100]
+Sorted: [Alice, Bob, Charlie]</div>
+      <a class="try-btn" data-code='numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+# Map: transform every element
+squares = numbers |> map(|x| x * x)
+print("Squares: {squares}")
+
+# Filter: keep elements matching condition
+odds = numbers |> filter(|x| x % 2 != 0)
+print("Odds: {odds}")
+
+# Chain: filter then map
+result = numbers |> filter(|x| x >= 5)
+                 |> map(|x| x * 10)
+print(">=5 then *10: {result}")
+
+# Sorting
+names = ["Charlie", "Alice", "Bob"]
+print("Sorted: {names.sort()}")'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- 13. Multiline Strings -->
+    <div class="example" id="ex-13">
+      <h3><span class="ex-num">13.</span> Multiline Strings</h3>
+      <p>Triple-quoted strings <code>"""..."""</code> preserve newlines and indentation. Great for templates, SQL, and HTML.</p>
+      <pre><code><span class="cm"># Multiline string</span>
+poem = <span class="str">"""Roses are red,
+Violets are blue,
+Pyro is fast,
+And elegant too."""</span>
+<span class="bi">print</span>(poem)
+
+<span class="cm"># Interpolation works inside triple-quotes</span>
+name = <span class="str">"Pyro"</span>
+version = <span class="num">1.0</span>
+info = <span class="str">"""
+Language: {name}
+Version:  {version}
+Speed:    79x faster than Python
+"""</span>
+<span class="bi">print</span>(info)</code></pre>
+      <div class="output">Roses are red,
+Violets are blue,
+Pyro is fast,
+And elegant too.
+
+Language: Pyro
+Version:  1.0
+Speed:    79x faster than Python</div>
+      <a class="try-btn" data-code='# Multiline string
+poem = """Roses are red,
+Violets are blue,
+Pyro is fast,
+And elegant too."""
+print(poem)
+
+# Interpolation works inside triple-quotes
+name = "Pyro"
+version = 1.0
+info = """
+Language: {name}
+Version:  {version}
+Speed:    79x faster than Python
+"""
+print(info)'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- 14. Error Handling -->
+    <div class="example" id="ex-14">
+      <h3><span class="ex-num">14.</span> Error Handling</h3>
+      <p>Use <code>try</code>/<code>catch</code> for error handling and <code>throw</code> to raise errors. No colons.</p>
+      <pre><code><span class="kw">fn</span> <span class="fn">divide</span>(a, b)
+    <span class="kw">if</span> b == <span class="num">0</span>
+        <span class="kw">throw</span> <span class="str">"Division by zero!"</span>
+    <span class="kw">return</span> a / b
+
+<span class="cm"># Safe division</span>
+<span class="kw">try</span>
+    result = divide(<span class="num">10</span>, <span class="num">3</span>)
+    <span class="bi">print</span>(<span class="str">"10 / 3 = {result}"</span>)
+<span class="kw">catch</span> e
+    <span class="bi">print</span>(<span class="str">"Error: {e}"</span>)
+
+<span class="cm"># This will throw</span>
+<span class="kw">try</span>
+    result = divide(<span class="num">10</span>, <span class="num">0</span>)
+    <span class="bi">print</span>(<span class="str">"Result: {result}"</span>)
+<span class="kw">catch</span> e
+    <span class="bi">print</span>(<span class="str">"Caught: {e}"</span>)
+
+<span class="bi">print</span>(<span class="str">"Program continues after error!"</span>)</code></pre>
+      <div class="output">10 / 3 = 3.3333
+Caught: Division by zero!
+Program continues after error!</div>
+      <a class="try-btn" data-code='fn divide(a, b)
+    if b == 0
+        throw "Division by zero!"
+    return a / b
+
+# Safe division
+try
+    result = divide(10, 3)
+    print("10 / 3 = {result}")
+catch e
+    print("Error: {e}")
+
+# This will throw
+try
+    result = divide(10, 0)
+    print("Result: {result}")
+catch e
+    print("Caught: {e}")
+
+print("Program continues after error!")'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- 15. Importing Modules -->
+    <div class="example" id="ex-15">
+      <h3><span class="ex-num">15.</span> Importing Modules</h3>
+      <p>Pyro has 76 built-in modules. Import with <code>import module</code> — no pip install, no package managers.</p>
+      <pre><code><span class="kw">import</span> math
+<span class="kw">import</span> time
+
+<span class="cm"># Use module functions with dot notation</span>
+<span class="bi">print</span>(<span class="str">"Pi = {math.PI}"</span>)
+<span class="bi">print</span>(<span class="str">"sqrt(64) = {math.sqrt(64)}"</span>)
+
+<span class="cm"># Time module</span>
+now = time.now()
+<span class="bi">print</span>(<span class="str">"Timestamp: {now}"</span>)
+
+<span class="cm"># Benchmark something</span>
+start = time.now()
+<span class="kw">mut</span> sum = <span class="num">0</span>
+<span class="kw">for</span> i <span class="kw">in</span> <span class="num">0</span><span class="op">..</span><span class="num">100000</span>
+    sum = sum + i
+elapsed = time.now() - start
+<span class="bi">print</span>(<span class="str">"Sum of 0..100k = {sum} in {elapsed} ms"</span>)</code></pre>
+      <div class="output">Pi = 3.14159265358979
+sqrt(64) = 8.0
+Timestamp: 1710672000
+Sum of 0..100k = 4999950000 in 2 ms</div>
+      <a class="try-btn" data-code='import math
+import time
+
+# Use module functions with dot notation
+print("Pi = {math.PI}")
+print("sqrt(64) = {math.sqrt(64)}")
+
+# Time module
+now = time.now()
+print("Timestamp: {now}")
+
+# Benchmark something
+start = time.now()
+mut sum = 0
+for i in 0..100000
+    sum = sum + i
+elapsed = time.now() - start
+print("Sum of 0..100k = {sum} in {elapsed} ms")'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- 16. Math Module -->
+    <div class="example" id="ex-16">
+      <h3><span class="ex-num">16.</span> Math Module</h3>
+      <p>Constants, square roots, powers, trig, and random numbers — all built in.</p>
+      <pre><code><span class="kw">import</span> math
+
+<span class="cm"># Constants</span>
+<span class="bi">print</span>(<span class="str">"PI  = {math.PI}"</span>)
+<span class="bi">print</span>(<span class="str">"E   = {math.E}"</span>)
+<span class="bi">print</span>(<span class="str">"TAU = {math.TAU}"</span>)
+
+<span class="cm"># Functions</span>
+<span class="bi">print</span>(<span class="str">"sqrt(144) = {math.sqrt(144)}"</span>)
+<span class="bi">print</span>(<span class="str">"pow(2,10) = {math.pow(2, 10)}"</span>)
+<span class="bi">print</span>(<span class="str">"abs(-42)  = {math.abs(-42)}"</span>)
+
+<span class="cm"># Trigonometry</span>
+<span class="bi">print</span>(<span class="str">"sin(PI/2) = {math.sin(math.PI / 2)}"</span>)
+<span class="bi">print</span>(<span class="str">"cos(0)    = {math.cos(0)}"</span>)
+
+<span class="cm"># Random numbers</span>
+<span class="bi">print</span>(<span class="str">"Random: {math.random()}"</span>)
+<span class="bi">print</span>(<span class="str">"Rand 1-100: {math.randint(1, 100)}"</span>)</code></pre>
+      <div class="output">PI  = 3.14159265358979
+E   = 2.71828182845905
+TAU = 6.28318530717959
+sqrt(144) = 12.0
+pow(2,10) = 1024.0
+abs(-42)  = 42
+sin(PI/2) = 1.0
+cos(0)    = 1.0
+Random: 0.7291
+Rand 1-100: 42</div>
+      <a class="try-btn" data-code='import math
+
+# Constants
+print("PI  = {math.PI}")
+print("E   = {math.E}")
+print("TAU = {math.TAU}")
+
+# Functions
+print("sqrt(144) = {math.sqrt(144)}")
+print("pow(2,10) = {math.pow(2, 10)}")
+print("abs(-42)  = {math.abs(-42)}")
+
+# Trigonometry
+print("sin(PI/2) = {math.sin(math.PI / 2)}")
+print("cos(0)    = {math.cos(0)}")
+
+# Random numbers
+print("Random: {math.random()}")
+print("Rand 1-100: {math.randint(1, 100)}")'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- 17. JSON Parsing -->
+    <div class="example" id="ex-17">
+      <h3><span class="ex-num">17.</span> JSON Parsing</h3>
+      <p>Parse, stringify, and pretty-print JSON with the built-in <code>json</code> module.</p>
+      <pre><code><span class="kw">import</span> json
+
+<span class="cm"># Parse JSON string to object</span>
+raw = <span class="str">"{\"name\": \"Pyro\", \"speed\": 79, \"compiled\": true}"</span>
+data = json.parse(raw)
+<span class="bi">print</span>(<span class="str">"Name: {data[\"name\"]}"</span>)
+<span class="bi">print</span>(<span class="str">"Speed: {data[\"speed\"]}x"</span>)
+
+<span class="cm"># Stringify object to JSON</span>
+obj = {<span class="str">"lang"</span>: <span class="str">"Pyro"</span>, <span class="str">"version"</span>: <span class="num">1.0</span>}
+<span class="bi">print</span>(<span class="str">"JSON: {json.stringify(obj)}"</span>)
+
+<span class="cm"># Pretty print</span>
+<span class="bi">print</span>(<span class="str">"Pretty:"</span>)
+<span class="bi">print</span>(json.pretty(obj))
+
+<span class="cm"># Parse array</span>
+arr = json.parse(<span class="str">"[1, 2, 3, 4, 5]"</span>)
+<span class="bi">print</span>(<span class="str">"Array: {arr}"</span>)</code></pre>
+      <div class="output">Name: Pyro
+Speed: 79x
+JSON: {"lang":"Pyro","version":1.0}
+Pretty:
+{
+  "lang": "Pyro",
+  "version": 1.0
+}
+Array: [1, 2, 3, 4, 5]</div>
+      <a class="try-btn" data-code='import json
+
+# Parse JSON string to object
+raw = "{\"name\": \"Pyro\", \"speed\": 79, \"compiled\": true}"
+data = json.parse(raw)
+print("Name: {data[\"name\"]}")
+print("Speed: {data[\"speed\"]}x")
+
+# Stringify object to JSON
+obj = {"lang": "Pyro", "version": 1.0}
+print("JSON: {json.stringify(obj)}")
+
+# Pretty print
+print("Pretty:")
+print(json.pretty(obj))
+
+# Parse array
+arr = json.parse("[1, 2, 3, 4, 5]")
+print("Array: {arr}")'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- 18. File I/O -->
+    <div class="example" id="ex-18">
+      <h3><span class="ex-num">18.</span> File I/O</h3>
+      <p>Read and write files with the <code>io</code> module. Simple one-liners for common operations.</p>
+      <pre><code><span class="kw">import</span> io
+
+<span class="cm"># Write a file</span>
+io.write(<span class="str">"hello.txt"</span>, <span class="str">"Hello from Pyro!\nLine 2\nLine 3"</span>)
+<span class="bi">print</span>(<span class="str">"File written!"</span>)
+
+<span class="cm"># Read entire file</span>
+content = io.read(<span class="str">"hello.txt"</span>)
+<span class="bi">print</span>(<span class="str">"Content: {content}"</span>)
+
+<span class="cm"># Read as lines</span>
+lines = io.readlines(<span class="str">"hello.txt"</span>)
+<span class="bi">print</span>(<span class="str">"Lines: {lines}"</span>)
+<span class="bi">print</span>(<span class="str">"Line count: {lines.len()}"</span>)
+
+<span class="cm"># Append to file</span>
+io.append(<span class="str">"hello.txt"</span>, <span class="str">"\nLine 4 appended!"</span>)
+<span class="bi">print</span>(io.read(<span class="str">"hello.txt"</span>))</code></pre>
+      <div class="output">File written!
+Content: Hello from Pyro!
+Line 2
+Line 3
+Lines: [Hello from Pyro!, Line 2, Line 3]
+Line count: 3
+Hello from Pyro!
+Line 2
+Line 3
+Line 4 appended!</div>
+      <a class="try-btn" data-code='import io
+
+# Write a file
+io.write("hello.txt", "Hello from Pyro!\nLine 2\nLine 3")
+print("File written!")
+
+# Read entire file
+content = io.read("hello.txt")
+print("Content: {content}")
+
+# Read as lines
+lines = io.readlines("hello.txt")
+print("Lines: {lines}")
+print("Line count: {lines.len()}")
+
+# Append to file
+io.append("hello.txt", "\nLine 4 appended!")
+print(io.read("hello.txt"))'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- 19. Regular Expressions -->
+    <div class="example" id="ex-19">
+      <h3><span class="ex-num">19.</span> Regular Expressions</h3>
+      <p>Pattern matching with the <code>re</code> module — find, match, and replace text.</p>
+      <pre><code><span class="kw">import</span> re
+
+text = <span class="str">"Call 555-1234 or 555-5678 today!"</span>
+
+<span class="cm"># Find all matches</span>
+phones = re.find_all(<span class="str">"\\d{3}-\\d{4}"</span>, text)
+<span class="bi">print</span>(<span class="str">"Phones: {phones}"</span>)
+
+<span class="cm"># Test if pattern matches</span>
+<span class="bi">print</span>(<span class="str">"Has phone: {re.match(\"\\d{3}-\\d{4}\", text)}"</span>)
+<span class="bi">print</span>(<span class="str">"Has email: {re.match(\"@\", text)}"</span>)
+
+<span class="cm"># Replace with regex</span>
+cleaned = re.replace(<span class="str">"\\d"</span>, text, <span class="str">"#"</span>)
+<span class="bi">print</span>(<span class="str">"Cleaned: {cleaned}"</span>)
+
+<span class="cm"># Extract emails</span>
+msg = <span class="str">"Contact us at hello@pyro.dev or support@pyro.dev"</span>
+emails = re.find_all(<span class="str">"[\\w.]+@[\\w.]+"</span>, msg)
+<span class="bi">print</span>(<span class="str">"Emails: {emails}"</span>)</code></pre>
+      <div class="output">Phones: [555-1234, 555-5678]
+Has phone: true
+Has email: false
+Cleaned: Call ###-#### or ###-#### today!
+Emails: [hello@pyro.dev, support@pyro.dev]</div>
+      <a class="try-btn" data-code='import re
+
+text = "Call 555-1234 or 555-5678 today!"
+
+# Find all matches
+phones = re.find_all("\\d{3}-\\d{4}", text)
+print("Phones: {phones}")
+
+# Test if pattern matches
+print("Has phone: {re.match(\"\\d{3}-\\d{4}\", text)}")
+print("Has email: {re.match(\"@\", text)}")
+
+# Replace with regex
+cleaned = re.replace("\\d", text, "#")
+print("Cleaned: {cleaned}")
+
+# Extract emails
+msg = "Contact us at hello@pyro.dev or support@pyro.dev"
+emails = re.find_all("[\\w.]+@[\\w.]+", msg)
+print("Emails: {emails}")'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- 20. Testing -->
+    <div class="example" id="ex-20">
+      <h3><span class="ex-num">20.</span> Testing</h3>
+      <p>Built-in test framework with <code>test.run</code>, <code>test.eq</code>, and <code>test.summary</code>. No pytest needed.</p>
+      <pre><code><span class="kw">import</span> test
+
+<span class="cm"># Define what we're testing</span>
+<span class="kw">fn</span> <span class="fn">add</span>(a, b)
+    <span class="kw">return</span> a + b
+
+<span class="kw">fn</span> <span class="fn">factorial</span>(n)
+    <span class="kw">if</span> n <= <span class="num">1</span>
+        <span class="kw">return</span> <span class="num">1</span>
+    <span class="kw">return</span> n * factorial(n - <span class="num">1</span>)
+
+<span class="cm"># Run tests</span>
+test.run(<span class="str">"addition"</span>, <span class="kw">fn</span>()
+    test.eq(add(<span class="num">2</span>, <span class="num">3</span>), <span class="num">5</span>)
+    test.eq(add(<span class="num">-1</span>, <span class="num">1</span>), <span class="num">0</span>)
+    test.eq(add(<span class="num">0</span>, <span class="num">0</span>), <span class="num">0</span>)
+)
+
+test.run(<span class="str">"factorial"</span>, <span class="kw">fn</span>()
+    test.eq(factorial(<span class="num">0</span>), <span class="num">1</span>)
+    test.eq(factorial(<span class="num">1</span>), <span class="num">1</span>)
+    test.eq(factorial(<span class="num">5</span>), <span class="num">120</span>)
+    test.eq(factorial(<span class="num">10</span>), <span class="num">3628800</span>)
+)
+
+test.summary()</code></pre>
+      <div class="output">PASS  addition (3 assertions)
+PASS  factorial (4 assertions)
+
+All 2 tests passed (7 assertions)</div>
+      <a class="try-btn" data-code='import test
+
+# Define what we are testing
+fn add(a, b)
+    return a + b
+
+fn factorial(n)
+    if n <= 1
+        return 1
+    return n * factorial(n - 1)
+
+# Run tests
+test.run("addition", fn()
+    test.eq(add(2, 3), 5)
+    test.eq(add(-1, 1), 0)
+    test.eq(add(0, 0), 0)
+)
+
+test.run("factorial", fn()
+    test.eq(factorial(0), 1)
+    test.eq(factorial(1), 1)
+    test.eq(factorial(5), 120)
+    test.eq(factorial(10), 3628800)
+)
+
+test.summary()'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- ==================== ADVANCED ==================== -->
+    <div class="section-divider text-gradient">Advanced</div>
+
+    <!-- 21. Web Server -->
+    <div class="example" id="ex-21">
+      <h3><span class="ex-num">21.</span> Web Server</h3>
+      <p>Build a web server with routes and static files using the built-in <code>web</code> module. No Express, no Flask.</p>
+      <pre><code><span class="kw">import</span> web
+
+<span class="cm"># Create a web app</span>
+app = web.App()
+
+<span class="cm"># Define routes</span>
+app.get(<span class="str">"/"</span>, <span class="kw">fn</span>(req, res)
+    res.send(<span class="str">"Hello from Pyro Web!"</span>)
+)
+
+app.get(<span class="str">"/api/status"</span>, <span class="kw">fn</span>(req, res)
+    res.json({<span class="str">"status"</span>: <span class="str">"ok"</span>, <span class="str">"lang"</span>: <span class="str">"Pyro"</span>})
+)
+
+app.get(<span class="str">"/greet/{name}"</span>, <span class="kw">fn</span>(req, res)
+    res.send(<span class="str">"Hello, {req.params.name}!"</span>)
+)
+
+<span class="cm"># Serve static files</span>
+app.static(<span class="str">"/public"</span>, <span class="str">"./static"</span>)
+
+<span class="cm"># Start server</span>
+app.listen(<span class="num">8080</span>)
+<span class="bi">print</span>(<span class="str">"Server running on http://localhost:8080"</span>)</code></pre>
+      <div class="output">Server running on http://localhost:8080</div>
+      <a class="try-btn" data-code='import web
+
+# Create a web app
+app = web.App()
+
+# Define routes
+app.get("/", fn(req, res)
+    res.send("Hello from Pyro Web!")
+)
+
+app.get("/api/status", fn(req, res)
+    res.json({"status": "ok", "lang": "Pyro"})
+)
+
+app.get("/greet/{name}", fn(req, res)
+    res.send("Hello, {req.params.name}!")
+)
+
+# Serve static files
+app.static("/public", "./static")
+
+# Start server
+app.listen(8080)
+print("Server running on http://localhost:8080")'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- 22. Database -->
+    <div class="example" id="ex-22">
+      <h3><span class="ex-num">22.</span> Database</h3>
+      <p>SQLite CRUD operations with the built-in <code>db</code> module. No ORM setup, no drivers.</p>
+      <pre><code><span class="kw">import</span> db
+
+<span class="cm"># Connect to SQLite (creates file if needed)</span>
+conn = db.connect(<span class="str">"app.db"</span>)
+
+<span class="cm"># Create table</span>
+conn.exec(<span class="str">"CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name TEXT, age INTEGER)"</span>)
+
+<span class="cm"># Insert rows</span>
+conn.exec(<span class="str">"INSERT INTO users (name, age) VALUES ('Alice', 25)"</span>)
+conn.exec(<span class="str">"INSERT INTO users (name, age) VALUES ('Bob', 30)"</span>)
+conn.exec(<span class="str">"INSERT INTO users (name, age) VALUES ('Charlie', 22)"</span>)
+<span class="bi">print</span>(<span class="str">"Inserted 3 users"</span>)
+
+<span class="cm"># Query</span>
+rows = conn.query(<span class="str">"SELECT * FROM users"</span>)
+<span class="kw">for</span> row <span class="kw">in</span> rows
+    <span class="bi">print</span>(<span class="str">"{row}"</span>)
+
+<span class="cm"># Update</span>
+conn.exec(<span class="str">"UPDATE users SET age = 26 WHERE name = 'Alice'"</span>)
+
+<span class="cm"># Count</span>
+count = conn.query(<span class="str">"SELECT COUNT(*) as total FROM users"</span>)
+<span class="bi">print</span>(<span class="str">"Total users: {count}"</span>)
+
+conn.close()</code></pre>
+      <div class="output">Inserted 3 users
+{id: 1, name: Alice, age: 25}
+{id: 2, name: Bob, age: 30}
+{id: 3, name: Charlie, age: 22}
+Total users: [{total: 3}]</div>
+      <a class="try-btn" data-code='import db
+
+# Connect to SQLite
+conn = db.connect("app.db")
+
+# Create table
+conn.exec("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name TEXT, age INTEGER)")
+
+# Insert rows
+conn.exec("INSERT INTO users (name, age) VALUES (&apos;Alice&apos;, 25)")
+conn.exec("INSERT INTO users (name, age) VALUES (&apos;Bob&apos;, 30)")
+conn.exec("INSERT INTO users (name, age) VALUES (&apos;Charlie&apos;, 22)")
+print("Inserted 3 users")
+
+# Query
+rows = conn.query("SELECT * FROM users")
+for row in rows
+    print("{row}")
+
+conn.close()'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- 23. HTTP Client -->
+    <div class="example" id="ex-23">
+      <h3><span class="ex-num">23.</span> HTTP Client</h3>
+      <p>Make HTTP requests with the built-in <code>http</code> module. GET, POST, headers, JSON — all included.</p>
+      <pre><code><span class="kw">import</span> http
+
+<span class="cm"># Simple GET request</span>
+res = http.get(<span class="str">"https://jsonplaceholder.typicode.com/posts/1"</span>)
+<span class="bi">print</span>(<span class="str">"Status: {res.status}"</span>)
+<span class="bi">print</span>(<span class="str">"Title: {res.json()[\"title\"]}"</span>)
+
+<span class="cm"># POST request with JSON body</span>
+res = http.post(<span class="str">"https://jsonplaceholder.typicode.com/posts"</span>, {
+    <span class="str">"title"</span>: <span class="str">"Pyro is awesome"</span>,
+    <span class="str">"body"</span>: <span class="str">"Built-in HTTP client!"</span>,
+    <span class="str">"userId"</span>: <span class="num">1</span>
+})
+<span class="bi">print</span>(<span class="str">"Created post ID: {res.json()[\"id\"]}"</span>)
+
+<span class="cm"># GET with headers</span>
+res = http.get(<span class="str">"https://api.github.com"</span>, {
+    <span class="str">"User-Agent"</span>: <span class="str">"Pyro/1.0"</span>
+})
+<span class="bi">print</span>(<span class="str">"GitHub API status: {res.status}"</span>)</code></pre>
+      <div class="output">Status: 200
+Title: sunt aut facere repellat provident occaecati
+Created post ID: 101
+GitHub API status: 200</div>
+      <a class="try-btn" data-code='import http
+
+# Simple GET request
+res = http.get("https://jsonplaceholder.typicode.com/posts/1")
+print("Status: {res.status}")
+print("Title: {res.json()[\"title\"]}")
+
+# POST request with JSON body
+res = http.post("https://jsonplaceholder.typicode.com/posts", {
+    "title": "Pyro is awesome",
+    "body": "Built-in HTTP client!",
+    "userId": 1
+})
+print("Created post ID: {res.json()[\"id\"]}")'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- 24. AI Chat -->
+    <div class="example" id="ex-24">
+      <h3><span class="ex-num">24.</span> AI Chat</h3>
+      <p>Built-in AI module for chat, translation, and summarization. No API key setup in code.</p>
+      <pre><code><span class="kw">import</span> ai
+
+<span class="cm"># Chat with AI</span>
+response = ai.chat(<span class="str">"Explain Pyro in one sentence"</span>)
+<span class="bi">print</span>(<span class="str">"AI says: {response}"</span>)
+
+<span class="cm"># Translate text</span>
+spanish = ai.translate(<span class="str">"Hello, how are you?"</span>, <span class="str">"Spanish"</span>)
+<span class="bi">print</span>(<span class="str">"Spanish: {spanish}"</span>)
+
+french = ai.translate(<span class="str">"Pyro is fast"</span>, <span class="str">"French"</span>)
+<span class="bi">print</span>(<span class="str">"French: {french}"</span>)
+
+<span class="cm"># Summarize text</span>
+text = <span class="str">"Pyro is a compiled programming language created by Aravind Pilla. It compiles to native C++ and runs 79x faster than Python. It has 76 built-in modules and only 23 keywords."</span>
+summary = ai.summarize(text)
+<span class="bi">print</span>(<span class="str">"Summary: {summary}"</span>)</code></pre>
+      <div class="output">AI says: Pyro is a compiled language that combines Python's simplicity with C++ speed.
+Spanish: Hola, como estas?
+French: Pyro est rapide
+Summary: Pyro: compiled lang, 79x faster than Python, 76 modules, 23 keywords.</div>
+      <a class="try-btn" data-code='import ai
+
+# Chat with AI
+response = ai.chat("Explain Pyro in one sentence")
+print("AI says: {response}")
+
+# Translate text
+spanish = ai.translate("Hello, how are you?", "Spanish")
+print("Spanish: {spanish}")
+
+french = ai.translate("Pyro is fast", "French")
+print("French: {french}")'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- 25. Machine Learning -->
+    <div class="example" id="ex-25">
+      <h3><span class="ex-num">25.</span> Machine Learning</h3>
+      <p>Train models with the built-in <code>ml</code> module. Linear regression, prediction, evaluation — no scikit-learn.</p>
+      <pre><code><span class="kw">import</span> ml
+
+<span class="cm"># Dataset: [hours_studied, sleep] -> exam_score</span>
+<span class="kw">mut</span> ds = ml.Dataset()
+ds.X = [[<span class="num">1.0</span>, <span class="num">8.0</span>], [<span class="num">2.0</span>, <span class="num">7.0</span>], [<span class="num">3.0</span>, <span class="num">6.0</span>], [<span class="num">5.0</span>, <span class="num">6.0</span>], [<span class="num">7.0</span>, <span class="num">4.0</span>], [<span class="num">8.0</span>, <span class="num">3.0</span>]]
+ds.y = [<span class="num">30.0</span>, <span class="num">40.0</span>, <span class="num">50.0</span>, <span class="num">65.0</span>, <span class="num">80.0</span>, <span class="num">85.0</span>]
+
+<span class="cm"># Train linear regression</span>
+model = ml.linear_regression(ds, <span class="num">0.01</span>, <span class="num">2000</span>)
+<span class="bi">print</span>(model)
+
+<span class="cm"># Predict new data</span>
+<span class="kw">mut</span> new_data = ml.Dataset()
+new_data.X = [[<span class="num">4.0</span>, <span class="num">7.0</span>], [<span class="num">9.0</span>, <span class="num">2.0</span>]]
+preds = model.predict(new_data)
+<span class="bi">print</span>(<span class="str">"Predictions: {preds}"</span>)
+
+<span class="cm"># Evaluate</span>
+<span class="bi">print</span>(<span class="str">"MSE: {ml.mse(preds, [55.0, 90.0])}"</span>)</code></pre>
+      <div class="output">LinearRegression(weights=[7.82, -2.14], bias=18.5)
+Predictions: [34.42, 88.24]
+MSE: 213.45</div>
+      <a class="try-btn" data-code='import ml
+
+# Dataset: [hours_studied, sleep] -> exam_score
+mut ds = ml.Dataset()
+ds.X = [[1.0, 8.0], [2.0, 7.0], [3.0, 6.0], [5.0, 6.0], [7.0, 4.0], [8.0, 3.0]]
+ds.y = [30.0, 40.0, 50.0, 65.0, 80.0, 85.0]
+
+# Train linear regression
+model = ml.linear_regression(ds, 0.01, 2000)
+print(model)
+
+# Predict new data
+mut new_data = ml.Dataset()
+new_data.X = [[4.0, 7.0], [9.0, 2.0]]
+preds = model.predict(new_data)
+print("Predictions: {preds}")
+
+# Evaluate
+print("MSE: {ml.mse(preds, [55.0, 90.0])}")'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- 26. NLP -->
+    <div class="example" id="ex-26">
+      <h3><span class="ex-num">26.</span> NLP</h3>
+      <p>Natural Language Processing built in. Sentiment analysis, tokenization, keyword extraction — no NLTK or spaCy.</p>
+      <pre><code><span class="kw">import</span> nlp
+
+text = <span class="str">"Pyro is an amazing programming language. It compiles to C++ and runs incredibly fast."</span>
+
+<span class="cm"># Sentiment analysis</span>
+<span class="bi">print</span>(<span class="str">"Sentiment: {nlp.sentiment(text)}"</span>)
+<span class="bi">print</span>(<span class="str">"Negative:  {nlp.sentiment(\"This is terrible\")}"</span>)
+
+<span class="cm"># Tokenize</span>
+tokens = nlp.tokenize(text)
+<span class="bi">print</span>(<span class="str">"Tokens: {tokens}"</span>)
+
+<span class="cm"># Keywords (TF-IDF)</span>
+kw = nlp.keywords(text, <span class="num">5</span>)
+<span class="bi">print</span>(<span class="str">"Keywords: {kw}"</span>)
+
+<span class="cm"># Word count and sentence count</span>
+<span class="bi">print</span>(<span class="str">"Words: {nlp.count_words(text)}"</span>)
+<span class="bi">print</span>(<span class="str">"Sentences: {nlp.count_sentences(text)}"</span>)
+
+<span class="cm"># Similarity</span>
+score = nlp.similarity(<span class="str">"Pyro is fast"</span>, <span class="str">"Pyro has great speed"</span>)
+<span class="bi">print</span>(<span class="str">"Similarity: {score}"</span>)</code></pre>
+      <div class="output">Sentiment: {score: 0.85, label: positive}
+Negative:  {score: -0.72, label: negative}
+Tokens: [Pyro, is, an, amazing, programming, language, It, compiles, to, C++, and, runs, incredibly, fast]
+Keywords: [Pyro, programming, compiles, language, fast]
+Words: 14
+Sentences: 2
+Similarity: 0.82</div>
+      <a class="try-btn" data-code='import nlp
+
+text = "Pyro is an amazing programming language. It compiles to C++ and runs incredibly fast."
+
+# Sentiment analysis
+print("Sentiment: {nlp.sentiment(text)}")
+print("Negative:  {nlp.sentiment(\"This is terrible\")}")
+
+# Tokenize
+tokens = nlp.tokenize(text)
+print("Tokens: {tokens}")
+
+# Keywords
+kw = nlp.keywords(text, 5)
+print("Keywords: {kw}")
+
+# Word and sentence count
+print("Words: {nlp.count_words(text)}")
+print("Sentences: {nlp.count_sentences(text)}")'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- 27. Visualization -->
+    <div class="example" id="ex-27">
+      <h3><span class="ex-num">27.</span> Visualization</h3>
+      <p>Create charts with the <code>viz</code> module. Bar charts, pie charts, line graphs — rendered natively.</p>
+      <pre><code><span class="kw">import</span> viz
+
+<span class="cm"># Bar chart</span>
+viz.bar(
+    <span class="str">"Programming Languages"</span>,
+    [<span class="str">"Pyro"</span>, <span class="str">"Python"</span>, <span class="str">"Go"</span>, <span class="str">"Rust"</span>],
+    [<span class="num">95</span>, <span class="num">85</span>, <span class="num">78</span>, <span class="num">92</span>]
+)
+
+<span class="cm"># Pie chart</span>
+viz.pie(
+    <span class="str">"Market Share"</span>,
+    [<span class="str">"Chrome"</span>, <span class="str">"Firefox"</span>, <span class="str">"Safari"</span>, <span class="str">"Edge"</span>],
+    [<span class="num">65</span>, <span class="num">12</span>, <span class="num">18</span>, <span class="num">5</span>]
+)
+
+<span class="cm"># Line chart</span>
+viz.line(
+    <span class="str">"Growth Over Time"</span>,
+    [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>],
+    [<span class="num">10</span>, <span class="num">25</span>, <span class="num">45</span>, <span class="num">80</span>, <span class="num">150</span>]
+)
+
+<span class="bi">print</span>(<span class="str">"Charts rendered!"</span>)</code></pre>
+      <div class="output">Bar chart: Programming Languages (4 bars)
+Pie chart: Market Share (4 slices)
+Line chart: Growth Over Time (5 points)
+Charts rendered!</div>
+      <a class="try-btn" data-code='import viz
+
+# Bar chart
+viz.bar(
+    "Programming Languages",
+    ["Pyro", "Python", "Go", "Rust"],
+    [95, 85, 78, 92]
+)
+
+# Pie chart
+viz.pie(
+    "Market Share",
+    ["Chrome", "Firefox", "Safari", "Edge"],
+    [65, 12, 18, 5]
+)
+
+print("Charts rendered!")'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- 28. Benchmarking -->
+    <div class="example" id="ex-28">
+      <h3><span class="ex-num">28.</span> Benchmarking</h3>
+      <p>Measure performance with <code>test.bench</code>. Compare different implementations side by side.</p>
+      <pre><code><span class="kw">import</span> test
+<span class="kw">import</span> time
+
+<span class="cm"># Iterative fibonacci</span>
+<span class="kw">fn</span> <span class="fn">fib_iter</span>(n)
+    <span class="kw">mut</span> a = <span class="num">0</span>
+    <span class="kw">mut</span> b = <span class="num">1</span>
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="num">0</span><span class="op">..</span>n
+        <span class="kw">mut</span> temp = b
+        b = a + b
+        a = temp
+    <span class="kw">return</span> a
+
+<span class="cm"># Recursive fibonacci</span>
+<span class="kw">fn</span> <span class="fn">fib_rec</span>(n)
+    <span class="kw">if</span> n <= <span class="num">1</span>
+        <span class="kw">return</span> n
+    <span class="kw">return</span> fib_rec(n - <span class="num">1</span>) + fib_rec(n - <span class="num">2</span>)
+
+<span class="cm"># Benchmark both</span>
+test.bench(<span class="str">"fib_iter(30)"</span>, <span class="kw">fn</span>()
+    fib_iter(<span class="num">30</span>)
+)
+
+test.bench(<span class="str">"fib_rec(30)"</span>, <span class="kw">fn</span>()
+    fib_rec(<span class="num">30</span>)
+)
+
+<span class="cm"># Verify they give same result</span>
+<span class="bi">print</span>(<span class="str">"Iterative: {fib_iter(30)}"</span>)
+<span class="bi">print</span>(<span class="str">"Recursive: {fib_rec(30)}"</span>)</code></pre>
+      <div class="output">BENCH fib_iter(30): 0.001 ms (1000 iterations)
+BENCH fib_rec(30):  12.4 ms  (100 iterations)
+Iterative: 832040
+Recursive: 832040</div>
+      <a class="try-btn" data-code='import test
+import time
+
+# Iterative fibonacci
+fn fib_iter(n)
+    mut a = 0
+    mut b = 1
+    for i in 0..n
+        mut temp = b
+        b = a + b
+        a = temp
+    return a
+
+# Recursive fibonacci
+fn fib_rec(n)
+    if n <= 1
+        return n
+    return fib_rec(n - 1) + fib_rec(n - 2)
+
+# Benchmark both
+test.bench("fib_iter(30)", fn()
+    fib_iter(30)
+)
+
+test.bench("fib_rec(30)", fn()
+    fib_rec(30)
+)
+
+print("Iterative: {fib_iter(30)}")
+print("Recursive: {fib_rec(30)}")'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- 29. Environment Variables -->
+    <div class="example" id="ex-29">
+      <h3><span class="ex-num">29.</span> Environment Variables</h3>
+      <p>Access env vars and load <code>.env</code> files with the built-in <code>env</code> module.</p>
+      <pre><code><span class="kw">import</span> env
+
+<span class="cm"># Get environment variable</span>
+home = env.get(<span class="str">"HOME"</span>)
+<span class="bi">print</span>(<span class="str">"Home: {home}"</span>)
+
+path = env.get(<span class="str">"PATH"</span>)
+<span class="bi">print</span>(<span class="str">"Path: {path}"</span>)
+
+<span class="cm"># Get with default value</span>
+port = env.get(<span class="str">"PORT"</span>, <span class="str">"3000"</span>)
+<span class="bi">print</span>(<span class="str">"Port: {port}"</span>)
+
+<span class="cm"># Load .env file</span>
+env.load(<span class="str">".env"</span>)
+<span class="bi">print</span>(<span class="str">"Loaded .env file"</span>)
+
+<span class="cm"># Set environment variable</span>
+env.set(<span class="str">"APP_NAME"</span>, <span class="str">"PyroApp"</span>)
+<span class="bi">print</span>(<span class="str">"APP_NAME = {env.get(\"APP_NAME\")}"</span>)
+
+<span class="cm"># List all env vars</span>
+all_vars = env.keys()
+<span class="bi">print</span>(<span class="str">"Total env vars: {all_vars.len()}"</span>)</code></pre>
+      <div class="output">Home: /home/user
+Path: /usr/local/bin:/usr/bin
+Port: 3000
+Loaded .env file
+APP_NAME = PyroApp
+Total env vars: 42</div>
+      <a class="try-btn" data-code='import env
+
+# Get environment variable
+home = env.get("HOME")
+print("Home: {home}")
+
+# Get with default value
+port = env.get("PORT", "3000")
+print("Port: {port}")
+
+# Set environment variable
+env.set("APP_NAME", "PyroApp")
+print("APP_NAME = {env.get(\"APP_NAME\")}")'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- 30. Form Validation -->
+    <div class="example" id="ex-30">
+      <h3><span class="ex-num">30.</span> Form Validation</h3>
+      <p>Validate user input with the <code>validate</code> module. Email, phone, URL, and custom rules.</p>
+      <pre><code><span class="kw">import</span> validate
+
+<span class="cm"># Email validation</span>
+<span class="bi">print</span>(<span class="str">"Email valid: {validate.email(\"user@pyro.dev\")}"</span>)
+<span class="bi">print</span>(<span class="str">"Email valid: {validate.email(\"not-an-email\")}"</span>)
+
+<span class="cm"># Phone validation</span>
+<span class="bi">print</span>(<span class="str">"Phone valid: {validate.phone(\"+1-555-123-4567\")}"</span>)
+<span class="bi">print</span>(<span class="str">"Phone valid: {validate.phone(\"abc\")}"</span>)
+
+<span class="cm"># URL validation</span>
+<span class="bi">print</span>(<span class="str">"URL valid: {validate.url(\"https://pyro.dev\")}"</span>)
+<span class="bi">print</span>(<span class="str">"URL valid: {validate.url(\"not a url\")}"</span>)
+
+<span class="cm"># Validate a form</span>
+form = {
+    <span class="str">"name"</span>: <span class="str">"Aravind"</span>,
+    <span class="str">"email"</span>: <span class="str">"aravind@pyro.dev"</span>,
+    <span class="str">"age"</span>: <span class="num">20</span>
+}
+
+result = validate.check(form, {
+    <span class="str">"name"</span>: <span class="str">"required|min:2"</span>,
+    <span class="str">"email"</span>: <span class="str">"required|email"</span>,
+    <span class="str">"age"</span>: <span class="str">"required|min:18"</span>
+})
+
+<span class="bi">print</span>(<span class="str">"Form valid: {result.valid}"</span>)
+<span class="bi">print</span>(<span class="str">"Errors: {result.errors}"</span>)</code></pre>
+      <div class="output">Email valid: true
+Email valid: false
+Phone valid: true
+Phone valid: false
+URL valid: true
+URL valid: false
+Form valid: true
+Errors: []</div>
+      <a class="try-btn" data-code='import validate
+
+# Email validation
+print("Email valid: {validate.email(\"user@pyro.dev\")}")
+print("Email valid: {validate.email(\"not-an-email\")}")
+
+# Phone validation
+print("Phone valid: {validate.phone(\"+1-555-123-4567\")}")
+print("Phone valid: {validate.phone(\"abc\")}")
+
+# URL validation
+print("URL valid: {validate.url(\"https://pyro.dev\")}")
+print("URL valid: {validate.url(\"not a url\")}")
+
+# Form valid check
+form = {"name": "Aravind", "email": "aravind@pyro.dev", "age": 20}
+result = validate.check(form, {
+    "name": "required|min:2",
+    "email": "required|email",
+    "age": "required|min:18"
+})
+print("Form valid: {result.valid}")'>Try in Playground &rarr;</a>
+    </div>
+
+  </main>
+</div>
+
+<!-- Footer -->
+<footer style="text-align:center; padding:40px 24px; border-top:1px solid var(--border); color:var(--text-muted); font-size:0.85rem;">
+  <p>Pyro Programming Language &mdash; Created by <strong style="color:var(--text-primary);">Aravind Pilla</strong></p>
+  <p style="margin-top:8px;">30 examples to go from zero to production. <a href="playground.html">Open Playground</a></p>
+</footer>
+
+<script>
+// Sidebar active tracking on scroll
+const examples = document.querySelectorAll('.example');
+const sidebarLinks = document.querySelectorAll('.learn-sidebar a');
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      sidebarLinks.forEach(link => link.classList.remove('active'));
+      const id = entry.target.id;
+      const activeLink = document.querySelector(`.learn-sidebar a[href="#${id}"]`);
+      if (activeLink) activeLink.classList.add('active');
+    }
+  });
+}, { rootMargin: '-20% 0px -70% 0px' });
+
+examples.forEach(ex => observer.observe(ex));
+
+// "Try in Playground" buttons — encode code to URL and open playground
+document.querySelectorAll('.try-btn').forEach(btn => {
+  btn.addEventListener('click', function(e) {
+    e.preventDefault();
+    const code = this.getAttribute('data-code');
+    if (code) {
+      // Store code in localStorage for playground to pick up
+      localStorage.setItem('pyro_playground_code', code);
+      window.location.href = 'playground.html';
+    }
+  });
+});
+
+// Mobile nav toggle
+const toggle = document.querySelector('.nav-toggle');
+const navLinks = document.querySelector('.nav-links');
+if (toggle) {
+  toggle.addEventListener('click', () => {
+    navLinks.classList.toggle('open');
+    toggle.setAttribute('aria-expanded', navLinks.classList.contains('open'));
+  });
+}
+</script>
+
+</body>
+</html>

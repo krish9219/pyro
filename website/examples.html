@@ -468,6 +468,46 @@ pred = model.<span class="fn">predict</span>(<span class="num">6.0</span>)
         </div>
       </div>
 
+      <!-- Pastebin (Real App Showcase) -->
+      <div class="example-card fade-in" data-category="web" style="border: 1px solid #ff6b35; position: relative;">
+        <div style="position: absolute; top: -10px; right: 16px; background: linear-gradient(135deg, #ff6b35, #ff8c42); color: white; font-size: 0.7rem; font-weight: 700; padding: 2px 10px; border-radius: 4px;">SHOWCASE</div>
+        <div class="example-card-header">
+          <h3>Pyro Paste — Real App</h3>
+          <p>A full pastebin with web server, SQLite database, and routing — all in Pyro.</p>
+        </div>
+        <pre><code><span class="kw">import</span> web
+<span class="kw">import</span> db
+<span class="kw">import</span> io
+<span class="kw">import</span> random
+
+<span class="kw">mut</span> conn = <span class="type">db</span>.<span class="fn">connect</span>(<span class="str">"pastes.db"</span>)
+conn.<span class="fn">exec</span>(<span class="str">"CREATE TABLE IF NOT EXISTS pastes ..."</span>)
+
+<span class="kw">mut</span> app = <span class="type">web</span>.<span class="fn">app</span>()
+
+app.<span class="fn">get</span>(<span class="str">"/"</span>, <span class="kw">fn</span>(req) = <span class="type">web</span>.<span class="fn">html</span>(<span class="type">io</span>.<span class="fn">read</span>(<span class="str">"pages/index.html"</span>)))
+
+app.<span class="fn">post</span>(<span class="str">"/api/paste"</span>, <span class="kw">fn</span>(req)
+    <span class="kw">let</span> id = <span class="fn">str</span>(<span class="type">random</span>.<span class="fn">randint</span>(<span class="num">10000000</span>, <span class="num">99999999</span>))
+    conn.<span class="fn">exec</span>(<span class="str">"INSERT INTO pastes ..."</span>)
+    <span class="kw">return</span> <span class="type">web</span>.<span class="fn">json</span>(<span class="str">"{\"id\": \""</span> + id + <span class="str">"\"}"</span>)
+)
+
+app.<span class="fn">get</span>(<span class="str">"/view/:id"</span>, <span class="kw">fn</span>(req)
+    <span class="kw">let</span> rows = conn.<span class="fn">query</span>(<span class="str">"SELECT * FROM pastes WHERE id = ..."</span>)
+    <span class="kw">if</span> rows.<span class="fn">len</span>() &gt; <span class="num">0</span>
+        <span class="kw">return</span> <span class="type">web</span>.<span class="fn">html</span>(rows[<span class="num">0</span>].<span class="fn">get</span>(<span class="str">"content"</span>))
+    <span class="kw">return</span> <span class="type">web</span>.<span class="fn">html</span>(<span class="str">"&lt;h1&gt;Not Found&lt;/h1&gt;"</span>)
+)
+
+app.<span class="fn">serve_static</span>(<span class="str">"/static"</span>, <span class="str">"static"</span>)
+app.<span class="fn">listen</span>(<span class="num">3000</span>)</code></pre>
+        <div class="example-card-footer">
+          <span class="example-tag tag-web">Web</span>
+          <a href="https://github.com/krish9219/pyro/tree/main/showcase/pastebin" class="btn btn-sm btn-ghost">View source</a>
+        </div>
+      </div>
+
       <!-- JWT Auth -->
       <div class="example-card fade-in" data-category="crypto">
         <div class="example-card-header">

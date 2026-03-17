@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>API Reference — Pyro</title>
+  <base href="/pyro-lang/">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .api-wrap{display:grid;grid-template-columns:200px 1fr;min-height:100vh}
+    .api-nav{background:#0d0d1a;border-right:1px solid #1a1a2e;padding:16px 0;position:sticky;top:60px;height:calc(100vh - 60px);overflow-y:auto}
+    .api-nav a{display:block;padding:5px 16px;color:#94a3b8;text-decoration:none;font-size:.82rem}
+    .api-nav a:hover{color:#ff6b35}
+    .api-main{padding:32px;max-width:880px}
+    .mod{margin-bottom:40px}
+    .mod h2{color:#ff6b35;border-bottom:1px solid #1a1a2e;padding-bottom:6px;margin-bottom:12px}
+    .mod p.desc{color:#64748b;margin-bottom:12px;font-size:.9rem}
+    .fn{background:#1a1a2e;padding:10px 14px;border-radius:6px;margin-bottom:8px;border-left:3px solid #ff6b35}
+    .fn code{color:#ff8c42;font-size:.9rem}
+    .fn span{color:#94a3b8;font-size:.82rem;display:block;margin-top:4px}
+    @media(max-width:768px){.api-wrap{grid-template-columns:1fr}.api-nav{display:none}}
+  </style>
+</head>
+<body>
+<nav class="navbar"><div class="container">
+  <a href="index.html" class="nav-brand text-gradient">Pyro<span>lang</span></a>
+  <div class="nav-links">
+    <a href="index.html">Home</a><a href="docs.html">Docs</a><a href="learn.html">Learn</a>
+    <a href="api.html" class="active">API</a><a href="playground.html">Playground</a>
+    <a href="https://github.com/krish9219/pyro" class="btn btn-sm btn-outline">GitHub</a>
+  </div>
+</div></nav>
+
+<div class="api-wrap">
+<nav class="api-nav">
+  <div style="padding:8px 16px;color:#ff6b35;font-weight:700;font-size:.9rem">Modules</div>
+  <a href="#mod-math">math</a><a href="#mod-io">io</a><a href="#mod-json">json</a>
+  <a href="#mod-time">time</a><a href="#mod-os">os</a><a href="#mod-env">env</a>
+  <a href="#mod-re">re</a><a href="#mod-fs">fs</a><a href="#mod-web">web</a>
+  <a href="#mod-http">http</a><a href="#mod-db">db</a><a href="#mod-ai">ai</a>
+  <a href="#mod-ml">ml</a><a href="#mod-nn">nn</a><a href="#mod-tensor">tensor</a>
+  <a href="#mod-nlp">nlp</a><a href="#mod-cv">cv</a><a href="#mod-viz">viz</a>
+  <a href="#mod-plot">plot</a><a href="#mod-test">test</a><a href="#mod-validate">validate</a>
+  <a href="#mod-crypto">crypto</a><a href="#mod-csv">csv</a><a href="#mod-data">data</a>
+  <a href="#mod-random">random</a><a href="#mod-base64">base64</a><a href="#mod-uuid">uuid</a>
+  <a href="#mod-color">color</a><a href="#mod-log">log</a><a href="#mod-path">path</a>
+</nav>
+<main class="api-main">
+  <h1 style="color:#ff6b35;margin-bottom:8px">API Reference</h1>
+  <p style="color:#64748b;margin-bottom:32px">Every function in Pyro's 76 built-in modules.</p>
+
+  <div class="mod" id="mod-math">
+    <h2>math</h2>
+    <p class="desc">Mathematical functions and constants.</p>
+    <div class="fn"><code>math.PI</code><span>Pi constant (3.14159...)</span></div>
+    <div class="fn"><code>math.E</code><span>Euler's number (2.71828...)</span></div>
+    <div class="fn"><code>math.TAU</code><span>Tau constant (6.28318...)</span></div>
+    <div class="fn"><code>math.abs(x)</code><span>Absolute value</span></div>
+    <div class="fn"><code>math.sqrt(x)</code><span>Square root</span></div>
+    <div class="fn"><code>math.pow(x, y)</code><span>Raise x to the power y</span></div>
+    <div class="fn"><code>math.ceil(x)</code><span>Round up to nearest integer</span></div>
+    <div class="fn"><code>math.floor(x)</code><span>Round down to nearest integer</span></div>
+    <div class="fn"><code>math.round(x)</code><span>Round to nearest integer</span></div>
+    <div class="fn"><code>math.sin(x)</code><span>Sine</span></div>
+    <div class="fn"><code>math.cos(x)</code><span>Cosine</span></div>
+    <div class="fn"><code>math.tan(x)</code><span>Tangent</span></div>
+    <div class="fn"><code>math.log(x)</code><span>Natural logarithm</span></div>
+    <div class="fn"><code>math.log2(x)</code><span>Base-2 logarithm</span></div>
+    <div class="fn"><code>math.log10(x)</code><span>Base-10 logarithm</span></div>
+    <div class="fn"><code>math.exp(x)</code><span>e raised to the power x</span></div>
+    <div class="fn"><code>math.random()</code><span>Random double in [0, 1)</span></div>
+    <div class="fn"><code>math.randint(a, b)</code><span>Random integer in [a, b]</span></div>
+  </div>
+
+  <div class="mod" id="mod-io">
+    <h2>io</h2>
+    <p class="desc">File I/O operations.</p>
+    <div class="fn"><code>io.read(path)</code><span>Read entire file as string</span></div>
+    <div class="fn"><code>io.write(path, content)</code><span>Write string to file</span></div>
+    <div class="fn"><code>io.append(path, content)</code><span>Append string to file</span></div>
+    <div class="fn"><code>io.readlines(path)</code><span>Read file as list of lines</span></div>
+    <div class="fn"><code>io.exists(path)</code><span>Check if file exists</span></div>
+    <div class="fn"><code>io.remove(path)</code><span>Delete a file</span></div>
+    <div class="fn"><code>io.mkdir(path)</code><span>Create directory (recursive)</span></div>
+    <div class="fn"><code>io.listdir(path)</code><span>List directory entries</span></div>
+  </div>
+
+  <div class="mod" id="mod-json">
+    <h2>json</h2>
+    <p class="desc">JSON parsing and serialization.</p>
+    <div class="fn"><code>json.parse(str)</code><span>Parse JSON string into JsonValue</span></div>
+    <div class="fn"><code>json.stringify(value)</code><span>Convert JsonValue to compact JSON string</span></div>
+    <div class="fn"><code>json.pretty(value)</code><span>Convert JsonValue to pretty-printed JSON</span></div>
+  </div>
+
+  <div class="mod" id="mod-time">
+    <h2>time</h2>
+    <p class="desc">Time, dates, and scheduling.</p>
+    <div class="fn"><code>time.now()</code><span>Current time in milliseconds since epoch</span></div>
+    <div class="fn"><code>time.millis()</code><span>Alias for now()</span></div>
+    <div class="fn"><code>time.seconds()</code><span>Current time in seconds</span></div>
+    <div class="fn"><code>time.format(ms, fmt)</code><span>Format timestamp with strftime pattern</span></div>
+    <div class="fn"><code>time.today()</code><span>Today's date as YYYY-MM-DD</span></div>
+    <div class="fn"><code>time.timestamp()</code><span>Current datetime as YYYY-MM-DD HH:MM:SS</span></div>
+    <div class="fn"><code>time.year()</code><span>Current year</span></div>
+    <div class="fn"><code>time.month()</code><span>Current month (1-12)</span></div>
+    <div class="fn"><code>time.day()</code><span>Current day of month</span></div>
+    <div class="fn"><code>time.hour()</code><span>Current hour (0-23)</span></div>
+    <div class="fn"><code>time.minute()</code><span>Current minute</span></div>
+    <div class="fn"><code>time.second()</code><span>Current second</span></div>
+    <div class="fn"><code>time.sleep(ms)</code><span>Sleep for ms milliseconds</span></div>
+    <div class="fn"><code>time.wait(ms)</code><span>Alias for sleep()</span></div>
+    <div class="fn"><code>time.date()</code><span>Current datetime string</span></div>
+    <div class="fn"><code>time.timer()</code><span>Create a Timer with elapsed() and reset()</span></div>
+    <div class="fn"><code>time.every(interval_ms, func, count)</code><span>Run func repeatedly at interval</span></div>
+    <div class="fn"><code>time.after(delay_ms, func)</code><span>Run func after delay</span></div>
+  </div>
+
+  <div class="mod" id="mod-os">
+    <h2>os</h2>
+    <p class="desc">Operating system utilities.</p>
+    <div class="fn"><code>os.env(name)</code><span>Get environment variable</span></div>
+    <div class="fn"><code>os.setenv(name, val)</code><span>Set environment variable</span></div>
+    <div class="fn"><code>os.platform()</code><span>Returns "linux", "macos", or "windows"</span></div>
+    <div class="fn"><code>os.pid()</code><span>Current process ID</span></div>
+    <div class="fn"><code>os.cwd()</code><span>Current working directory</span></div>
+    <div class="fn"><code>os.cpus()</code><span>Number of CPU cores</span></div>
+  </div>
+
+  <div class="mod" id="mod-env">
+    <h2>env</h2>
+    <p class="desc">Environment variables and .env file loading.</p>
+    <div class="fn"><code>env.get(name, default)</code><span>Get env var with optional default</span></div>
+    <div class="fn"><code>env.set(name, val)</code><span>Set environment variable</span></div>
+    <div class="fn"><code>env.unset(name)</code><span>Remove environment variable</span></div>
+    <div class="fn"><code>env.has(name)</code><span>Check if env var exists</span></div>
+    <div class="fn"><code>env.load(path)</code><span>Load variables from .env file</span></div>
+  </div>
+
+  <div class="mod" id="mod-re">
+    <h2>re</h2>
+    <p class="desc">Regular expressions.</p>
+    <div class="fn"><code>re.match(pattern, str)</code><span>Test if entire string matches pattern</span></div>
+    <div class="fn"><code>re.has_match(pattern, str)</code><span>Test if pattern found anywhere in string</span></div>
+    <div class="fn"><code>re.search(pattern, str)</code><span>Return first match or empty string</span></div>
+    <div class="fn"><code>re.replace(pattern, replacement, text)</code><span>Replace all matches</span></div>
+    <div class="fn"><code>re.findall(pattern, str)</code><span>Return all matches as list</span></div>
+    <div class="fn"><code>re.find_all(pattern, text)</code><span>Alias for findall()</span></div>
+    <div class="fn"><code>re.split(pattern, str)</code><span>Split string by regex pattern</span></div>
+  </div>
+
+  <div class="mod" id="mod-fs">
+    <h2>fs</h2>
+    <p class="desc">Filesystem operations.</p>
+    <div class="fn"><code>fs.read(path)</code><span>Read file contents</span></div>
+    <div class="fn"><code>fs.write(path, data)</code><span>Write data to file</span></div>
+    <div class="fn"><code>fs.append(path, data)</code><span>Append data to file</span></div>
+    <div class="fn"><code>fs.copy(src, dst)</code><span>Copy file or directory</span></div>
+    <div class="fn"><code>fs.move(src, dst)</code><span>Move/rename file or directory</span></div>
+    <div class="fn"><code>fs.remove(path)</code><span>Delete file or directory recursively</span></div>
+    <div class="fn"><code>fs.mkdir(path)</code><span>Create directories recursively</span></div>
+    <div class="fn"><code>fs.list(path)</code><span>List directory entries</span></div>
+    <div class="fn"><code>fs.size(path)</code><span>Get file size in bytes</span></div>
+    <div class="fn"><code>fs.exists(path)</code><span>Check if path exists</span></div>
+    <div class="fn"><code>fs.is_file(path)</code><span>Check if path is a regular file</span></div>
+    <div class="fn"><code>fs.is_dir(path)</code><span>Check if path is a directory</span></div>
+  </div>
+
+  <div class="mod" id="mod-web">
+    <h2>web</h2>
+    <p class="desc">Web server framework with routing, middleware, and SSE.</p>
+    <div class="fn"><code>web.app()</code><span>Create a new web application</span></div>
+    <div class="fn"><code>app.get(path, handler)</code><span>Register GET route</span></div>
+    <div class="fn"><code>app.post(path, handler)</code><span>Register POST route</span></div>
+    <div class="fn"><code>app.put(path, handler)</code><span>Register PUT route</span></div>
+    <div class="fn"><code>app.del(path, handler)</code><span>Register DELETE route</span></div>
+    <div class="fn"><code>app.use(middleware)</code><span>Add middleware function</span></div>
+    <div class="fn"><code>app.serve_static(prefix, dir)</code><span>Serve static files from directory</span></div>
+    <div class="fn"><code>app.listen(port)</code><span>Start server on port</span></div>
+    <div class="fn"><code>app.sse(path, generator, interval)</code><span>Server-Sent Events endpoint</span></div>
+    <div class="fn"><code>app.live(path, handler)</code><span>Long-polling endpoint</span></div>
+    <div class="fn"><code>web.html(body)</code><span>Create HTML response</span></div>
+    <div class="fn"><code>web.json(body)</code><span>Create JSON response</span></div>
+    <div class="fn"><code>web.text(body)</code><span>Create text response</span></div>
+    <div class="fn"><code>web.redirect(url)</code><span>Create redirect response</span></div>
+    <div class="fn"><code>web.bus()</code><span>Create in-memory message bus</span></div>
+  </div>
+
+  <div class="mod" id="mod-http">
+    <h2>http</h2>
+    <p class="desc">HTTP client (powered by libcurl).</p>
+    <div class="fn"><code>http.get(url)</code><span>HTTP GET request</span></div>
+    <div class="fn"><code>http.post(url, body)</code><span>HTTP POST request</span></div>
+    <div class="fn"><code>http.put(url, body)</code><span>HTTP PUT request</span></div>
+    <div class="fn"><code>http.del(url)</code><span>HTTP DELETE request</span></div>
+    <div class="fn"><code>http.patch(url, body)</code><span>HTTP PATCH request</span></div>
+    <div class="fn"><code>http.request(method, url, body, headers)</code><span>Custom HTTP request</span></div>
+    <div class="fn"><code>http.download(url, path)</code><span>Download file from URL</span></div>
+  </div>
+
+  <div class="mod" id="mod-db">
+    <h2>db</h2>
+    <p class="desc">SQLite database (real SQLite via sqlite3).</p>
+    <div class="fn"><code>db.connect(path)</code><span>Open SQLite database connection</span></div>
+    <div class="fn"><code>conn.exec(sql)</code><span>Execute SQL statement</span></div>
+    <div class="fn"><code>conn.query(sql)</code><span>Query and return list of Row objects</span></div>
+    <div class="fn"><code>conn.close()</code><span>Close database connection</span></div>
+    <div class="fn"><code>row.get(key)</code><span>Get column value from Row by name</span></div>
+  </div>
+
+  <div class="mod" id="mod-ai">
+    <h2>ai</h2>
+    <p class="desc">AI/LLM integration (multi-provider, OpenAI-compatible).</p>
+    <div class="fn"><code>ai.chat(prompt, model)</code><span>Send prompt to AI, get response</span></div>
+    <div class="fn"><code>ai.chat(prompt, system, model)</code><span>Chat with system prompt</span></div>
+    <div class="fn"><code>ai.ask(question)</code><span>Simple alias for chat()</span></div>
+    <div class="fn"><code>ai.summarize(text, max_words)</code><span>Summarize text</span></div>
+    <div class="fn"><code>ai.translate(text, to)</code><span>Translate text to target language</span></div>
+    <div class="fn"><code>ai.classify(text, labels)</code><span>Classify text into one of the labels</span></div>
+    <div class="fn"><code>ai.extract(text, fields)</code><span>Extract structured fields from text as JSON</span></div>
+    <div class="fn"><code>ai.generate_code(description)</code><span>Generate Pyro code from description</span></div>
+    <div class="fn"><code>ai.conversation(system)</code><span>Create multi-turn conversation</span></div>
+    <div class="fn"><code>ai.set_key(key)</code><span>Set API key</span></div>
+    <div class="fn"><code>ai.set_model(model)</code><span>Set default model</span></div>
+    <div class="fn"><code>ai.set_url(url)</code><span>Set API endpoint URL</span></div>
+    <div class="fn"><code>ai.provider(name, key, model)</code><span>Configure provider (nvidia, openai, groq, etc.)</span></div>
+  </div>
+
+  <div class="mod" id="mod-ml">
+    <h2>ml</h2>
+    <p class="desc">Machine learning: regression, classification, clustering.</p>
+    <div class="fn"><code>ml.load_csv(path, target)</code><span>Load CSV into Dataset</span></div>
+    <div class="fn"><code>ml.split(dataset, ratio)</code><span>Split dataset into train/test</span></div>
+    <div class="fn"><code>ml.normalize(dataset)</code><span>Min-max normalize features</span></div>
+    <div class="fn"><code>ml.linear_regression(ds, lr, epochs)</code><span>Train linear regression model</span></div>
+    <div class="fn"><code>ml.logistic(ds, lr, epochs)</code><span>Train logistic regression model</span></div>
+    <div class="fn"><code>ml.knn_predict(train, test, k)</code><span>K-nearest neighbors prediction</span></div>
+    <div class="fn"><code>ml.kmeans(ds, k, max_iter)</code><span>K-means clustering</span></div>
+    <div class="fn"><code>ml.mse(pred, actual)</code><span>Mean squared error</span></div>
+    <div class="fn"><code>ml.mae(pred, actual)</code><span>Mean absolute error</span></div>
+    <div class="fn"><code>ml.r2_score(pred, actual)</code><span>R-squared score</span></div>
+    <div class="fn"><code>ml.accuracy(pred, actual)</code><span>Classification accuracy</span></div>
+  </div>
+
+  <div class="mod" id="mod-nn">
+    <h2>nn</h2>
+    <p class="desc">Neural networks with backpropagation.</p>
+    <div class="fn"><code>nn.sequential()</code><span>Create sequential model</span></div>
+    <div class="fn"><code>nn.dense(in, out, activation)</code><span>Dense layer (relu, sigmoid, tanh, softmax)</span></div>
+    <div class="fn"><code>nn.dropout(rate)</code><span>Dropout regularization layer</span></div>
+    <div class="fn"><code>nn.randn(rows, cols)</code><span>Random tensor (He initialization)</span></div>
+    <div class="fn"><code>model.add(layer)</code><span>Add layer to model</span></div>
+    <div class="fn"><code>model.compile(loss, lr)</code><span>Set loss function and learning rate</span></div>
+    <div class="fn"><code>model.fit(x, y, in_size, out_size, epochs, batch)</code><span>Train the model</span></div>
+    <div class="fn"><code>model.predict(input)</code><span>Run inference</span></div>
+    <div class="fn"><code>model.evaluate(x, y, out_size)</code><span>Evaluate accuracy</span></div>
+    <div class="fn"><code>model.summary()</code><span>Print model architecture</span></div>
+    <div class="fn"><code>model.save(path)</code><span>Save model weights to file</span></div>
+    <div class="fn"><code>nn.mse_loss(pred, target)</code><span>Mean squared error loss</span></div>
+    <div class="fn"><code>nn.cross_entropy_loss(pred, target)</code><span>Cross-entropy loss</span></div>
+  </div>
+
+  <div class="mod" id="mod-tensor">
+    <h2>tensor</h2>
+    <p class="desc">N-dimensional tensor operations.</p>
+    <div class="fn"><code>tensor.zeros(r, c)</code><span>Tensor of zeros</span></div>
+    <div class="fn"><code>tensor.ones(r, c)</code><span>Tensor of ones</span></div>
+    <div class="fn"><code>tensor.eye(n)</code><span>Identity matrix</span></div>
+    <div class="fn"><code>tensor.random(r, c)</code><span>Random tensor in [0, 1)</span></div>
+    <div class="fn"><code>tensor.range(start, end, step)</code><span>Tensor from range</span></div>
+    <div class="fn"><code>tensor.sum(t)</code><span>Sum of all elements</span></div>
+    <div class="fn"><code>tensor.mean(t)</code><span>Mean of all elements</span></div>
+    <div class="fn"><code>tensor.min_val(t)</code><span>Minimum element</span></div>
+    <div class="fn"><code>tensor.max_val(t)</code><span>Maximum element</span></div>
+    <div class="fn"><code>tensor.std_dev(t)</code><span>Standard deviation</span></div>
+    <div class="fn"><code>tensor.sqrt(t)</code><span>Element-wise square root</span></div>
+    <div class="fn"><code>tensor.abs(t)</code><span>Element-wise absolute value</span></div>
+    <div class="fn"><code>tensor.exp(t)</code><span>Element-wise exponential</span></div>
+    <div class="fn"><code>tensor.log(t)</code><span>Element-wise natural log</span></div>
+    <div class="fn"><code>tensor.pow(t, p)</code><span>Element-wise power</span></div>
+    <div class="fn"><code>tensor.dot(a, b)</code><span>Dot product</span></div>
+    <div class="fn"><code>tensor.matmul(a, b)</code><span>Matrix multiplication</span></div>
+    <div class="fn"><code>tensor.transpose(t)</code><span>Transpose matrix</span></div>
+    <div class="fn"><code>tensor.det(t)</code><span>Determinant (2x2 and 3x3)</span></div>
+    <div class="fn"><code>tensor.inverse(t)</code><span>Matrix inverse (2x2)</span></div>
+  </div>
+
+  <div class="mod" id="mod-nlp">
+    <h2>nlp</h2>
+    <p class="desc">Natural language processing.</p>
+    <div class="fn"><code>nlp.tokenize(text)</code><span>Tokenize into words and punctuation</span></div>
+    <div class="fn"><code>nlp.word_tokenize(text)</code><span>Tokenize into alphabetic words only</span></div>
+    <div class="fn"><code>nlp.sent_tokenize(text)</code><span>Split text into sentences</span></div>
+    <div class="fn"><code>nlp.lowercase(str)</code><span>Convert to lowercase</span></div>
+    <div class="fn"><code>nlp.remove_stopwords(text)</code><span>Remove common stopwords</span></div>
+    <div class="fn"><code>nlp.remove_punctuation(text)</code><span>Strip punctuation characters</span></div>
+    <div class="fn"><code>nlp.stem(word)</code><span>Porter-like suffix stemmer</span></div>
+    <div class="fn"><code>nlp.ngrams(text, n)</code><span>Generate n-grams</span></div>
+    <div class="fn"><code>nlp.word_count(text)</code><span>Word frequency map</span></div>
+    <div class="fn"><code>nlp.keywords(text, top)</code><span>Extract top keywords by TF score</span></div>
+    <div class="fn"><code>nlp.similarity(a, b)</code><span>Cosine similarity between two texts</span></div>
+    <div class="fn"><code>nlp.sentiment(text)</code><span>Lexicon-based sentiment analysis</span></div>
+    <div class="fn"><code>nlp.ner(text)</code><span>Rule-based named entity recognition</span></div>
+  </div>
+
+  <div class="mod" id="mod-cv">
+    <h2>cv</h2>
+    <p class="desc">Computer vision and image processing.</p>
+    <div class="fn"><code>cv.create(w, h, r, g, b)</code><span>Create blank image</span></div>
+    <div class="fn"><code>cv.load(path)</code><span>Load PPM/PGM image</span></div>
+    <div class="fn"><code>cv.save(img, path)</code><span>Save image as PPM or BMP</span></div>
+    <div class="fn"><code>cv.grayscale(img)</code><span>Convert to grayscale</span></div>
+    <div class="fn"><code>cv.resize(img, w, h)</code><span>Resize image (nearest neighbor)</span></div>
+    <div class="fn"><code>cv.flip(img, dir)</code><span>Flip horizontal or vertical</span></div>
+    <div class="fn"><code>cv.blur(img, radius)</code><span>Box blur</span></div>
+    <div class="fn"><code>cv.edges(img)</code><span>Sobel edge detection</span></div>
+    <div class="fn"><code>cv.threshold(img, thresh)</code><span>Binary threshold</span></div>
+    <div class="fn"><code>cv.brightness(img, delta)</code><span>Adjust brightness</span></div>
+    <div class="fn"><code>cv.invert(img)</code><span>Invert colors</span></div>
+    <div class="fn"><code>cv.crop(img, x, y, w, h)</code><span>Crop region</span></div>
+    <div class="fn"><code>cv.draw_rect(img, x, y, w, h, r, g, b)</code><span>Draw rectangle outline</span></div>
+    <div class="fn"><code>cv.fill_rect(img, x, y, w, h, r, g, b)</code><span>Draw filled rectangle</span></div>
+    <div class="fn"><code>cv.histogram(img)</code><span>Pixel value distribution (256 bins)</span></div>
+  </div>
+
+  <div class="mod" id="mod-viz">
+    <h2>viz</h2>
+    <p class="desc">Rich SVG visualizations with dark theme and animation.</p>
+    <div class="fn"><code>viz.bar_chart(labels, values, title, w, h)</code><span>Animated bar chart</span></div>
+    <div class="fn"><code>viz.line_chart(x, y, title, w, h)</code><span>Line chart with gradient fill</span></div>
+    <div class="fn"><code>viz.scatter(x, y, title, w, h)</code><span>Animated scatter plot</span></div>
+    <div class="fn"><code>viz.pie_chart(labels, values, title, w, h)</code><span>Donut-style pie chart</span></div>
+    <div class="fn"><code>viz.save(path, svg)</code><span>Save SVG string to file</span></div>
+  </div>
+
+  <div class="mod" id="mod-plot">
+    <h2>plot</h2>
+    <p class="desc">Simple SVG chart generation.</p>
+    <div class="fn"><code>plot.set_size(w, h)</code><span>Set chart dimensions</span></div>
+    <div class="fn"><code>plot.line(y, title, file)</code><span>Line chart from y values</span></div>
+    <div class="fn"><code>plot.bar(labels, values, title, file)</code><span>Bar chart</span></div>
+    <div class="fn"><code>plot.scatter(x, y, title, file)</code><span>Scatter plot</span></div>
+    <div class="fn"><code>plot.histogram(data, bins, title, file)</code><span>Histogram</span></div>
+    <div class="fn"><code>plot.heatmap(matrix, title, file)</code><span>Heatmap from 2D matrix</span></div>
+    <div class="fn"><code>plot.training_curve(loss, title, file)</code><span>Training loss curve</span></div>
+    <div class="fn"><code>plot.save(file)</code><span>Save last chart to file</span></div>
+    <div class="fn"><code>plot.show()</code><span>Open last chart in browser</span></div>
+  </div>
+
+  <div class="mod" id="mod-test">
+    <h2>test</h2>
+    <p class="desc">Unit testing and benchmarking.</p>
+    <div class="fn"><code>test.run(name, fn)</code><span>Run a named test</span></div>
+    <div class="fn"><code>test.eq(got, expected)</code><span>Assert equal</span></div>
+    <div class="fn"><code>test.neq(got, expected)</code><span>Assert not equal</span></div>
+    <div class="fn"><code>test.ok(condition)</code><span>Assert true</span></div>
+    <div class="fn"><code>test.fail(msg)</code><span>Force test failure</span></div>
+    <div class="fn"><code>test.gt(a, b)</code><span>Assert a > b</span></div>
+    <div class="fn"><code>test.lt(a, b)</code><span>Assert a < b</span></div>
+    <div class="fn"><code>test.gte(a, b)</code><span>Assert a >= b</span></div>
+    <div class="fn"><code>test.lte(a, b)</code><span>Assert a <= b</span></div>
+    <div class="fn"><code>test.summary()</code><span>Print test results summary</span></div>
+    <div class="fn"><code>test.bench(name, iterations, fn)</code><span>Benchmark a function</span></div>
+  </div>
+
+  <div class="mod" id="mod-validate">
+    <h2>validate</h2>
+    <p class="desc">Input validation and sanitization.</p>
+    <div class="fn"><code>validate.email(str)</code><span>Validate email address</span></div>
+    <div class="fn"><code>validate.url(str)</code><span>Validate URL (http/https)</span></div>
+    <div class="fn"><code>validate.ip(str)</code><span>Validate IPv4 address</span></div>
+    <div class="fn"><code>validate.phone(str)</code><span>Validate phone number</span></div>
+    <div class="fn"><code>validate.number(str)</code><span>Check if string is numeric</span></div>
+    <div class="fn"><code>validate.alpha(str)</code><span>Check if string is alphabetic</span></div>
+    <div class="fn"><code>validate.alphanumeric(str)</code><span>Check if string is alphanumeric</span></div>
+    <div class="fn"><code>validate.empty(str)</code><span>Check if string is empty</span></div>
+    <div class="fn"><code>validate.not_empty(str)</code><span>Check if string is not empty</span></div>
+    <div class="fn"><code>validate.length(str, min, max)</code><span>Check string length in range</span></div>
+    <div class="fn"><code>validate.sanitize(str)</code><span>HTML-escape special characters</span></div>
+    <div class="fn"><code>validate.sql_safe(str)</code><span>Escape SQL injection characters</span></div>
+    <div class="fn"><code>validate.password_strength(str)</code><span>Score password strength (0-6)</span></div>
+  </div>
+
+  <div class="mod" id="mod-crypto">
+    <h2>crypto</h2>
+    <p class="desc">Cryptography via OpenSSL.</p>
+    <div class="fn"><code>crypto.sha256(input)</code><span>SHA-256 hash</span></div>
+    <div class="fn"><code>crypto.sha512(input)</code><span>SHA-512 hash</span></div>
+    <div class="fn"><code>crypto.hmac_sha256(key, data)</code><span>HMAC-SHA256</span></div>
+    <div class="fn"><code>crypto.encrypt(plaintext, key)</code><span>AES-256-GCM encryption</span></div>
+    <div class="fn"><code>crypto.decrypt(ciphertext, key)</code><span>AES-256-GCM decryption</span></div>
+    <div class="fn"><code>crypto.random_token(length)</code><span>Secure random alphanumeric token</span></div>
+    <div class="fn"><code>crypto.random_bytes(length)</code><span>Secure random bytes (hex)</span></div>
+    <div class="fn"><code>crypto.uuid()</code><span>Generate UUID v4</span></div>
+    <div class="fn"><code>crypto.hash_password(password, iterations)</code><span>PBKDF2 password hash</span></div>
+    <div class="fn"><code>crypto.verify_password(password, hash)</code><span>Verify password against hash</span></div>
+    <div class="fn"><code>crypto.to_hex(data)</code><span>Bytes to hex string</span></div>
+    <div class="fn"><code>crypto.from_hex(hex)</code><span>Hex string to bytes</span></div>
+  </div>
+
+  <div class="mod" id="mod-csv">
+    <h2>csv</h2>
+    <p class="desc">CSV reading and writing.</p>
+    <div class="fn"><code>csv.read(path)</code><span>Read CSV file into 2D string array</span></div>
+    <div class="fn"><code>csv.parse(str)</code><span>Parse CSV string</span></div>
+    <div class="fn"><code>csv.stringify(data)</code><span>Convert 2D array to CSV string</span></div>
+    <div class="fn"><code>csv.write(path, data)</code><span>Write 2D array to CSV file</span></div>
+  </div>
+
+  <div class="mod" id="mod-data">
+    <h2>data</h2>
+    <p class="desc">DataFrame for tabular data analysis.</p>
+    <div class="fn"><code>data.read(path)</code><span>Load CSV into DataFrame</span></div>
+    <div class="fn"><code>data.write(df, path)</code><span>Save DataFrame to CSV</span></div>
+    <div class="fn"><code>df.rows()</code><span>Number of rows</span></div>
+    <div class="fn"><code>df.cols()</code><span>Number of columns</span></div>
+    <div class="fn"><code>df.col(name)</code><span>Get column as Series</span></div>
+    <div class="fn"><code>df.head(n)</code><span>Print first n rows</span></div>
+    <div class="fn"><code>df.describe()</code><span>Print column statistics</span></div>
+    <div class="fn"><code>df.where(col, predicate)</code><span>Filter rows</span></div>
+    <div class="fn"><code>df.sort_by(col, ascending)</code><span>Sort by column</span></div>
+    <div class="fn"><code>df.select(cols)</code><span>Select columns</span></div>
+    <div class="fn"><code>df.groupby(key, agg_col, func)</code><span>Group by column and aggregate</span></div>
+    <div class="fn"><code>df.merge(other, on)</code><span>Join two DataFrames</span></div>
+    <div class="fn"><code>df.apply(col, func)</code><span>Apply function to column</span></div>
+    <div class="fn"><code>df.drop_duplicates()</code><span>Remove duplicate rows</span></div>
+    <div class="fn"><code>df.fillna(val)</code><span>Fill empty cells</span></div>
+    <div class="fn"><code>df.sample(n)</code><span>Random sample of n rows</span></div>
+    <div class="fn"><code>df.to_json()</code><span>Convert to JSON string</span></div>
+    <div class="fn"><code>df.rename(old, new)</code><span>Rename column</span></div>
+    <div class="fn"><code>df.drop(col)</code><span>Drop column</span></div>
+  </div>
+
+  <div class="mod" id="mod-random">
+    <h2>random</h2>
+    <p class="desc">Random number generation.</p>
+    <div class="fn"><code>random.random()</code><span>Random double in [0, 1)</span></div>
+    <div class="fn"><code>random.randint(a, b)</code><span>Random integer in [a, b]</span></div>
+    <div class="fn"><code>random.uniform(a, b)</code><span>Random double in [a, b)</span></div>
+    <div class="fn"><code>random.seed(s)</code><span>Seed the random generator</span></div>
+    <div class="fn"><code>random.choice(list)</code><span>Pick random element from list</span></div>
+    <div class="fn"><code>random.sample(list, n)</code><span>Pick n random elements</span></div>
+    <div class="fn"><code>random.shuffle(list)</code><span>Shuffle list in place</span></div>
+  </div>
+
+  <div class="mod" id="mod-base64">
+    <h2>base64</h2>
+    <p class="desc">Base64 encoding and decoding.</p>
+    <div class="fn"><code>base64.encode(str)</code><span>Encode string to Base64</span></div>
+    <div class="fn"><code>base64.decode(str)</code><span>Decode Base64 to string</span></div>
+  </div>
+
+  <div class="mod" id="mod-uuid">
+    <h2>uuid</h2>
+    <p class="desc">UUID generation.</p>
+    <div class="fn"><code>uuid.v4()</code><span>Generate random UUID v4</span></div>
+    <div class="fn"><code>uuid.nil_uuid()</code><span>Return nil UUID (all zeros)</span></div>
+    <div class="fn"><code>uuid.from_string(str)</code><span>UUID from string (passthrough)</span></div>
+  </div>
+
+  <div class="mod" id="mod-color">
+    <h2>color</h2>
+    <p class="desc">Terminal color formatting (ANSI escape codes).</p>
+    <div class="fn"><code>color.red(str)</code><span>Red text</span></div>
+    <div class="fn"><code>color.green(str)</code><span>Green text</span></div>
+    <div class="fn"><code>color.yellow(str)</code><span>Yellow text</span></div>
+    <div class="fn"><code>color.blue(str)</code><span>Blue text</span></div>
+    <div class="fn"><code>color.magenta(str)</code><span>Magenta text</span></div>
+    <div class="fn"><code>color.cyan(str)</code><span>Cyan text</span></div>
+    <div class="fn"><code>color.bold(str)</code><span>Bold text</span></div>
+    <div class="fn"><code>color.dim(str)</code><span>Dim text</span></div>
+    <div class="fn"><code>color.underline(str)</code><span>Underlined text</span></div>
+    <div class="fn"><code>color.bg_red(str)</code><span>Red background</span></div>
+    <div class="fn"><code>color.bg_green(str)</code><span>Green background</span></div>
+  </div>
+
+  <div class="mod" id="mod-log">
+    <h2>log</h2>
+    <p class="desc">Leveled logging with timestamps.</p>
+    <div class="fn"><code>log.set_level(level)</code><span>Set minimum log level (trace/debug/info/warn/error/fatal)</span></div>
+    <div class="fn"><code>log.trace(...)</code><span>Log at TRACE level</span></div>
+    <div class="fn"><code>log.debug(...)</code><span>Log at DEBUG level</span></div>
+    <div class="fn"><code>log.info(...)</code><span>Log at INFO level</span></div>
+    <div class="fn"><code>log.warn(...)</code><span>Log at WARN level</span></div>
+    <div class="fn"><code>log.error(...)</code><span>Log at ERROR level</span></div>
+    <div class="fn"><code>log.fatal(...)</code><span>Log at FATAL level</span></div>
+  </div>
+
+  <div class="mod" id="mod-path">
+    <h2>path</h2>
+    <p class="desc">Filesystem path manipulation.</p>
+    <div class="fn"><code>path.join(a, b)</code><span>Join two path segments</span></div>
+    <div class="fn"><code>path.dirname(p)</code><span>Parent directory</span></div>
+    <div class="fn"><code>path.basename(p)</code><span>File name component</span></div>
+    <div class="fn"><code>path.extension(p)</code><span>File extension</span></div>
+    <div class="fn"><code>path.exists(p)</code><span>Check if path exists</span></div>
+    <div class="fn"><code>path.is_file(p)</code><span>Check if path is a file</span></div>
+    <div class="fn"><code>path.is_dir(p)</code><span>Check if path is a directory</span></div>
+    <div class="fn"><code>path.absolute(p)</code><span>Get absolute path</span></div>
+  </div>
+
+</main>
+</div>
+</body>
+</html>

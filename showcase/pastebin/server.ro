@@ -1,0 +1,40 @@
+import web
+import db
+import io
+import random
+
+# Initialize database
+mut conn = db.connect("pastes.db")
+conn.exec("CREATE TABLE IF NOT EXISTS pastes (id TEXT PRIMARY KEY, content TEXT, title TEXT, created TEXT, views INTEGER DEFAULT 0)")
+
+mut app = web.app()
+
+# Home page
+app.get("/", fn(req) = web.html(io.read("pages/index.html")))
+
+# Create paste API
+app.post("/api/paste", fn(req)
+    let id = str(random.randint(10000000, 99999999))
+    conn.exec("INSERT INTO pastes (id, content, title, created, views) VALUES ('" + id + "', '" + req.body + "', 'Untitled', '2026-03-17', 0)")
+    return web.json("{\"id\": \"" + id + "\", \"url\": \"/view/" + id + "\"}")
+)
+
+# View paste
+app.get("/view/:id", fn(req)
+    let rows = conn.query("SELECT * FROM pastes WHERE id = '" + req.params["id"] + "'")
+    if rows.len() > 0
+        return web.html("<html><head><title>Paste</title><link rel='stylesheet' href='/static/style.css'></head><body><div class='container'><h1>" + rows[0].get("title") + "</h1><pre class='code'>" + rows[0].get("content") + "</pre><p class='meta'>ID: " + rows[0].get("id") + "</p><a href='/'>Back</a></div></body></html>")
+    return web.html("<h1>Not Found</h1>")
+)
+
+# Recent pastes API
+app.get("/api/recent", fn(req)
+    let rows = conn.query("SELECT id, title, created FROM pastes ORDER BY rowid DESC LIMIT 10")
+    return web.json("[]")
+)
+
+# Static files
+app.serve_static("/static", "static")
+
+print("Pyro Pastebin running at http://localhost:3000")
+app.listen(3000)

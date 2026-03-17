@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Pyro Paste — Built with Pyro</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Pyro Paste</h1>
+            <p class="subtitle">Code sharing built entirely in Pyro — 23 keywords, 76 modules, zero dependencies</p>
+        </header>
+
+        <div class="editor-section">
+            <input type="text" id="title" placeholder="Title (optional)" class="title-input">
+            <textarea id="content" placeholder="Paste your code here..." rows="15" class="code-editor"></textarea>
+            <div class="actions">
+                <button onclick="createPaste()" class="btn-primary">Create Paste</button>
+                <span id="result" class="result"></span>
+            </div>
+        </div>
+
+        <footer>
+            <p>Built with <strong>P.Y.R.O</strong> — Performance You Really Own</p>
+            <p class="tech">Web server, SQLite database, routing — all built into the language. Zero npm, zero pip.</p>
+            <a href="https://aravindlabs.tech/pyro-lang/">Learn Pyro</a>
+        </footer>
+    </div>
+
+    <script>
+    async function createPaste() {
+        const content = document.getElementById('content').value;
+        if (!content.trim()) return;
+        const resp = await fetch('/api/paste', { method: 'POST', body: content });
+        const data = await resp.json();
+        document.getElementById('result').innerHTML =
+            'Paste created! <a href="/view/' + data.id + '">' + window.location.origin + '/view/' + data.id + '</a>';
+        document.getElementById('content').value = '';
+    }
+    </script>
+</body>
+</html>

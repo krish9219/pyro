@@ -666,8 +666,16 @@ const runBtn = document.getElementById('run-btn');
 const statusBadge = document.getElementById('status-badge');
 const execTime = document.getElementById('exec-time');
 
-// Load default example
-loadExample('hello');
+// Check if code was passed from Learn page
+const learnCode = localStorage.getItem('pyro_playground_code');
+if (learnCode) {
+  editor.value = learnCode;
+  localStorage.removeItem('pyro_playground_code');
+  updateLineNumbers();
+} else {
+  // Load default example
+  loadExample('hello');
+}
 
 // Line numbers
 function updateLineNumbers() {
