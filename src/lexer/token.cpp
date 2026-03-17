@@ -7,6 +7,7 @@ std::string Token::type_name() const {
         case TokenType::INTEGER: return "INTEGER";
         case TokenType::FLOAT: return "FLOAT";
         case TokenType::STRING: return "STRING";
+        case TokenType::TRIPLE_STRING: return "TRIPLE_STRING";
         case TokenType::BOOL_TRUE: return "TRUE";
         case TokenType::BOOL_FALSE: return "FALSE";
         case TokenType::NIL: return "NIL";

@@ -6,7 +6,7 @@ namespace pyro {
 
 enum class TokenType {
     // Literals
-    INTEGER, FLOAT, STRING, BOOL_TRUE, BOOL_FALSE, NIL,
+    INTEGER, FLOAT, STRING, TRIPLE_STRING, BOOL_TRUE, BOOL_FALSE, NIL,
 
     // Identifiers
     IDENTIFIER,

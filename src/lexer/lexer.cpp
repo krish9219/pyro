@@ -167,6 +167,29 @@ std::vector<Token> Lexer::tokenize() {
             continue;
         }
 
+        // Triple-quoted strings
+        if (c == '"' && peek(1) == '"' && peek(2) == '"') {
+            int start_line = line_;
+            int start_col = column_;
+            advance(); advance(); advance(); // skip opening """
+            std::string value;
+            while (!is_at_end()) {
+                if (current() == '"' && peek(1) == '"' && peek(2) == '"') {
+                    advance(); advance(); advance(); // skip closing """
+                    break;
+                }
+                if (current() == '\n') {
+                    value += '\n';
+                    advance();
+                } else {
+                    value += current();
+                    advance();
+                }
+            }
+            tokens.push_back(Token(TokenType::TRIPLE_STRING, value, start_line, start_col));
+            continue;
+        }
+
         // Strings
         if (c == '"' || c == '\'') {
             tokens.push_back(read_string());

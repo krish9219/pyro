@@ -659,6 +659,11 @@ std::string CodeGenerator::generate(const Program& program, const std::string& s
             emit_line("#include <filesystem>");
         }
     }
+    if (imports_.count("env")) {
+        if (!imports_.count("io") && !imports_.count("data") && !imports_.count("img") && !imports_.count("fs") && !imports_.count("path") && !imports_.count("web") && !imports_.count("db") && !imports_.count("csv") && !imports_.count("config")) {
+            emit_line("#include <fstream>");
+        }
+    }
     if (imports_.count("os") || imports_.count("env") || imports_.count("subprocess") || imports_.count("process")) {
         emit_line("#include <cstdlib>");
         if (!imports_.count("net") && !imports_.count("web")) {
@@ -1256,145 +1261,155 @@ void CodeGenerator::emit_import(const ImportStmt& stmt) {
     } else if (stmt.module == "json") {
         emit_line("namespace pyro_json {");
         indent();
-        // JsonValue struct
+
+        // JsonValue type using variant-like approach
         emit_line("struct JsonValue {");
         indent();
-        emit_line("enum Type { Null, Bool, Number, String, Array, Object };");
-        emit_line("Type type = Null;");
-        emit_line("std::string str_val;");
-        emit_line("double num_val = 0;");
+        emit_line("enum Type { NUL, BOOL, NUM, STR, ARR, OBJ } type = NUL;");
         emit_line("bool bool_val = false;");
-        emit_line("std::vector<JsonValue> arr;");
-        emit_line("std::unordered_map<std::string, JsonValue> obj;");
+        emit_line("double num_val = 0;");
+        emit_line("std::string str_val;");
+        emit_line("std::vector<JsonValue> arr_val;");
+        emit_line("std::vector<std::pair<std::string, JsonValue>> obj_val;");
         emit_line("");
-        emit_line("JsonValue& operator[](const std::string& key) { return obj[key]; }");
-        emit_line("JsonValue& operator[](size_t idx) { return arr[idx]; }");
-        emit_line("std::string as_string() const { return str_val; }");
-        emit_line("double as_number() const { return num_val; }");
-        emit_line("bool as_bool() const { return bool_val; }");
-        emit_line("int64_t size() const { return type == Array ? (int64_t)arr.size() : type == Object ? (int64_t)obj.size() : 0; }");
+        emit_line("JsonValue() : type(NUL) {}");
+        emit_line("JsonValue(bool v) : type(BOOL), bool_val(v) {}");
+        emit_line("JsonValue(double v) : type(NUM), num_val(v) {}");
+        emit_line("JsonValue(int64_t v) : type(NUM), num_val(v) {}");
+        emit_line("JsonValue(const std::string& v) : type(STR), str_val(v) {}");
+        emit_line("JsonValue(const char* v) : type(STR), str_val(v) {}");
         emit_line("");
-        emit_line("friend std::ostream& operator<<(std::ostream& os, const JsonValue& v) {");
+        // Operator[] for object access
+        emit_line("JsonValue& operator[](const std::string& key) {");
         indent();
-        emit_line("switch (v.type) {");
-        indent();
-        emit_line("case Null: os << \"null\"; break;");
-        emit_line("case Bool: os << (v.bool_val ? \"true\" : \"false\"); break;");
-        emit_line("case Number: os << v.num_val; break;");
-        emit_line("case String: os << \"\\\"\" << v.str_val << \"\\\"\"; break;");
-        emit_line("case Array: {");
-        indent();
-        emit_line("os << \"[\";");
-        emit_line("for (size_t i = 0; i < v.arr.size(); i++) { if (i) os << \", \"; os << v.arr[i]; }");
-        emit_line("os << \"]\"; break;");
+        emit_line("for (auto& [k, v] : obj_val) if (k == key) return v;");
+        emit_line("obj_val.push_back({key, JsonValue()});");
+        emit_line("return obj_val.back().second;");
         dedent();
         emit_line("}");
-        emit_line("case Object: {");
+        emit_line("const JsonValue& operator[](const std::string& key) const {");
         indent();
-        emit_line("os << \"{\";");
-        emit_line("bool first = true;");
-        emit_line("for (const auto& [k, val] : v.obj) { if (!first) os << \", \"; os << \"\\\"\" << k << \"\\\": \" << val; first = false; }");
-        emit_line("os << \"}\"; break;");
+        emit_line("for (const auto& [k, v] : obj_val) if (k == key) return v;");
+        emit_line("static JsonValue null_val; return null_val;");
+        dedent();
+        emit_line("}");
+        // Array access
+        emit_line("JsonValue& operator[](int64_t idx) { return arr_val[idx]; }");
+        emit_line("");
+        // To string conversion for printing
+        emit_line("operator std::string() const {");
+        indent();
+        emit_line("if (type == STR) return str_val;");
+        emit_line("if (type == NUM) { if (num_val == (int64_t)num_val) return std::to_string((int64_t)num_val); std::ostringstream s; s << num_val; return s.str(); }");
+        emit_line("if (type == BOOL) return bool_val ? \"true\" : \"false\";");
+        emit_line("if (type == NUL) return \"null\";");
+        emit_line("return \"\";");
         dedent();
         emit_line("}");
         dedent();
-        emit_line("}");
+        emit_line("};");
+        emit_line("");
+
+        // Print support
+        emit_line("std::ostream& operator<<(std::ostream& os, const JsonValue& v) {");
+        indent();
+        emit_line("if (v.type == JsonValue::STR) os << v.str_val;");
+        emit_line("else if (v.type == JsonValue::NUM) { if (v.num_val == (int64_t)v.num_val) os << (int64_t)v.num_val; else os << v.num_val; }");
+        emit_line("else if (v.type == JsonValue::BOOL) os << (v.bool_val ? \"true\" : \"false\");");
+        emit_line("else if (v.type == JsonValue::NUL) os << \"null\";");
+        emit_line("else if (v.type == JsonValue::ARR) { os << \"[\"; for(size_t i=0;i<v.arr_val.size();i++){if(i)os<<\",\";os<<v.arr_val[i];}os<<\"]\"; }");
+        emit_line("else if (v.type == JsonValue::OBJ) { os << \"{\"; bool f=true; for(auto& [k,val]:v.obj_val){if(!f)os<<\",\";os<<'\"'<<k<<\"\\\":\"<<val;f=false;}os<<\"}\"; }");
         emit_line("return os;");
         dedent();
         emit_line("}");
-        dedent();
-        emit_line("};");
         emit_line("");
-        // JsonParser class
-        emit_line("class JsonParser {");
+
+        // Simple JSON parser
+        emit_line("static JsonValue _parse(const std::string& s, size_t& pos) {");
         indent();
-        emit_line("std::string src; size_t pos = 0;");
-        emit_line("void skip_ws() { while (pos < src.size() && isspace(src[pos])) pos++; }");
-        emit_line("char cur() { return pos < src.size() ? src[pos] : 0; }");
-        dedent();
-        emit_line("public:");
+        emit_line("while(pos<s.size()&&(s[pos]==' '||s[pos]=='\\n'||s[pos]=='\\r'||s[pos]=='\\t'))pos++;");
+        emit_line("if(pos>=s.size()) return JsonValue();");
+        emit_line("if(s[pos]=='\"'){");
         indent();
-        emit_line("JsonParser(const std::string& s) : src(s) {}");
-        emit_line("JsonValue parse_value() {");
-        indent();
-        emit_line("skip_ws();");
-        emit_line("if (cur() == '\"') return parse_string();");
-        emit_line("if (cur() == '{') return parse_object();");
-        emit_line("if (cur() == '[') return parse_array();");
-        emit_line("if (cur() == 't' || cur() == 'f') return parse_bool();");
-        emit_line("if (cur() == 'n') { pos += 4; return JsonValue{}; }");
-        emit_line("return parse_number();");
+        emit_line("pos++; std::string val;");
+        emit_line("while(pos<s.size()&&s[pos]!='\"'){if(s[pos]=='\\\\'&&pos+1<s.size()){pos++;if(s[pos]=='n')val+='\\n';else if(s[pos]=='t')val+='\\t';else val+=s[pos];}else val+=s[pos];pos++;}");
+        emit_line("if(pos<s.size())pos++;");
+        emit_line("return JsonValue(val);");
         dedent();
         emit_line("}");
-        emit_line("JsonValue parse_string() {");
+        emit_line("if(s[pos]=='{'){ // Object");
         indent();
-        emit_line("pos++;");
-        emit_line("std::string s;");
-        emit_line("while (pos < src.size() && src[pos] != '\"') {");
+        emit_line("JsonValue obj; obj.type=JsonValue::OBJ; pos++;");
+        emit_line("while(pos<s.size()&&s[pos]!='}'){");
         indent();
-        emit_line("if (src[pos] == '\\\\') { pos++; if (src[pos] == 'n') s += '\\n'; else if (src[pos] == 't') s += '\\t'; else s += src[pos]; }");
-        emit_line("else s += src[pos];");
-        emit_line("pos++;");
+        emit_line("while(pos<s.size()&&(s[pos]==' '||s[pos]=='\\n'||s[pos]=='\\r'||s[pos]=='\\t'||s[pos]==','))pos++;");
+        emit_line("if(pos<s.size()&&s[pos]=='}')break;");
+        emit_line("auto key=_parse(s,pos);");
+        emit_line("while(pos<s.size()&&s[pos]!=':')pos++; pos++;");
+        emit_line("auto val=_parse(s,pos);");
+        emit_line("obj.obj_val.push_back({(std::string)key, val});");
         dedent();
         emit_line("}");
-        emit_line("pos++;");
-        emit_line("JsonValue v; v.type = JsonValue::String; v.str_val = s; return v;");
+        emit_line("if(pos<s.size())pos++;");
+        emit_line("return obj;");
         dedent();
         emit_line("}");
-        emit_line("JsonValue parse_number() {");
+        emit_line("if(s[pos]=='['){ // Array");
         indent();
-        emit_line("size_t start = pos;");
-        emit_line("if (cur() == '-') pos++;");
-        emit_line("while (pos < src.size() && (isdigit(src[pos]) || src[pos] == '.')) pos++;");
-        emit_line("JsonValue v; v.type = JsonValue::Number; v.num_val = std::stod(src.substr(start, pos - start)); return v;");
-        dedent();
-        emit_line("}");
-        emit_line("JsonValue parse_bool() {");
+        emit_line("JsonValue arr; arr.type=JsonValue::ARR; pos++;");
+        emit_line("while(pos<s.size()&&s[pos]!=']'){");
         indent();
-        emit_line("JsonValue v; v.type = JsonValue::Bool;");
-        emit_line("if (cur() == 't') { v.bool_val = true; pos += 4; }");
-        emit_line("else { v.bool_val = false; pos += 5; }");
-        emit_line("return v;");
+        emit_line("while(pos<s.size()&&(s[pos]==' '||s[pos]=='\\n'||s[pos]=='\\r'||s[pos]=='\\t'||s[pos]==','))pos++;");
+        emit_line("if(pos<s.size()&&s[pos]==']')break;");
+        emit_line("arr.arr_val.push_back(_parse(s,pos));");
         dedent();
         emit_line("}");
-        emit_line("JsonValue parse_array() {");
-        indent();
-        emit_line("pos++;");
-        emit_line("JsonValue v; v.type = JsonValue::Array;");
-        emit_line("skip_ws();");
-        emit_line("if (cur() == ']') { pos++; return v; }");
-        emit_line("v.arr.push_back(parse_value());");
-        emit_line("while (skip_ws(), cur() == ',') { pos++; v.arr.push_back(parse_value()); }");
-        emit_line("pos++;");
-        emit_line("return v;");
+        emit_line("if(pos<s.size())pos++;");
+        emit_line("return arr;");
         dedent();
         emit_line("}");
-        emit_line("JsonValue parse_object() {");
-        indent();
-        emit_line("pos++;");
-        emit_line("JsonValue v; v.type = JsonValue::Object;");
-        emit_line("skip_ws();");
-        emit_line("if (cur() == '}') { pos++; return v; }");
-        emit_line("auto key = parse_string().str_val; skip_ws(); pos++;");
-        emit_line("v.obj[key] = parse_value();");
-        emit_line("while (skip_ws(), cur() == ',') { pos++; skip_ws(); auto k = parse_string().str_val; skip_ws(); pos++; v.obj[k] = parse_value(); }");
-        emit_line("pos++;");
-        emit_line("return v;");
+        emit_line("if(s.substr(pos,4)==\"true\"){pos+=4;return JsonValue(true);}");
+        emit_line("if(s.substr(pos,5)==\"false\"){pos+=5;return JsonValue(false);}");
+        emit_line("if(s.substr(pos,4)==\"null\"){pos+=4;return JsonValue();}");
+        emit_line("// Number");
+        emit_line("size_t start=pos;");
+        emit_line("if(s[pos]=='-')pos++;");
+        emit_line("while(pos<s.size()&&(std::isdigit(s[pos])||s[pos]=='.'))pos++;");
+        emit_line("return JsonValue(std::stod(s.substr(start,pos-start)));");
         dedent();
         emit_line("}");
-        dedent();
-        emit_line("};");
         emit_line("");
-        // Free functions
-        emit_line("JsonValue parse(const std::string& s) { JsonParser p(s); return p.parse_value(); }");
+
+        // Public API
+        emit_line("JsonValue parse(const std::string& s) { size_t pos=0; return _parse(s, pos); }");
         emit_line("");
-        emit_line("template<typename T>");
-        emit_line("std::string stringify(const T& val) { std::ostringstream ss; ss << val; return ss.str(); }");
-        emit_line("std::string stringify(const JsonValue& v) { std::ostringstream ss; ss << v; return ss.str(); }");
-        emit_line("std::string stringify(const std::string& s) { return \"\\\"\" + s + \"\\\"\"; }");
-        emit_line("std::string stringify(int64_t n) { return std::to_string(n); }");
-        emit_line("std::string stringify(double d) { return std::to_string(d); }");
-        emit_line("std::string stringify(bool b) { return b ? \"true\" : \"false\"; }");
+
+        // Stringify
+        emit_line("std::string stringify(const JsonValue& v) {");
+        indent();
+        emit_line("std::ostringstream os;");
+        emit_line("if(v.type==JsonValue::STR) os<<'\"'<<v.str_val<<'\"';");
+        emit_line("else if(v.type==JsonValue::NUM){if(v.num_val==(int64_t)v.num_val)os<<(int64_t)v.num_val;else os<<v.num_val;}");
+        emit_line("else if(v.type==JsonValue::BOOL) os<<(v.bool_val?\"true\":\"false\");");
+        emit_line("else if(v.type==JsonValue::NUL) os<<\"null\";");
+        emit_line("else if(v.type==JsonValue::ARR){os<<\"[\";for(size_t i=0;i<v.arr_val.size();i++){if(i)os<<\",\";os<<stringify(v.arr_val[i]);}os<<\"]\";}");
+        emit_line("else if(v.type==JsonValue::OBJ){os<<\"{\";bool f=true;for(auto&[k,val]:v.obj_val){if(!f)os<<\",\";os<<'\"'<<k<<\"\\\":\"<<stringify(val);f=false;}os<<\"}\";}");
+        emit_line("return os.str();");
+        dedent();
+        emit_line("}");
+        emit_line("");
+
+        // Pretty print
+        emit_line("static void _pretty(const JsonValue& v, std::ostringstream& os, int indent) {");
+        indent();
+        emit_line("std::string pad(indent*2,' ');");
+        emit_line("if(v.type==JsonValue::OBJ){os<<\"{\\n\";bool f=true;for(auto&[k,val]:v.obj_val){if(!f)os<<\",\\n\";os<<pad<<\"  \\\"\"<<k<<\"\\\": \";_pretty(val,os,indent+1);f=false;}os<<\"\\n\"<<pad<<\"}\";}");
+        emit_line("else if(v.type==JsonValue::ARR){os<<\"[\\n\";for(size_t i=0;i<v.arr_val.size();i++){if(i)os<<\",\\n\";os<<pad<<\"  \";_pretty(v.arr_val[i],os,indent+1);}os<<\"\\n\"<<pad<<\"]\";}");
+        emit_line("else os<<stringify(v);");
+        dedent();
+        emit_line("}");
+        emit_line("std::string pretty(const JsonValue& v) { std::ostringstream os; _pretty(v,os,0); return os.str(); }");
+
         dedent();
         emit_line("} // namespace pyro_json");
         emit_line("");
@@ -2268,6 +2283,8 @@ void CodeGenerator::emit_import(const ImportStmt& stmt) {
         emit_line("int64_t second() { auto t = std::time(nullptr); return std::localtime(&t)->tm_sec; }");
         emit_line("");
         emit_line("void sleep(int64_t ms) { std::this_thread::sleep_for(std::chrono::milliseconds(ms)); }");
+        emit_line("void wait(int64_t ms) { std::this_thread::sleep_for(std::chrono::milliseconds(ms)); }");
+        emit_line("std::string date() { return format(now(), \"%Y-%m-%d %H:%M:%S\"); }");
         emit_line("");
         emit_line("struct Timer {");
         indent();
@@ -3671,12 +3688,21 @@ void CodeGenerator::emit_import(const ImportStmt& stmt) {
         emit_line("namespace pyro_re {");
         indent();
         emit_line("bool match(const std::string& pattern, const std::string& str) { return std::regex_match(str, std::regex(pattern)); }");
-        emit_line("bool search(const std::string& pattern, const std::string& str) { return std::regex_search(str, std::regex(pattern)); }");
-        emit_line("std::string replace(const std::string& pattern, const std::string& str, const std::string& rep) { return std::regex_replace(str, std::regex(pattern), rep); }");
+        emit_line("bool has_match(const std::string& pattern, const std::string& str) { return std::regex_search(str, std::regex(pattern)); }");
+        emit_line("std::string search(const std::string& pattern, const std::string& str) { std::smatch m; if(std::regex_search(str, m, std::regex(pattern))) return m[0].str(); return \"\"; }");
+        emit_line("std::string replace(const std::string& pattern, const std::string& replacement, const std::string& text) { return std::regex_replace(text, std::regex(pattern), replacement); }");
         emit_line("std::vector<std::string> findall(const std::string& pattern, const std::string& str) {");
         indent();
         emit_line("std::vector<std::string> r; std::regex re(pattern); std::sregex_iterator it(str.begin(), str.end(), re), end;");
         emit_line("for (; it != end; ++it) r.push_back((*it)[0].str()); return r;");
+        dedent(); emit_line("}");
+        emit_line("std::vector<std::string> find_all(const std::string& pattern, const std::string& text) {");
+        indent();
+        emit_line("std::vector<std::string> results;");
+        emit_line("std::regex re(pattern);");
+        emit_line("std::sregex_iterator it(text.begin(), text.end(), re), end;");
+        emit_line("for (; it != end; ++it) results.push_back((*it)[0].str());");
+        emit_line("return results;");
         dedent(); emit_line("}");
         emit_line("std::vector<std::string> split(const std::string& pattern, const std::string& str) {");
         indent();
@@ -3875,6 +3901,31 @@ void CodeGenerator::emit_import(const ImportStmt& stmt) {
         emit_line("void set(const std::string& name, const std::string& val) { ::setenv(name.c_str(), val.c_str(), 1); }");
         emit_line("void unset(const std::string& name) { ::unsetenv(name.c_str()); }");
         emit_line("bool has(const std::string& name) { return std::getenv(name.c_str()) != nullptr; }");
+        emit_line("void load(const std::string& path = \".env\") {");
+        indent();
+        emit_line("std::ifstream f(path);");
+        emit_line("if (!f.is_open()) return;");
+        emit_line("std::string line;");
+        emit_line("while (std::getline(f, line)) {");
+        indent();
+        emit_line("if (line.empty() || line[0] == '#') continue;");
+        emit_line("auto eq = line.find('=');");
+        emit_line("if (eq == std::string::npos) continue;");
+        emit_line("std::string key = line.substr(0, eq);");
+        emit_line("std::string val = line.substr(eq + 1);");
+        emit_line("// Trim quotes");
+        emit_line("while (!key.empty() && key.back() == ' ') key.pop_back();");
+        emit_line("while (!val.empty() && val[0] == ' ') val.erase(0, 1);");
+        emit_line("if (val.size() >= 2 && val.front() == '\"' && val.back() == '\"') val = val.substr(1, val.size()-2);");
+        emit_line("#ifdef _WIN32");
+        emit_line("_putenv_s(key.c_str(), val.c_str());");
+        emit_line("#else");
+        emit_line("setenv(key.c_str(), val.c_str(), 1);");
+        emit_line("#endif");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("}");
         emit_line("}"); emit_line("");
     } else if (stmt.module == "fs") {
         emit_line("namespace pyro_fs {");

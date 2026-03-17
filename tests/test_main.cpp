@@ -980,8 +980,9 @@ TEST(codegen_json_parser) {
     std::string cpp = codegen.generate(program);
     ASSERT(cpp.find("namespace pyro_json") != std::string::npos);
     ASSERT(cpp.find("struct JsonValue") != std::string::npos);
-    ASSERT(cpp.find("class JsonParser") != std::string::npos);
     ASSERT(cpp.find("JsonValue parse(") != std::string::npos);
+    ASSERT(cpp.find("stringify(") != std::string::npos);
+    ASSERT(cpp.find("pretty(") != std::string::npos);
 }
 
 TEST(codegen_crypto_import) {

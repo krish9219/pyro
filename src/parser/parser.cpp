@@ -587,7 +587,25 @@ ExprPtr Parser::parse_postfix() {
             expr = std::make_shared<Expression>(std::move(call));
         } else if (check(TokenType::DOT)) {
             advance();
-            std::string member = expect(TokenType::IDENTIFIER, "Expected member name").value;
+            // Allow keywords as member names (e.g., re.match, time.import)
+            std::string member;
+            if (check(TokenType::IDENTIFIER)) {
+                member = advance().value;
+            } else if (current().type == TokenType::MATCH || current().type == TokenType::RETURN ||
+                       current().type == TokenType::IMPORT || current().type == TokenType::STRUCT ||
+                       current().type == TokenType::PUB || current().type == TokenType::ASYNC ||
+                       current().type == TokenType::FOR || current().type == TokenType::WHILE ||
+                       current().type == TokenType::IF || current().type == TokenType::ELSE ||
+                       current().type == TokenType::IN || current().type == TokenType::FN ||
+                       current().type == TokenType::LET || current().type == TokenType::MUT ||
+                       current().type == TokenType::AWAIT || current().type == TokenType::TRY ||
+                       current().type == TokenType::CATCH || current().type == TokenType::ENUM ||
+                       current().type == TokenType::THROW || current().type == TokenType::FINALLY ||
+                       current().type == TokenType::BOOL_TRUE || current().type == TokenType::BOOL_FALSE) {
+                member = advance().value;
+            } else {
+                member = expect(TokenType::IDENTIFIER, "Expected member name").value;
+            }
             MemberExpr mem;
             mem.object = expr;
             mem.member = member;
@@ -619,10 +637,24 @@ ExprPtr Parser::parse_primary() {
         lit.value = std::stod(advance().value);
         return std::make_shared<Expression>(std::move(lit));
     }
+    if (check(TokenType::TRIPLE_STRING)) {
+        StringLiteral lit;
+        lit.value = advance().value;
+        return std::make_shared<Expression>(std::move(lit));
+    }
     if (check(TokenType::STRING)) {
         std::string raw = advance().value;
-        // Check if string contains interpolation braces
-        if (raw.find('{') != std::string::npos) {
+        // Check if string contains interpolation braces (e.g. "hello {name}")
+        // Only treat as interpolation if { is followed by an identifier character,
+        // not JSON-like content (e.g. {"key": "value"})
+        bool has_interp = false;
+        for (size_t ci = 0; ci < raw.size(); ci++) {
+            if (raw[ci] == '{' && ci + 1 < raw.size()) {
+                char next = raw[ci + 1];
+                if (std::isalpha(next) || next == '_') { has_interp = true; break; }
+            }
+        }
+        if (has_interp) {
             StringInterpExpr interp;
             std::string literal;
             size_t i = 0;
