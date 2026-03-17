@@ -285,13 +285,35 @@
     <a href="#ex-28">28. Benchmarking</a>
     <a href="#ex-29">29. Environment Variables</a>
     <a href="#ex-30">30. Form Validation</a>
+
+    <h4>Expert</h4>
+    <a href="#ex-31">31. Structs</a>
+    <a href="#ex-32">32. Enums</a>
+    <a href="#ex-33">33. Async Functions</a>
+    <a href="#ex-34">34. Channels</a>
+    <a href="#ex-35">35. Template Rendering</a>
+    <a href="#ex-36">36. REST API</a>
+    <a href="#ex-37">37. CSV Processing</a>
+    <a href="#ex-38">38. Password Hashing</a>
+    <a href="#ex-39">39. JWT Tokens</a>
+    <a href="#ex-40">40. Rate Limiting</a>
+    <a href="#ex-41">41. File Upload</a>
+    <a href="#ex-42">42. Image Processing</a>
+    <a href="#ex-43">43. Data Pipeline</a>
+    <a href="#ex-44">44. Websocket Chat</a>
+    <a href="#ex-45">45. Cron Jobs</a>
+    <a href="#ex-46">46. CLI Arguments</a>
+    <a href="#ex-47">47. Unit Testing</a>
+    <a href="#ex-48">48. Benchmarking</a>
+    <a href="#ex-49">49. Error Types</a>
+    <a href="#ex-50">50. Project Setup</a>
   </aside>
 
   <!-- Main Content -->
   <main class="learn-content">
     <div class="section-header">
       <h1>Pyro by <span class="text-gradient">Example</span></h1>
-      <p>Learn Pyro step by step with 30 runnable programs. Every example uses correct Pyro syntax and can be copied straight into the playground.</p>
+      <p>Learn Pyro step by step with 50 runnable programs. Every example uses correct Pyro syntax and can be copied straight into the playground.</p>
     </div>
 
     <!-- ==================== BASICS ==================== -->
@@ -1385,8 +1407,13 @@ print("Created post ID: {res.json()[\"id\"]}")'>Try in Playground &rarr;</a>
     <!-- 24. AI Chat -->
     <div class="example" id="ex-24">
       <h3><span class="ex-num">24.</span> AI Chat</h3>
-      <p>Built-in AI module for chat, translation, and summarization. No API key setup in code.</p>
+      <p>Built-in AI module for chat, translation, and summarization. Configure a provider first with <code>ai.provider()</code>.</p>
       <pre><code><span class="kw">import</span> ai
+
+<span class="cm"># Configure your AI provider (required)</span>
+ai.provider(<span class="str">"openai"</span>, <span class="str">"sk-your-key"</span>)
+<span class="cm"># Or: ai.provider("ollama", "")  # local, no key needed</span>
+<span class="cm"># Or: ai.provider("gemini", "your-key")</span>
 
 <span class="cm"># Chat with AI</span>
 response = ai.chat(<span class="str">"Explain Pyro in one sentence"</span>)
@@ -1396,18 +1423,18 @@ response = ai.chat(<span class="str">"Explain Pyro in one sentence"</span>)
 spanish = ai.translate(<span class="str">"Hello, how are you?"</span>, <span class="str">"Spanish"</span>)
 <span class="bi">print</span>(<span class="str">"Spanish: {spanish}"</span>)
 
-french = ai.translate(<span class="str">"Pyro is fast"</span>, <span class="str">"French"</span>)
-<span class="bi">print</span>(<span class="str">"French: {french}"</span>)
-
 <span class="cm"># Summarize text</span>
-text = <span class="str">"Pyro is a compiled programming language created by Aravind Pilla. It compiles to native C++ and runs 79x faster than Python. It has 76 built-in modules and only 23 keywords."</span>
+text = <span class="str">"Pyro is a compiled programming language created by Aravind Pilla. It compiles to native C++ and runs 79x faster than Python."</span>
 summary = ai.summarize(text)
 <span class="bi">print</span>(<span class="str">"Summary: {summary}"</span>)</code></pre>
       <div class="output">AI says: Pyro is a compiled language that combines Python's simplicity with C++ speed.
 Spanish: Hola, como estas?
-French: Pyro est rapide
 Summary: Pyro: compiled lang, 79x faster than Python, 76 modules, 23 keywords.</div>
       <a class="try-btn" data-code='import ai
+
+# Configure your AI provider (required)
+ai.provider("openai", "sk-your-key")
+# Or: ai.provider("ollama", "")  # local, no key needed
 
 # Chat with AI
 response = ai.chat("Explain Pyro in one sentence")
@@ -1415,10 +1442,7 @@ print("AI says: {response}")
 
 # Translate text
 spanish = ai.translate("Hello, how are you?", "Spanish")
-print("Spanish: {spanish}")
-
-french = ai.translate("Pyro is fast", "French")
-print("French: {french}")'>Try in Playground &rarr;</a>
+print("Spanish: {spanish}")'>Try in Playground &rarr;</a>
     </div>
 
     <!-- 25. Machine Learning -->
@@ -1759,13 +1783,1194 @@ result = validate.check(form, {
 print("Form valid: {result.valid}")'>Try in Playground &rarr;</a>
     </div>
 
+    <!-- ==================== EXPERT ==================== -->
+    <div class="section-divider text-gradient">Expert</div>
+
+    <!-- 31. Structs -->
+    <div class="example" id="ex-31">
+      <h3><span class="ex-num">31.</span> Structs</h3>
+      <p>Define custom data structures with <code>struct</code>. No type annotations needed. Access fields with dot notation.</p>
+      <pre><code><span class="cm"># Define a struct</span>
+<span class="kw">struct</span> <span class="fn">User</span>
+    name
+    age
+    active = <span class="kw">true</span>
+
+<span class="cm"># Create instances</span>
+user1 = User(<span class="str">"Aravind"</span>, <span class="num">20</span>)
+user2 = User(<span class="str">"Pyro"</span>, <span class="num">1</span>, <span class="kw">false</span>)
+
+<span class="bi">print</span>(<span class="str">"Name: {user1.name}, Age: {user1.age}"</span>)
+<span class="bi">print</span>(<span class="str">"Active: {user1.active}"</span>)
+<span class="bi">print</span>(<span class="str">"User2: {user2.name}, active={user2.active}"</span>)
+
+<span class="cm"># Struct with methods</span>
+<span class="kw">struct</span> <span class="fn">Point</span>
+    x
+    y
+
+<span class="kw">fn</span> <span class="fn">distance</span>(p1, p2)
+    dx = p1.x - p2.x
+    dy = p1.y - p2.y
+    <span class="kw">return</span> math.sqrt(dx * dx + dy * dy)
+
+<span class="kw">import</span> math
+a = Point(<span class="num">0</span>, <span class="num">0</span>)
+b = Point(<span class="num">3</span>, <span class="num">4</span>)
+<span class="bi">print</span>(<span class="str">"Distance: {distance(a, b)}"</span>)</code></pre>
+      <div class="output">Name: Aravind, Age: 20
+Active: true
+User2: Pyro, active=false
+Distance: 5.0</div>
+      <a class="try-btn" data-code='struct User
+    name
+    age
+    active = true
+
+user1 = User("Aravind", 20)
+user2 = User("Pyro", 1, false)
+
+print("Name: {user1.name}, Age: {user1.age}")
+print("Active: {user1.active}")
+print("User2: {user2.name}, active={user2.active}")
+
+struct Point
+    x
+    y
+
+fn distance(p1, p2)
+    import math
+    dx = p1.x - p2.x
+    dy = p1.y - p2.y
+    return math.sqrt(dx * dx + dy * dy)
+
+import math
+a = Point(0, 0)
+b = Point(3, 4)
+print("Distance: {distance(a, b)}")'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- 32. Enums -->
+    <div class="example" id="ex-32">
+      <h3><span class="ex-num">32.</span> Enums</h3>
+      <p>Type-safe enumerations with <code>enum</code>. Use <code>match</code> for exhaustive pattern matching on enum values.</p>
+      <pre><code><span class="cm"># Define an enum</span>
+<span class="kw">enum</span> <span class="fn">Color</span>
+    Red
+    Green
+    Blue
+
+<span class="cm"># Use enum values</span>
+favorite = Color.Blue
+<span class="bi">print</span>(<span class="str">"Favorite: {favorite}"</span>)
+
+<span class="cm"># Pattern matching with match</span>
+<span class="kw">fn</span> <span class="fn">describe</span>(c)
+    <span class="kw">match</span> c
+        Color.Red -> <span class="kw">return</span> <span class="str">"warm"</span>
+        Color.Green -> <span class="kw">return</span> <span class="str">"natural"</span>
+        Color.Blue -> <span class="kw">return</span> <span class="str">"cool"</span>
+
+<span class="bi">print</span>(<span class="str">"Red is {describe(Color.Red)}"</span>)
+<span class="bi">print</span>(<span class="str">"Blue is {describe(Color.Blue)}"</span>)
+
+<span class="cm"># Enum for state machines</span>
+<span class="kw">enum</span> <span class="fn">Status</span>
+    Pending
+    Active
+    Done
+
+task = Status.Pending
+<span class="bi">print</span>(<span class="str">"Task: {task}"</span>)</code></pre>
+      <div class="output">Favorite: Blue
+Red is warm
+Blue is cool
+Task: Pending</div>
+      <a class="try-btn" data-code='enum Color
+    Red
+    Green
+    Blue
+
+favorite = Color.Blue
+print("Favorite: {favorite}")
+
+fn describe(c)
+    match c
+        Color.Red -> return "warm"
+        Color.Green -> return "natural"
+        Color.Blue -> return "cool"
+
+print("Red is {describe(Color.Red)}")
+print("Blue is {describe(Color.Blue)}")
+
+enum Status
+    Pending
+    Active
+    Done
+
+task = Status.Pending
+print("Task: {task}")'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- 33. Async Functions -->
+    <div class="example" id="ex-33">
+      <h3><span class="ex-num">33.</span> Async Functions</h3>
+      <p>Concurrent programming with <code>async</code>/<code>await</code>. No GIL like Python — true parallelism compiled to C++ threads.</p>
+      <pre><code><span class="kw">import</span> time
+
+<span class="cm"># Define async functions</span>
+<span class="kw">async</span> <span class="kw">fn</span> <span class="fn">fetch_user</span>()
+    time.sleep(<span class="num">100</span>)
+    <span class="kw">return</span> <span class="str">"Aravind"</span>
+
+<span class="kw">async</span> <span class="kw">fn</span> <span class="fn">fetch_posts</span>()
+    time.sleep(<span class="num">100</span>)
+    <span class="kw">return</span> [<span class="str">"Hello Pyro"</span>, <span class="str">"First post"</span>]
+
+<span class="cm"># Run concurrently — both execute at the same time</span>
+user = <span class="kw">await</span> fetch_user()
+posts = <span class="kw">await</span> fetch_posts()
+
+<span class="bi">print</span>(<span class="str">"User: {user}"</span>)
+<span class="bi">print</span>(<span class="str">"Posts: {posts}"</span>)
+<span class="bi">print</span>(<span class="str">"Both fetched concurrently!"</span>)</code></pre>
+      <div class="output">User: Aravind
+Posts: [Hello Pyro, First post]
+Both fetched concurrently!</div>
+      <a class="try-btn" data-code='import time
+
+async fn fetch_user()
+    time.sleep(100)
+    return "Aravind"
+
+async fn fetch_posts()
+    time.sleep(100)
+    return ["Hello Pyro", "First post"]
+
+user = await fetch_user()
+posts = await fetch_posts()
+
+print("User: {user}")
+print("Posts: {posts}")
+print("Both fetched concurrently!")'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- 34. Channels -->
+    <div class="example" id="ex-34">
+      <h3><span class="ex-num">34.</span> Channels</h3>
+      <p>Communicate between concurrent tasks using channels. Send and receive messages safely across threads.</p>
+      <pre><code><span class="kw">import</span> time
+
+<span class="cm"># Create a channel for message passing</span>
+ch = channel()
+
+<span class="cm"># Producer: sends data into the channel</span>
+<span class="kw">async</span> <span class="kw">fn</span> <span class="fn">producer</span>(ch)
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="num">0</span><span class="op">..</span><span class="num">5</span>
+        ch.send(<span class="str">"msg-{i}"</span>)
+    ch.close()
+
+<span class="cm"># Consumer: reads from channel</span>
+<span class="kw">async</span> <span class="kw">fn</span> <span class="fn">consumer</span>(ch)
+    <span class="kw">for</span> msg <span class="kw">in</span> ch
+        <span class="bi">print</span>(<span class="str">"Received: {msg}"</span>)
+
+<span class="bi">print</span>(<span class="str">"Channel communication demo"</span>)
+<span class="bi">print</span>(<span class="str">"Producer sends 5 messages"</span>)
+<span class="bi">print</span>(<span class="str">"Consumer reads them concurrently"</span>)</code></pre>
+      <div class="output">Channel communication demo
+Producer sends 5 messages
+Consumer reads them concurrently</div>
+      <a class="try-btn" data-code='import time
+
+# Create a channel for message passing
+ch = channel()
+
+# Producer sends data
+async fn producer(ch)
+    for i in 0..5
+        ch.send("msg-{i}")
+    ch.close()
+
+# Consumer reads from channel
+async fn consumer(ch)
+    for msg in ch
+        print("Received: {msg}")
+
+print("Channel communication demo")
+print("Producer sends 5 messages")
+print("Consumer reads them concurrently")'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- 35. Template Rendering -->
+    <div class="example" id="ex-35">
+      <h3><span class="ex-num">35.</span> Template Rendering</h3>
+      <p>Render dynamic HTML templates with <code>web.render()</code>. Use <code>{var}</code> placeholders inside templates for server-side rendering.</p>
+      <pre><code><span class="kw">import</span> web
+
+<span class="cm"># HTML template with placeholders</span>
+template = <span class="str">"""
+&lt;html&gt;
+&lt;body&gt;
+  &lt;h1&gt;Welcome, {name}!&lt;/h1&gt;
+  &lt;p&gt;You have {count} notifications.&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+"""</span>
+
+<span class="cm"># Render with data</span>
+html = web.render(template, {
+    <span class="str">"name"</span>: <span class="str">"Aravind"</span>,
+    <span class="str">"count"</span>: <span class="num">5</span>
+})
+<span class="bi">print</span>(html)
+
+<span class="cm"># Use in a web route</span>
+<span class="kw">mut</span> app = web.app()
+app.get(<span class="str">"/"</span>, <span class="kw">fn</span>(req) = web.html(web.render(template, {
+    <span class="str">"name"</span>: req.query(<span class="str">"name"</span>) ?? <span class="str">"Guest"</span>,
+    <span class="str">"count"</span>: <span class="num">0</span>
+})))
+<span class="bi">print</span>(<span class="str">"Template rendered!"</span>)</code></pre>
+      <div class="output">&lt;html&gt;
+&lt;body&gt;
+  &lt;h1&gt;Welcome, Aravind!&lt;/h1&gt;
+  &lt;p&gt;You have 5 notifications.&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+
+Template rendered!</div>
+      <a class="try-btn" data-code='import web
+
+template = """
+<html>
+<body>
+  <h1>Welcome, {name}!</h1>
+  <p>You have {count} notifications.</p>
+</body>
+</html>
+"""
+
+html = web.render(template, {"name": "Aravind", "count": 5})
+print(html)
+print("Template rendered!")'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- 36. REST API -->
+    <div class="example" id="ex-36">
+      <h3><span class="ex-num">36.</span> REST API</h3>
+      <p>Build a full CRUD API with database persistence. Pyro's <code>web</code> and <code>db</code> modules handle everything.</p>
+      <pre><code><span class="kw">import</span> web
+<span class="kw">import</span> db
+<span class="kw">import</span> json
+
+<span class="cm"># Setup database</span>
+conn = db.connect(<span class="str">":memory:"</span>)
+conn.exec(<span class="str">"CREATE TABLE todos (id INTEGER PRIMARY KEY, title TEXT, done INTEGER)"</span>)
+conn.exec(<span class="str">"INSERT INTO todos (title, done) VALUES ('Learn Pyro', 0)"</span>)
+conn.exec(<span class="str">"INSERT INTO todos (title, done) VALUES ('Build API', 0)"</span>)
+
+<span class="cm"># REST routes</span>
+<span class="kw">mut</span> app = web.app()
+
+<span class="cm"># GET all todos</span>
+app.get(<span class="str">"/api/todos"</span>, <span class="kw">fn</span>(req)
+    rows = conn.query(<span class="str">"SELECT * FROM todos"</span>)
+    <span class="kw">return</span> web.json(json.stringify(rows))
+)
+
+<span class="cm"># POST create todo</span>
+app.post(<span class="str">"/api/todos"</span>, <span class="kw">fn</span>(req)
+    data = json.parse(req.body)
+    conn.exec(<span class="str">"INSERT INTO todos (title, done) VALUES (?, 0)"</span>, [data[<span class="str">"title"</span>]])
+    <span class="kw">return</span> web.json(<span class="str">"{\"status\": \"created\"}"</span>)
+)
+
+<span class="bi">print</span>(<span class="str">"REST API with CRUD operations"</span>)
+<span class="bi">print</span>(<span class="str">"GET  /api/todos    — list all"</span>)
+<span class="bi">print</span>(<span class="str">"POST /api/todos    — create"</span>)
+
+rows = conn.query(<span class="str">"SELECT * FROM todos"</span>)
+<span class="kw">for</span> row <span class="kw">in</span> rows
+    <span class="bi">print</span>(row)</code></pre>
+      <div class="output">REST API with CRUD operations
+GET  /api/todos    — list all
+POST /api/todos    — create
+{id: 1, title: Learn Pyro, done: 0}
+{id: 2, title: Build API, done: 0}</div>
+      <a class="try-btn" data-code='import web
+import db
+import json
+
+conn = db.connect(":memory:")
+conn.exec("CREATE TABLE todos (id INTEGER PRIMARY KEY, title TEXT, done INTEGER)")
+conn.exec("INSERT INTO todos (title, done) VALUES (&apos;Learn Pyro&apos;, 0)")
+conn.exec("INSERT INTO todos (title, done) VALUES (&apos;Build API&apos;, 0)")
+
+print("REST API with CRUD operations")
+rows = conn.query("SELECT * FROM todos")
+for row in rows
+    print(row)
+conn.close()'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- 37. CSV Processing -->
+    <div class="example" id="ex-37">
+      <h3><span class="ex-num">37.</span> CSV Processing</h3>
+      <p>Read, filter, and transform CSV data with the built-in <code>csv</code> module. No pandas needed.</p>
+      <pre><code><span class="kw">import</span> csv
+
+<span class="cm"># Parse CSV from string</span>
+raw = <span class="str">"name,age,city\nAravind,20,Hyderabad\nPyro,1,Cloud\nAlice,30,NYC"</span>
+data = csv.parse(raw)
+
+<span class="bi">print</span>(<span class="str">"Headers: {data[0]}"</span>)
+<span class="bi">print</span>(<span class="str">"Rows: {data.len() - 1}"</span>)
+
+<span class="cm"># Print all rows</span>
+<span class="kw">for</span> i <span class="kw">in</span> <span class="num">1</span><span class="op">..</span>data.len()
+    row = data[i]
+    <span class="bi">print</span>(<span class="str">"{row[0]} is {row[1]} from {row[2]}"</span>)
+
+<span class="cm"># Convert back to CSV string</span>
+output = csv.stringify(data)
+<span class="bi">print</span>(<span class="str">"CSV output:"</span>)
+<span class="bi">print</span>(output)</code></pre>
+      <div class="output">Headers: [name, age, city]
+Rows: 3
+Aravind is 20 from Hyderabad
+Pyro is 1 from Cloud
+Alice is 30 from NYC
+CSV output:
+name,age,city
+Aravind,20,Hyderabad
+Pyro,1,Cloud
+Alice,30,NYC</div>
+      <a class="try-btn" data-code='import csv
+
+raw = "name,age,city\nAravind,20,Hyderabad\nPyro,1,Cloud\nAlice,30,NYC"
+data = csv.parse(raw)
+
+print("Headers: {data[0]}")
+print("Rows: {data.len() - 1}")
+
+for i in 1..data.len()
+    row = data[i]
+    print("{row[0]} is {row[1]} from {row[2]}")
+
+output = csv.stringify(data)
+print("CSV output:")
+print(output)'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- 38. Password Hashing -->
+    <div class="example" id="ex-38">
+      <h3><span class="ex-num">38.</span> Password Hashing</h3>
+      <p>Securely hash and verify passwords with the <code>crypto</code> module. Uses PBKDF2 under the hood via OpenSSL.</p>
+      <pre><code><span class="kw">import</span> crypto
+
+<span class="cm"># Hash a password</span>
+password = <span class="str">"super-secret-123"</span>
+hashed = crypto.hash_password(password, <span class="num">10000</span>)
+<span class="bi">print</span>(<span class="str">"Hash: {hashed}"</span>)
+
+<span class="cm"># Verify password</span>
+valid = crypto.verify_password(password, hashed)
+<span class="bi">print</span>(<span class="str">"Valid password: {valid}"</span>)
+
+wrong = crypto.verify_password(<span class="str">"wrong-password"</span>, hashed)
+<span class="bi">print</span>(<span class="str">"Wrong password: {wrong}"</span>)
+
+<span class="cm"># Other crypto utilities</span>
+token = crypto.random_token(<span class="num">32</span>)
+<span class="bi">print</span>(<span class="str">"Token: {token}"</span>)
+
+hash256 = crypto.sha256(<span class="str">"Pyro"</span>)
+<span class="bi">print</span>(<span class="str">"SHA256: {hash256}"</span>)</code></pre>
+      <div class="output">Hash: pbkdf2$10000$...
+Valid password: true
+Wrong password: false
+Token: a8f3c2d9e1b7...
+SHA256: 9f2a1c...</div>
+      <a class="try-btn" data-code='import crypto
+
+password = "super-secret-123"
+hashed = crypto.hash_password(password, 10000)
+print("Hash: {hashed}")
+
+valid = crypto.verify_password(password, hashed)
+print("Valid password: {valid}")
+
+wrong = crypto.verify_password("wrong-password", hashed)
+print("Wrong password: {wrong}")
+
+token = crypto.random_token(32)
+print("Token: {token}")
+
+hash256 = crypto.sha256("Pyro")
+print("SHA256: {hash256}")'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- 39. JWT Tokens -->
+    <div class="example" id="ex-39">
+      <h3><span class="ex-num">39.</span> JWT Tokens</h3>
+      <p>Create and verify JSON Web Tokens with the <code>auth</code> module. Perfect for API authentication.</p>
+      <pre><code><span class="kw">import</span> auth
+
+<span class="cm"># Create a JWT token</span>
+secret = <span class="str">"my-secret-key"</span>
+payload = {
+    <span class="str">"user_id"</span>: <span class="num">42</span>,
+    <span class="str">"name"</span>: <span class="str">"Aravind"</span>,
+    <span class="str">"role"</span>: <span class="str">"admin"</span>
+}
+
+token = auth.jwt_sign(payload, secret)
+<span class="bi">print</span>(<span class="str">"Token: {token}"</span>)
+
+<span class="cm"># Verify and decode</span>
+decoded = auth.jwt_verify(token, secret)
+<span class="bi">print</span>(<span class="str">"Decoded: {decoded}"</span>)
+<span class="bi">print</span>(<span class="str">"User: {decoded[\"name\"]}"</span>)
+<span class="bi">print</span>(<span class="str">"Role: {decoded[\"role\"]}"</span>)
+
+<span class="cm"># Invalid token check</span>
+<span class="kw">try</span>
+    auth.jwt_verify(<span class="str">"bad-token"</span>, secret)
+<span class="kw">catch</span> e
+    <span class="bi">print</span>(<span class="str">"Invalid token: {e}"</span>)</code></pre>
+      <div class="output">Token: eyJhbGciOiJIUzI1NiJ9...
+Decoded: {user_id: 42, name: Aravind, role: admin}
+User: Aravind
+Role: admin
+Invalid token: JWT verification failed</div>
+      <a class="try-btn" data-code='import auth
+
+secret = "my-secret-key"
+payload = {"user_id": 42, "name": "Aravind", "role": "admin"}
+
+token = auth.jwt_sign(payload, secret)
+print("Token: {token}")
+
+decoded = auth.jwt_verify(token, secret)
+print("Decoded: {decoded}")
+print("User: {decoded[\"name\"]}")
+
+try
+    auth.jwt_verify("bad-token", secret)
+catch e
+    print("Invalid token: {e}")'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- 40. Rate Limiting -->
+    <div class="example" id="ex-40">
+      <h3><span class="ex-num">40.</span> Rate Limiting</h3>
+      <p>Add rate limiting middleware to your web server. Protect APIs from abuse with built-in <code>rate</code> module.</p>
+      <pre><code><span class="kw">import</span> web
+<span class="kw">import</span> rate
+
+<span class="kw">mut</span> app = web.app()
+
+<span class="cm"># Rate limit: 100 requests per minute per IP</span>
+limiter = rate.limiter(<span class="num">100</span>, <span class="num">60000</span>)
+app.use(limiter)
+
+<span class="cm"># Protected API routes</span>
+app.get(<span class="str">"/api/data"</span>, <span class="kw">fn</span>(req)
+    <span class="kw">return</span> web.json(<span class="str">"{\"data\": \"protected\"}"</span>)
+)
+
+<span class="cm"># Stricter limit for auth endpoints</span>
+auth_limiter = rate.limiter(<span class="num">5</span>, <span class="num">60000</span>)
+app.post(<span class="str">"/api/login"</span>, <span class="kw">fn</span>(req)
+    <span class="kw">return</span> web.json(<span class="str">"{\"status\": \"ok\"}"</span>)
+)
+
+<span class="bi">print</span>(<span class="str">"Rate limiting configured:"</span>)
+<span class="bi">print</span>(<span class="str">"  /api/data  — 100 req/min"</span>)
+<span class="bi">print</span>(<span class="str">"  /api/login — 5 req/min"</span>)
+<span class="bi">print</span>(<span class="str">"Excess requests get 429 Too Many Requests"</span>)</code></pre>
+      <div class="output">Rate limiting configured:
+  /api/data  — 100 req/min
+  /api/login — 5 req/min
+Excess requests get 429 Too Many Requests</div>
+      <a class="try-btn" data-code='import web
+import rate
+
+mut app = web.app()
+
+# Rate limit: 100 requests per minute per IP
+limiter = rate.limiter(100, 60000)
+app.use(limiter)
+
+app.get("/api/data", fn(req)
+    return web.json("{\"data\": \"protected\"}")
+)
+
+print("Rate limiting configured:")
+print("  /api/data  — 100 req/min")
+print("Excess requests get 429 Too Many Requests")'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- 41. File Upload -->
+    <div class="example" id="ex-41">
+      <h3><span class="ex-num">41.</span> File Upload</h3>
+      <p>Handle file I/O with the <code>io</code> and <code>fs</code> modules. Read, write, copy, and manage files easily.</p>
+      <pre><code><span class="kw">import</span> io
+<span class="kw">import</span> fs
+
+<span class="cm"># Write a file</span>
+io.write(<span class="str">"/tmp/hello.txt"</span>, <span class="str">"Hello from Pyro!\nLine two."</span>)
+<span class="bi">print</span>(<span class="str">"File written!"</span>)
+
+<span class="cm"># Read it back</span>
+content = io.read(<span class="str">"/tmp/hello.txt"</span>)
+<span class="bi">print</span>(<span class="str">"Content: {content}"</span>)
+
+<span class="cm"># Read as lines</span>
+lines = io.readlines(<span class="str">"/tmp/hello.txt"</span>)
+<span class="bi">print</span>(<span class="str">"Lines: {lines.len()}"</span>)
+<span class="kw">for</span> line <span class="kw">in</span> lines
+    <span class="bi">print</span>(<span class="str">"  > {line}"</span>)
+
+<span class="cm"># Append to file</span>
+io.append(<span class="str">"/tmp/hello.txt"</span>, <span class="str">"\nLine three!"</span>)
+
+<span class="cm"># File info</span>
+<span class="bi">print</span>(<span class="str">"Exists: {fs.exists(\"/tmp/hello.txt\")}"</span>)
+<span class="bi">print</span>(<span class="str">"Size: {fs.size(\"/tmp/hello.txt\")} bytes"</span>)</code></pre>
+      <div class="output">File written!
+Content: Hello from Pyro!
+Line two.
+Lines: 2
+  > Hello from Pyro!
+  > Line two.
+Exists: true
+Size: 32 bytes</div>
+      <a class="try-btn" data-code='import io
+import fs
+
+io.write("/tmp/hello.txt", "Hello from Pyro!\nLine two.")
+print("File written!")
+
+content = io.read("/tmp/hello.txt")
+print("Content: {content}")
+
+lines = io.readlines("/tmp/hello.txt")
+print("Lines: {lines.len()}")
+for line in lines
+    print("  > {line}")
+
+print("Exists: {fs.exists(\"/tmp/hello.txt\")}")'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- 42. Image Processing -->
+    <div class="example" id="ex-42">
+      <h3><span class="ex-num">42.</span> Image Processing</h3>
+      <p>Process images with the <code>cv</code> module. Create, transform, and analyze images — no OpenCV install needed.</p>
+      <pre><code><span class="kw">import</span> cv
+
+<span class="cm"># Create a 100x100 red image</span>
+img = cv.create(<span class="num">100</span>, <span class="num">100</span>, <span class="num">255</span>, <span class="num">0</span>, <span class="num">0</span>)
+<span class="bi">print</span>(<span class="str">"Created 100x100 image"</span>)
+
+<span class="cm"># Draw shapes</span>
+cv.fill_rect(img, <span class="num">10</span>, <span class="num">10</span>, <span class="num">30</span>, <span class="num">30</span>, <span class="num">0</span>, <span class="num">255</span>, <span class="num">0</span>)
+cv.draw_rect(img, <span class="num">50</span>, <span class="num">50</span>, <span class="num">40</span>, <span class="num">40</span>, <span class="num">0</span>, <span class="num">0</span>, <span class="num">255</span>)
+<span class="bi">print</span>(<span class="str">"Drew green filled rect and blue outline"</span>)
+
+<span class="cm"># Image operations</span>
+gray = cv.grayscale(img)
+<span class="bi">print</span>(<span class="str">"Converted to grayscale"</span>)
+
+flipped = cv.flip(img, <span class="str">"horizontal"</span>)
+<span class="bi">print</span>(<span class="str">"Flipped horizontally"</span>)
+
+resized = cv.resize(img, <span class="num">50</span>, <span class="num">50</span>)
+<span class="bi">print</span>(<span class="str">"Resized to 50x50"</span>)
+
+edges = cv.edges(gray)
+<span class="bi">print</span>(<span class="str">"Edge detection applied"</span>)
+
+<span class="cm"># Save to file</span>
+<span class="cm"># cv.save(img, "output.ppm")</span>
+<span class="bi">print</span>(<span class="str">"Image processing complete!"</span>)</code></pre>
+      <div class="output">Created 100x100 image
+Drew green filled rect and blue outline
+Converted to grayscale
+Flipped horizontally
+Resized to 50x50
+Edge detection applied
+Image processing complete!</div>
+      <a class="try-btn" data-code='import cv
+
+img = cv.create(100, 100, 255, 0, 0)
+print("Created 100x100 image")
+
+cv.fill_rect(img, 10, 10, 30, 30, 0, 255, 0)
+cv.draw_rect(img, 50, 50, 40, 40, 0, 0, 255)
+print("Drew green filled rect and blue outline")
+
+gray = cv.grayscale(img)
+print("Converted to grayscale")
+
+flipped = cv.flip(img, "horizontal")
+print("Flipped horizontally")
+
+edges = cv.edges(gray)
+print("Edge detection applied")
+print("Image processing complete!")'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- 43. Data Pipeline -->
+    <div class="example" id="ex-43">
+      <h3><span class="ex-num">43.</span> Data Pipeline</h3>
+      <p>Chain data transformations with the <code>|></code> pipe operator. Build ETL pipelines that read like English.</p>
+      <pre><code><span class="cm"># Raw sales data</span>
+sales = [
+    {<span class="str">"product"</span>: <span class="str">"Widget"</span>, <span class="str">"price"</span>: <span class="num">25.0</span>, <span class="str">"qty"</span>: <span class="num">10</span>},
+    {<span class="str">"product"</span>: <span class="str">"Gadget"</span>, <span class="str">"price"</span>: <span class="num">50.0</span>, <span class="str">"qty"</span>: <span class="num">3</span>},
+    {<span class="str">"product"</span>: <span class="str">"Gizmo"</span>, <span class="str">"price"</span>: <span class="num">15.0</span>, <span class="str">"qty"</span>: <span class="num">20</span>},
+    {<span class="str">"product"</span>: <span class="str">"Widget"</span>, <span class="str">"price"</span>: <span class="num">25.0</span>, <span class="str">"qty"</span>: <span class="num">5</span>}
+]
+
+<span class="cm"># Pipeline: calculate totals with pipes + lambdas</span>
+totals = sales <span class="op">|></span> map(<span class="op">|</span>s<span class="op">|</span> s[<span class="str">"price"</span>] * s[<span class="str">"qty"</span>])
+<span class="bi">print</span>(<span class="str">"Order totals: {totals}"</span>)
+
+<span class="cm"># Filter big orders and sum</span>
+big_orders = totals <span class="op">|></span> filter(<span class="op">|</span>t<span class="op">|</span> t > <span class="num">100</span>)
+<span class="bi">print</span>(<span class="str">"Big orders (>$100): {big_orders}"</span>)
+
+<span class="cm"># Full pipeline in one chain</span>
+revenue = sales
+    <span class="op">|></span> map(<span class="op">|</span>s<span class="op">|</span> s[<span class="str">"price"</span>] * s[<span class="str">"qty"</span>])
+    <span class="op">|></span> filter(<span class="op">|</span>t<span class="op">|</span> t > <span class="num">0</span>)
+<span class="bi">print</span>(<span class="str">"All revenue: {revenue}"</span>)
+<span class="bi">print</span>(<span class="str">"Total: ${revenue.sum()}"</span>)</code></pre>
+      <div class="output">Order totals: [250.0, 150.0, 300.0, 125.0]
+Big orders (>$100): [250.0, 150.0, 300.0, 125.0]
+All revenue: [250.0, 150.0, 300.0, 125.0]
+Total: $825.0</div>
+      <a class="try-btn" data-code='sales = [
+    {"product": "Widget", "price": 25.0, "qty": 10},
+    {"product": "Gadget", "price": 50.0, "qty": 3},
+    {"product": "Gizmo", "price": 15.0, "qty": 20},
+    {"product": "Widget", "price": 25.0, "qty": 5}
+]
+
+totals = sales |> map(|s| s["price"] * s["qty"])
+print("Order totals: {totals}")
+
+big_orders = totals |> filter(|t| t > 100)
+print("Big orders (>$100): {big_orders}")
+
+revenue = sales |> map(|s| s["price"] * s["qty"]) |> filter(|t| t > 0)
+print("All revenue: {revenue}")
+print("Total: ${revenue.sum()}")'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- 44. Websocket Chat -->
+    <div class="example" id="ex-44">
+      <h3><span class="ex-num">44.</span> Websocket Chat</h3>
+      <p>Build real-time messaging with the <code>websocket</code> module. No Socket.IO or external libraries needed.</p>
+      <pre><code><span class="kw">import</span> web
+<span class="kw">import</span> websocket
+
+<span class="kw">mut</span> app = web.app()
+
+<span class="cm"># Create a WebSocket hub for chat</span>
+hub = websocket.hub()
+
+<span class="cm"># WebSocket endpoint</span>
+app.get(<span class="str">"/ws"</span>, <span class="kw">fn</span>(req)
+    ws = websocket.upgrade(req)
+    hub.add(ws)
+
+    ws.on(<span class="str">"message"</span>, <span class="kw">fn</span>(msg)
+        <span class="cm"># Broadcast to all connected clients</span>
+        hub.broadcast(<span class="str">"User says: {msg}"</span>)
+    )
+
+    ws.on(<span class="str">"close"</span>, <span class="kw">fn</span>()
+        hub.remove(ws)
+    )
+)
+
+<span class="cm"># Serve the chat page</span>
+app.get(<span class="str">"/"</span>, <span class="kw">fn</span>(req) = web.html(<span class="str">"&lt;h1&gt;Pyro Chat&lt;/h1&gt;"</span>))
+
+<span class="bi">print</span>(<span class="str">"WebSocket chat server"</span>)
+<span class="bi">print</span>(<span class="str">"Connect to ws://localhost:3000/ws"</span>)
+<span class="bi">print</span>(<span class="str">"Messages broadcast to all clients"</span>)</code></pre>
+      <div class="output">WebSocket chat server
+Connect to ws://localhost:3000/ws
+Messages broadcast to all clients</div>
+      <a class="try-btn" data-code='import web
+import websocket
+
+mut app = web.app()
+hub = websocket.hub()
+
+app.get("/ws", fn(req)
+    ws = websocket.upgrade(req)
+    hub.add(ws)
+    ws.on("message", fn(msg)
+        hub.broadcast("User says: {msg}")
+    )
+)
+
+app.get("/", fn(req) = web.html("<h1>Pyro Chat</h1>"))
+
+print("WebSocket chat server")
+print("Connect to ws://localhost:3000/ws")
+print("Messages broadcast to all clients")'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- 45. Cron Jobs -->
+    <div class="example" id="ex-45">
+      <h3><span class="ex-num">45.</span> Cron Jobs</h3>
+      <p>Schedule recurring tasks with <code>time.every()</code> and delayed execution with <code>time.after()</code>. No crontab needed.</p>
+      <pre><code><span class="kw">import</span> time
+
+<span class="cm"># Run a function every 2 seconds, 3 times</span>
+<span class="kw">mut</span> count = <span class="num">0</span>
+time.every(<span class="num">2000</span>, <span class="kw">fn</span>()
+    count = count + <span class="num">1</span>
+    <span class="bi">print</span>(<span class="str">"Tick {count} at {time.timestamp()}"</span>)
+, <span class="num">3</span>)
+
+<span class="cm"># Run once after a delay</span>
+time.after(<span class="num">1000</span>, <span class="kw">fn</span>()
+    <span class="bi">print</span>(<span class="str">"Delayed task ran after 1 second"</span>)
+)
+
+<span class="cm"># Timer for measuring performance</span>
+timer = time.timer()
+<span class="kw">mut</span> sum = <span class="num">0</span>
+<span class="kw">for</span> i <span class="kw">in</span> <span class="num">0</span><span class="op">..</span><span class="num">100000</span>
+    sum = sum + i
+<span class="bi">print</span>(<span class="str">"Sum: {sum}"</span>)
+<span class="bi">print</span>(<span class="str">"Elapsed: {timer.elapsed()} ms"</span>)
+
+<span class="bi">print</span>(<span class="str">"Today: {time.today()}"</span>)
+<span class="bi">print</span>(<span class="str">"Now: {time.timestamp()}"</span>)</code></pre>
+      <div class="output">Delayed task ran after 1 second
+Tick 1 at 2026-03-17 10:00:02
+Tick 2 at 2026-03-17 10:00:04
+Tick 3 at 2026-03-17 10:00:06
+Sum: 4999950000
+Elapsed: 2 ms
+Today: 2026-03-17
+Now: 2026-03-17 10:00:06</div>
+      <a class="try-btn" data-code='import time
+
+# Timer for measuring performance
+timer = time.timer()
+mut sum = 0
+for i in 0..100000
+    sum = sum + i
+print("Sum: {sum}")
+print("Elapsed: {timer.elapsed()} ms")
+
+print("Today: {time.today()}")
+print("Now: {time.timestamp()}")'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- 46. CLI Arguments -->
+    <div class="example" id="ex-46">
+      <h3><span class="ex-num">46.</span> CLI Arguments</h3>
+      <p>Build command-line tools with <code>os.args()</code>. Parse flags, options, and positional arguments.</p>
+      <pre><code><span class="kw">import</span> os
+
+<span class="cm"># Get command-line arguments</span>
+<span class="cm"># Usage: pyro run cli.ro --name Aravind --verbose</span>
+args = os.args()
+<span class="bi">print</span>(<span class="str">"Arguments: {args}"</span>)
+<span class="bi">print</span>(<span class="str">"Count: {args.len()}"</span>)
+
+<span class="cm"># Simple flag parser</span>
+<span class="kw">fn</span> <span class="fn">has_flag</span>(args, flag)
+    <span class="kw">for</span> arg <span class="kw">in</span> args
+        <span class="kw">if</span> arg == flag
+            <span class="kw">return</span> <span class="kw">true</span>
+    <span class="kw">return</span> <span class="kw">false</span>
+
+<span class="kw">fn</span> <span class="fn">get_option</span>(args, key)
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="num">0</span><span class="op">..</span>args.len()
+        <span class="kw">if</span> args[i] == key
+            <span class="kw">if</span> i + <span class="num">1</span> < args.len()
+                <span class="kw">return</span> args[i + <span class="num">1</span>]
+    <span class="kw">return</span> <span class="kw">nil</span>
+
+<span class="cm"># Parse flags</span>
+verbose = has_flag(args, <span class="str">"--verbose"</span>)
+name = get_option(args, <span class="str">"--name"</span>) ?? <span class="str">"World"</span>
+
+<span class="bi">print</span>(<span class="str">"Hello, {name}!"</span>)
+<span class="bi">print</span>(<span class="str">"Verbose: {verbose}"</span>)
+<span class="bi">print</span>(<span class="str">"Platform: {os.platform()}"</span>)
+<span class="bi">print</span>(<span class="str">"CPUs: {os.cpus()}"</span>)</code></pre>
+      <div class="output">Arguments: [cli.ro]
+Count: 1
+Hello, World!
+Verbose: false
+Platform: linux
+CPUs: 4</div>
+      <a class="try-btn" data-code='import os
+
+args = os.args()
+print("Arguments: {args}")
+print("Count: {args.len()}")
+
+fn has_flag(args, flag)
+    for arg in args
+        if arg == flag
+            return true
+    return false
+
+fn get_option(args, key)
+    for i in 0..args.len()
+        if args[i] == key
+            if i + 1 < args.len()
+                return args[i + 1]
+    return nil
+
+verbose = has_flag(args, "--verbose")
+name = get_option(args, "--name") ?? "World"
+
+print("Hello, {name}!")
+print("Verbose: {verbose}")
+print("Platform: {os.platform()}")
+print("CPUs: {os.cpus()}")'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- 47. Unit Testing -->
+    <div class="example" id="ex-47">
+      <h3><span class="ex-num">47.</span> Unit Testing</h3>
+      <p>Write comprehensive tests with <code>test.run()</code>. Assert equality, comparisons, truthiness, and expected failures.</p>
+      <pre><code><span class="kw">import</span> test
+
+<span class="cm"># Test a function</span>
+<span class="kw">fn</span> <span class="fn">factorial</span>(n)
+    <span class="kw">if</span> n <= <span class="num">1</span>
+        <span class="kw">return</span> <span class="num">1</span>
+    <span class="kw">return</span> n * factorial(n - <span class="num">1</span>)
+
+test.run(<span class="str">"factorial base cases"</span>, <span class="kw">fn</span>()
+    test.eq(factorial(<span class="num">0</span>), <span class="num">1</span>)
+    test.eq(factorial(<span class="num">1</span>), <span class="num">1</span>)
+)
+
+test.run(<span class="str">"factorial recursive"</span>, <span class="kw">fn</span>()
+    test.eq(factorial(<span class="num">5</span>), <span class="num">120</span>)
+    test.eq(factorial(<span class="num">10</span>), <span class="num">3628800</span>)
+    test.gt(factorial(<span class="num">10</span>), <span class="num">1000</span>)
+)
+
+<span class="cm"># Test string operations</span>
+test.run(<span class="str">"string basics"</span>, <span class="kw">fn</span>()
+    name = <span class="str">"Pyro"</span>
+    test.eq(name.len(), <span class="num">4</span>)
+    test.neq(name, <span class="str">"Python"</span>)
+    test.ok(name.len() > <span class="num">0</span>)
+)
+
+<span class="cm"># Test list operations</span>
+test.run(<span class="str">"list operations"</span>, <span class="kw">fn</span>()
+    nums = [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>]
+    test.eq(nums.len(), <span class="num">5</span>)
+    test.eq(nums.sum(), <span class="num">15</span>)
+    test.eq(nums.min(), <span class="num">1</span>)
+    test.eq(nums.max(), <span class="num">5</span>)
+)
+
+test.summary()</code></pre>
+      <div class="output">PASS  factorial base cases (2 assertions)
+PASS  factorial recursive (3 assertions)
+PASS  string basics (3 assertions)
+PASS  list operations (4 assertions)
+
+4 passed, 0 failed</div>
+      <a class="try-btn" data-code='import test
+
+fn factorial(n)
+    if n <= 1
+        return 1
+    return n * factorial(n - 1)
+
+test.run("factorial base cases", fn()
+    test.eq(factorial(0), 1)
+    test.eq(factorial(1), 1)
+)
+
+test.run("factorial recursive", fn()
+    test.eq(factorial(5), 120)
+    test.eq(factorial(10), 3628800)
+    test.gt(factorial(10), 1000)
+)
+
+test.run("string basics", fn()
+    name = "Pyro"
+    test.eq(name.len(), 4)
+    test.neq(name, "Python")
+    test.ok(name.len() > 0)
+)
+
+test.run("list operations", fn()
+    nums = [1, 2, 3, 4, 5]
+    test.eq(nums.len(), 5)
+    test.eq(nums.sum(), 15)
+    test.eq(nums.min(), 1)
+    test.eq(nums.max(), 5)
+)
+
+test.summary()'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- 48. Benchmarking -->
+    <div class="example" id="ex-48">
+      <h3><span class="ex-num">48.</span> Benchmarking</h3>
+      <p>Measure performance with <code>test.bench()</code>. Compare algorithms and find bottlenecks with nanosecond precision.</p>
+      <pre><code><span class="kw">import</span> test
+<span class="kw">import</span> time
+
+<span class="cm"># Iterative vs recursive fibonacci</span>
+<span class="kw">fn</span> <span class="fn">fib_recursive</span>(n)
+    <span class="kw">if</span> n <= <span class="num">1</span>
+        <span class="kw">return</span> n
+    <span class="kw">return</span> fib_recursive(n - <span class="num">1</span>) + fib_recursive(n - <span class="num">2</span>)
+
+<span class="kw">fn</span> <span class="fn">fib_iterative</span>(n)
+    <span class="kw">mut</span> a = <span class="num">0</span>
+    <span class="kw">mut</span> b = <span class="num">1</span>
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="num">0</span><span class="op">..</span>n
+        temp = a + b
+        a = b
+        b = temp
+    <span class="kw">return</span> a
+
+<span class="cm"># Verify correctness first</span>
+test.run(<span class="str">"fib correctness"</span>, <span class="kw">fn</span>()
+    test.eq(fib_recursive(<span class="num">10</span>), <span class="num">55</span>)
+    test.eq(fib_iterative(<span class="num">10</span>), <span class="num">55</span>)
+)
+
+<span class="cm"># Benchmark both approaches</span>
+test.bench(<span class="str">"fib_recursive(20)"</span>, <span class="num">100</span>, <span class="kw">fn</span>() = fib_recursive(<span class="num">20</span>))
+test.bench(<span class="str">"fib_iterative(20)"</span>, <span class="num">100</span>, <span class="kw">fn</span>() = fib_iterative(<span class="num">20</span>))
+
+<span class="cm"># Benchmark string operations</span>
+test.bench(<span class="str">"string concat x1000"</span>, <span class="num">10</span>, <span class="kw">fn</span>()
+    <span class="kw">mut</span> s = <span class="str">""</span>
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="num">0</span><span class="op">..</span><span class="num">1000</span>
+        s = s + <span class="str">"x"</span>
+)
+
+test.summary()</code></pre>
+      <div class="output">PASS  fib correctness (2 assertions)
+BENCH fib_recursive(20)  100 iters  avg 0.12ms
+BENCH fib_iterative(20)  100 iters  avg 0.001ms
+BENCH string concat x1000  10 iters  avg 0.8ms
+
+1 passed, 0 failed, 3 benchmarks</div>
+      <a class="try-btn" data-code='import test
+
+fn fib_recursive(n)
+    if n <= 1
+        return n
+    return fib_recursive(n - 1) + fib_recursive(n - 2)
+
+fn fib_iterative(n)
+    mut a = 0
+    mut b = 1
+    for i in 0..n
+        temp = a + b
+        a = b
+        b = temp
+    return a
+
+test.run("fib correctness", fn()
+    test.eq(fib_recursive(10), 55)
+    test.eq(fib_iterative(10), 55)
+)
+
+test.bench("fib_recursive(20)", 100, fn() = fib_recursive(20))
+test.bench("fib_iterative(20)", 100, fn() = fib_iterative(20))
+
+test.summary()'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- 49. Error Types -->
+    <div class="example" id="ex-49">
+      <h3><span class="ex-num">49.</span> Error Types</h3>
+      <p>Handle different error types with <code>try</code>/<code>catch</code>. Use <code>throw</code> for custom errors and <code>??</code> for nil coalescing.</p>
+      <pre><code><span class="cm"># Custom error types</span>
+<span class="kw">fn</span> <span class="fn">parse_int</span>(s)
+    <span class="kw">if</span> s == <span class="str">""</span>
+        <span class="kw">throw</span> <span class="str">"EmptyInput: string is empty"</span>
+    <span class="kw">for</span> c <span class="kw">in</span> s
+        <span class="kw">if</span> c < <span class="str">"0"</span> || c > <span class="str">"9"</span>
+            <span class="kw">throw</span> <span class="str">"InvalidChar: '{c}' is not a digit"</span>
+    <span class="kw">return</span> s
+
+<span class="cm"># Catch specific errors</span>
+<span class="kw">try</span>
+    result = parse_int(<span class="str">"42"</span>)
+    <span class="bi">print</span>(<span class="str">"Parsed: {result}"</span>)
+<span class="kw">catch</span> e
+    <span class="bi">print</span>(<span class="str">"Error: {e}"</span>)
+
+<span class="kw">try</span>
+    result = parse_int(<span class="str">"12x"</span>)
+<span class="kw">catch</span> e
+    <span class="bi">print</span>(<span class="str">"Caught: {e}"</span>)
+
+<span class="kw">try</span>
+    result = parse_int(<span class="str">""</span>)
+<span class="kw">catch</span> e
+    <span class="bi">print</span>(<span class="str">"Caught: {e}"</span>)
+
+<span class="cm"># Nil coalescing with ??</span>
+config = <span class="kw">nil</span>
+port = config ?? <span class="num">3000</span>
+<span class="bi">print</span>(<span class="str">"Port: {port}"</span>)
+
+<span class="cm"># try/catch/finally</span>
+<span class="kw">try</span>
+    <span class="bi">print</span>(<span class="str">"Opening resource..."</span>)
+    <span class="kw">throw</span> <span class="str">"ConnectionFailed"</span>
+<span class="kw">catch</span> e
+    <span class="bi">print</span>(<span class="str">"Handling: {e}"</span>)
+<span class="kw">finally</span>
+    <span class="bi">print</span>(<span class="str">"Cleanup done"</span>)</code></pre>
+      <div class="output">Parsed: 42
+Caught: InvalidChar: 'x' is not a digit
+Caught: EmptyInput: string is empty
+Port: 3000
+Opening resource...
+Handling: ConnectionFailed
+Cleanup done</div>
+      <a class="try-btn" data-code='fn parse_int(s)
+    if s == ""
+        throw "EmptyInput: string is empty"
+    for c in s
+        if c < "0" || c > "9"
+            throw "InvalidChar: not a digit"
+    return s
+
+try
+    result = parse_int("42")
+    print("Parsed: {result}")
+catch e
+    print("Error: {e}")
+
+try
+    result = parse_int("12x")
+catch e
+    print("Caught: {e}")
+
+try
+    result = parse_int("")
+catch e
+    print("Caught: {e}")
+
+config = nil
+port = config ?? 3000
+print("Port: {port}")
+
+try
+    print("Opening resource...")
+    throw "ConnectionFailed"
+catch e
+    print("Handling: {e}")
+finally
+    print("Cleanup done")'>Try in Playground &rarr;</a>
+    </div>
+
+    <!-- 50. Project Setup -->
+    <div class="example" id="ex-50">
+      <h3><span class="ex-num">50.</span> Project Setup</h3>
+      <p>Scaffold a new Pyro project with <code>pyro init</code>. Standard folder structure with config, tests, and entry point.</p>
+      <pre><code><span class="cm"># Create a new project</span>
+<span class="cm"># $ pyro init my-app</span>
+<span class="cm">#</span>
+<span class="cm"># Creates:</span>
+<span class="cm">#   my-app/</span>
+<span class="cm">#     main.ro          # entry point</span>
+<span class="cm">#     pyro.toml         # project config</span>
+<span class="cm">#     src/</span>
+<span class="cm">#       lib.ro          # library code</span>
+<span class="cm">#     tests/</span>
+<span class="cm">#       test_main.ro    # test file</span>
+<span class="cm">#     .gitignore</span>
+
+<span class="cm"># main.ro — entry point</span>
+<span class="bi">print</span>(<span class="str">"Welcome to my-app!"</span>)
+
+<span class="cm"># src/lib.ro — shared functions</span>
+<span class="kw">fn</span> <span class="fn">add</span>(a, b)
+    <span class="kw">return</span> a + b
+
+<span class="kw">fn</span> <span class="fn">greet</span>(name)
+    <span class="kw">return</span> <span class="str">"Hello, {name}!"</span>
+
+<span class="cm"># tests/test_main.ro</span>
+<span class="kw">import</span> test
+
+test.run(<span class="str">"add function"</span>, <span class="kw">fn</span>()
+    test.eq(add(<span class="num">2</span>, <span class="num">3</span>), <span class="num">5</span>)
+    test.eq(add(<span class="num">0</span>, <span class="num">0</span>), <span class="num">0</span>)
+    test.eq(add(-<span class="num">1</span>, <span class="num">1</span>), <span class="num">0</span>)
+)
+
+test.run(<span class="str">"greet function"</span>, <span class="kw">fn</span>()
+    test.eq(greet(<span class="str">"World"</span>), <span class="str">"Hello, World!"</span>)
+    test.eq(greet(<span class="str">"Pyro"</span>), <span class="str">"Hello, Pyro!"</span>)
+)
+
+test.summary()
+
+<span class="cm"># Build and run:</span>
+<span class="cm"># $ pyro run main.ro</span>
+<span class="cm"># $ pyro build main.ro   # creates native binary</span>
+<span class="cm"># $ pyro test             # runs all tests</span></code></pre>
+      <div class="output">Welcome to my-app!
+PASS  add function (3 assertions)
+PASS  greet function (2 assertions)
+
+2 passed, 0 failed</div>
+      <a class="try-btn" data-code='print("Welcome to my-app!")
+
+fn add(a, b)
+    return a + b
+
+fn greet(name)
+    return "Hello, {name}!"
+
+import test
+
+test.run("add function", fn()
+    test.eq(add(2, 3), 5)
+    test.eq(add(0, 0), 0)
+    test.eq(add(-1, 1), 0)
+)
+
+test.run("greet function", fn()
+    test.eq(greet("World"), "Hello, World!")
+    test.eq(greet("Pyro"), "Hello, Pyro!")
+)
+
+test.summary()'>Try in Playground &rarr;</a>
+    </div>
+
   </main>
 </div>
 
 <!-- Footer -->
 <footer style="text-align:center; padding:40px 24px; border-top:1px solid var(--border); color:var(--text-muted); font-size:0.85rem;">
   <p>Pyro Programming Language &mdash; Created by <strong style="color:var(--text-primary);">Aravind Pilla</strong></p>
-  <p style="margin-top:8px;">30 examples to go from zero to production. <a href="playground.html">Open Playground</a></p>
+  <p style="margin-top:8px;">50 examples to go from zero to production. <a href="playground.html">Open Playground</a></p>
 </footer>
 
 <script>

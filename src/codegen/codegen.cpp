@@ -5034,9 +5034,25 @@ void CodeGenerator::emit_import(const ImportStmt& stmt) {
 
         // Core config
         // Multi-provider support — all use OpenAI-compatible /v1/chat/completions
-        emit_line("static std::string _api_key = \"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\";");
-        emit_line("static std::string _default_model = \"meta/llama-3.3-70b-instruct\";");
-        emit_line("static std::string _api_url = \"https://integrate.api.nvidia.com/v1/chat/completions\";");
+        emit_line("static std::string _api_key = \"\";");
+        emit_line("static std::string _default_model = \"\";");
+        emit_line("static std::string _api_url = \"\";");
+        emit_line("");
+        emit_line("static void _check_config() {");
+        indent();
+        emit_line("if (_api_key.empty()) {");
+        indent();
+        emit_line("// Try environment variable");
+        emit_line("const char* env_key = std::getenv(\"PYRO_AI_KEY\");");
+        emit_line("if (env_key) _api_key = env_key;");
+        emit_line("const char* env_url = std::getenv(\"PYRO_AI_URL\");");
+        emit_line("if (env_url) _api_url = env_url;");
+        emit_line("const char* env_model = std::getenv(\"PYRO_AI_MODEL\");");
+        emit_line("if (env_model) _default_model = env_model;");
+        emit_line("}");
+        emit_line("if (_api_key.empty()) throw std::runtime_error(\"AI not configured. Set up with ai.provider(name, key) or set PYRO_AI_KEY environment variable.\\n\\nExample:\\n  ai.provider(\\\"openai\\\", \\\"sk-your-key\\\")\\n  ai.provider(\\\"gemini\\\", \\\"your-key\\\")\\n  ai.provider(\\\"ollama\\\", \\\"\\\")  # local, no key needed\");");
+        dedent();
+        emit_line("}");
         emit_line("");
         emit_line("void set_key(const std::string& key) { _api_key = key; }");
         emit_line("void set_model(const std::string& model) { _default_model = model; }");
@@ -5129,6 +5145,7 @@ void CodeGenerator::emit_import(const ImportStmt& stmt) {
         // Raw API call
         emit_line("static std::string _call_api(const std::string& messages_json, const std::string& model = \"\") {");
         indent();
+        emit_line("_check_config();");
         emit_line("std::string mdl = model.empty() ? _default_model : model;");
         emit_line("std::string body = \"{\\\"model\\\":\\\"\" + mdl + \"\\\",\\\"messages\\\":\" + messages_json + \",\\\"max_tokens\\\":2048,\\\"temperature\\\":0.7}\";");
         emit_line("");

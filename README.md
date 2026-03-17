@@ -84,6 +84,7 @@ app.listen(3000)
 
 ```pyro
 import ai
+ai.provider("openai", "your-key")
 print(ai.chat("Explain quantum computing in one sentence"))
 print(ai.translate("Hello", "Japanese"))
 ```

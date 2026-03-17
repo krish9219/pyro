@@ -674,7 +674,7 @@ tensor = cv.normalize(tensor, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.2
 **Module:** `ai`
 
 ### What It Does
-The first programming language with LLM access built into the standard library. No API keys to configure, no SDK to install. Just `import ai` and start chatting with AI.
+Built-in LLM access with support for 10+ providers. Configure once with `ai.provider(name, key)` and start building.
 
 ### API Design
 

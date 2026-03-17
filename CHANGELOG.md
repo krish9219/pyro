@@ -2,6 +2,45 @@
 
 All notable changes to the Pyro programming language.
 
+## [1.1.0] — 2026-03-17
+
+### Security
+- Removed hardcoded NVIDIA API key from compiler
+- AI module now requires explicit provider configuration
+- API key can be set via ai.provider() or PYRO_AI_KEY env var
+
+### New Features
+- Request body parsing (JSON + form data auto-parsed)
+- Threaded web server (concurrent request handling)
+- Parameterized SQL queries (SQL injection prevention)
+- Template engine: web.render(path, data) with {{key}} placeholders
+- CORS middleware (automatic headers + OPTIONS preflight)
+- "Did you mean?" suggestions for wrong module function names
+- Compile caching (instant re-run when source unchanged)
+- Shareable playground URLs (base64 in hash)
+- Analytics tracking on all pages
+- 21 playground examples (up from 6)
+- Language comparison with Go, Rust, Node.js, Java
+- 30 Pyro by Example tutorials
+- API reference for all 76+ modules
+- Real app showcase (Pastebin)
+
+### Improvements
+- pyro run uses -O0 for faster development compilation
+- pyro build uses -O2, pyro deploy uses -O3
+- Better REPL with :help, :clear, :time, :quit
+- pyro doc generates styled HTML documentation
+- test.bench() for benchmarking with ops/sec
+- Runtime error handling with try-catch in generated main()
+
+### Bug Fixes
+- |x| lambda syntax implemented (was missing from parser)
+- sum/min/max added to intercepted methods
+- Keywords work as member names (re.match, etc.)
+- String interpolation only triggers for {identifier} (fixes JSON strings)
+- Module names (tensor, nn, nlp, cv, ai, plot) recognized in call expressions
+- socklen_t type fix for cross-platform accept()
+
 ## [1.0.0] — 2026-03-17
 
 ### Language Features

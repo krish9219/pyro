@@ -4,3 +4,14 @@ build/
 gmon.out
 pyro_packages/
 pyro.lock
+build-win/
+*.exe
+analytics.jsonl
+server
+srv
+srv4k
+static_server
+test_*
+web_app
+webapp_demo
+*.html

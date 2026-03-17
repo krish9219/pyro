@@ -210,7 +210,8 @@
 
   <div class="mod" id="mod-ai">
     <h2>ai</h2>
-    <p class="desc">AI/LLM integration (multi-provider, OpenAI-compatible).</p>
+    <p class="desc">AI/LLM integration (multi-provider, OpenAI-compatible). <strong>You must configure a provider before use.</strong></p>
+    <div class="fn"><code>ai.provider(name, key, model)</code><span>Configure provider (nvidia, openai, gemini, groq, ollama, etc.) — <strong>required before any AI call</strong></span></div>
     <div class="fn"><code>ai.chat(prompt, model)</code><span>Send prompt to AI, get response</span></div>
     <div class="fn"><code>ai.chat(prompt, system, model)</code><span>Chat with system prompt</span></div>
     <div class="fn"><code>ai.ask(question)</code><span>Simple alias for chat()</span></div>
@@ -223,7 +224,6 @@
     <div class="fn"><code>ai.set_key(key)</code><span>Set API key</span></div>
     <div class="fn"><code>ai.set_model(model)</code><span>Set default model</span></div>
     <div class="fn"><code>ai.set_url(url)</code><span>Set API endpoint URL</span></div>
-    <div class="fn"><code>ai.provider(name, key, model)</code><span>Configure provider (nvidia, openai, groq, etc.)</span></div>
   </div>
 
   <div class="mod" id="mod-ml">

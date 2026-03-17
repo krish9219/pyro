@@ -7,6 +7,11 @@
 #include <cstdio>
 #include <cstdlib>
 #include <algorithm>
+#ifdef _WIN32
+#include <process.h>
+#else
+#include <unistd.h>
+#endif
 #include "lexer/lexer.h"
 #include "parser/parser.h"
 

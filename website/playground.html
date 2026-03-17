@@ -651,33 +651,27 @@ test.run("this should fail", fn()
 
 test.summary()`,
 
-  ai: `# AI — first language with built-in LLM
-# Works with: NVIDIA, OpenAI, Gemini, Grok, Ollama,
-# OpenRouter, Groq, Mistral, DeepSeek, Together
+  ai: `# AI — built-in LLM support for 10+ providers
+# You must configure a provider before using AI:
+#   ai.provider("openai", "sk-your-key")
+#   ai.provider("gemini", "your-key")
+#   ai.provider("ollama", "")  # local, no key
+#   ai.provider("groq", "your-key")
+# Or set environment variable: PYRO_AI_KEY
+
 import ai
 
-# Default: NVIDIA (works out of the box)
-response = ai.chat("What is 2+2? Answer in one word.")
-print("AI says: {response}")
-
-# Switch provider — just 1 line:
+# Configure your provider (uncomment one):
 # ai.provider("openai", "sk-your-key")
-# ai.provider("gemini", "your-key")
-# ai.provider("grok", "your-key")
-# ai.provider("ollama", "")  # local, no key
-# ai.provider("groq", "your-key")
-# ai.provider("mistral", "your-key")
-# ai.provider("deepseek", "your-key")
+# ai.provider("ollama", "")
 
-# AI utilities — all one-liners
-french = ai.translate("Hello, how are you?", "French")
-print("French: {french}")
+# Then use:
+# response = ai.chat("Hello!")
+# print(response)
 
-label = ai.classify("Pyro is amazing!", ["positive", "negative", "neutral"])
-print("Sentiment: {label}")
-
-summary = ai.summarize("Pyro is a compiled programming language that transpiles to C++ for native performance. It has 23 keywords and 76 built-in modules.", 20)
-print("Summary: {summary}")`,
+print("AI module loaded!")
+print("Configure with: ai.provider(name, key)")
+print("Supported: openai, gemini, grok, ollama, groq, mistral, deepseek, nvidia, openrouter, together, anthropic")`,
 
   viz: `# Visualization — SVG charts rendered live
 import viz
