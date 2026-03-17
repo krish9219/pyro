@@ -352,6 +352,14 @@
         <button class="example-btn" onclick="loadExample('test')">Testing</button>
         <button class="example-btn" onclick="loadExample('ai')">AI Chat</button>
         <button class="example-btn" onclick="loadExample('viz')">Viz Charts</button>
+        <button class="example-btn" onclick="loadExample('web')">Web Server</button>
+        <button class="example-btn" onclick="loadExample('db')">Database</button>
+        <button class="example-btn" onclick="loadExample('json')">JSON</button>
+        <button class="example-btn" onclick="loadExample('regex')">Regex</button>
+        <button class="example-btn" onclick="loadExample('benchmark')">Benchmark</button>
+        <button class="example-btn" onclick="loadExample('multiline')">Multiline</button>
+        <button class="example-btn" onclick="loadExample('validate')">Validate</button>
+        <button class="example-btn" onclick="loadExample('error')">Errors</button>
       </div>
     </div>
 
@@ -678,7 +686,146 @@ import viz
 labels = ["Pyro", "Python", "Java", "Go", "Rust"]
 speeds = [79.0, 1.0, 15.0, 30.0, 85.0]
 svg = viz.bar_chart(labels, speeds, "Speed Comparison (x faster)")
-print(svg)`
+print(svg)`,
+
+  web: `# Web Server — built into the language
+# Python needs Flask. Node needs Express. Pyro just works.
+import web
+
+mut app = web.app()
+app.get("/", fn(req) = web.html("<h1>Hello from Pyro!</h1>"))
+app.get("/api", fn(req) = web.json("{\\\"status\\\": \\\"ok\\\"}"))
+print("This would start a server on port 3000")
+print("(Disabled in playground for security)")`,
+
+  db: `# SQLite Database — built in, zero install
+# Python needs: pip install sqlite3/sqlalchemy
+import db
+
+conn = db.connect(":memory:")
+conn.exec("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, age INTEGER)")
+conn.exec("INSERT INTO users (name, age) VALUES ('Aravind', 25)")
+conn.exec("INSERT INTO users (name, age) VALUES ('Pyro', 1)")
+
+rows = conn.query("SELECT * FROM users")
+for row in rows
+    print(row)
+
+# Parameterized queries (SQL injection safe)
+conn.exec("INSERT INTO users (name, age) VALUES (?, ?)", ["Safe", "30"])
+print("Users: {conn.query(\\"SELECT COUNT(*) as count FROM users\\")}")
+conn.close()`,
+
+  json: `# JSON — parse, stringify, pretty print
+import json
+
+# Parse JSON string
+data = json.parse("{\\\"name\\\": \\\"Aravind\\\", \\\"age\\\": 25, \\\"lang\\\": \\\"Pyro\\\"}")
+print("Name: {data[\\"name\\"]}")
+print("Age: {data[\\"age\\"]}")
+
+# Stringify
+text = json.stringify(data)
+print("JSON: {text}")
+
+# Pretty print
+print(json.pretty(data))`,
+
+  regex: `# Regular Expressions — built in
+import re
+
+text = "I have 3 cats, 5 dogs, and 12 fish"
+
+# Find all numbers
+nums = re.find_all("[0-9]+", text)
+print("Numbers found: {nums}")
+
+# Check if valid email
+valid = re.match("^[a-z]+@[a-z]+\\\\.[a-z]+$", "test@email.com")
+print("Valid email: {valid}")
+
+# Replace
+cleaned = re.replace("[0-9]+", "X", text)
+print("Replaced: {cleaned}")
+
+# Split
+parts = re.split("[,]", "a,b,c,d")
+print("Split: {parts}")`,
+
+  benchmark: `# Benchmarking — built into test module
+import test
+import time
+
+fn fib(n)
+    if n <= 1
+        return n
+    return fib(n-1) + fib(n-2)
+
+# Built-in benchmarking
+test.bench("fib(20)", 100, fn() = fib(20))
+
+# Manual timing
+start = time.now()
+mut sum = 0
+for i in 0..1000000
+    sum = sum + i
+elapsed = time.now() - start
+print("Sum 0..1M = {sum} in {elapsed} ms")`,
+
+  multiline: `# Multiline Strings — triple quotes
+# CSS, HTML, SQL safe — no interpolation inside """
+
+html = """
+<html>
+<head><title>Pyro Page</title></head>
+<body>
+  <h1>Hello from triple-quote strings!</h1>
+  <style>
+    body { color: red; background: #000; }
+  </style>
+</body>
+</html>
+"""
+print(html)
+
+# Regular strings still interpolate
+name = "Pyro"
+print("Hello {name}")`,
+
+  validate: `# Form Validation — built in
+import validate
+
+print("Email valid: {validate.email(\\"test@example.com\\")}")
+print("Email invalid: {validate.email(\\"not-email\\")}")
+print("URL valid: {validate.url(\\"https://pyro.dev\\")}")
+print("Number: {validate.number(\\"42.5\\")}")
+print("Alpha: {validate.alpha(\\"hello\\")}")
+print("Alpha: {validate.alpha(\\"hello123\\")}")
+print("Length 3-10: {validate.length(\\"hello\\", 3, 10)}")
+print("Empty: {validate.empty(\\"\\")}")
+print("Not empty: {validate.not_empty(\\"hi\\")}")`,
+
+  error: `# Error Handling — try/catch/finally
+try
+    print("Trying something risky...")
+    throw "Something went wrong!"
+catch e
+    print("Caught error: {e}")
+finally
+    print("This always runs")
+
+# Functions that might fail
+fn divide(a, b)
+    if b == 0
+        throw "Division by zero!"
+    return a / b
+
+try
+    result = divide(10, 0)
+catch e
+    print("Error: {e}")
+
+print("Safe division: {divide(10, 3)}")`
 };
 
 const editor = document.getElementById('code-editor');
@@ -687,6 +834,7 @@ const lineNumbers = document.getElementById('line-numbers');
 const runBtn = document.getElementById('run-btn');
 const statusBadge = document.getElementById('status-badge');
 const execTime = document.getElementById('exec-time');
+var currentExample = 'hello';
 
 // Check if code was shared via URL hash
 const hash = window.location.hash;
@@ -745,6 +893,7 @@ editor.addEventListener('keydown', function(e) {
 
 function loadExample(name) {
   if (EXAMPLES[name]) {
+    currentExample = name;
     editor.value = EXAMPLES[name];
     updateLineNumbers();
 
@@ -770,6 +919,9 @@ async function runCode() {
     output.textContent = 'No code to run.';
     return;
   }
+
+  // Track playground run
+  if (window.pyroTrack) window.pyroTrack('playground_run', {example: currentExample});
 
   // UI: loading state
   runBtn.classList.add('loading');
@@ -880,5 +1032,6 @@ document.querySelector('.nav-toggle')?.addEventListener('click', function() {
 });
 </script>
 
+<script src="js/analytics.js"></script>
 </body>
 </html>

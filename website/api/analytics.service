@@ -1,0 +1,14 @@
+[Unit]
+Description=Pyro Analytics API
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/projects/pyro/website/api
+ExecStart=/usr/bin/python3 /projects/pyro/website/api/analytics.py
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
