@@ -201,6 +201,27 @@
       transform: none;
     }
 
+    .share-btn {
+      display: inline-flex;
+      align-items: center;
+      padding: 10px 20px;
+      background: rgba(99, 102, 241, 0.2);
+      color: #a5b4fc;
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+
+    .share-btn:hover {
+      background: rgba(99, 102, 241, 0.35);
+      border-color: rgba(99, 102, 241, 0.5);
+      transform: translateY(-1px);
+    }
+
     .run-btn .spinner {
       display: none;
       width: 16px;
@@ -312,6 +333,7 @@
           <span class="spinner"></span>
           Run
         </button>
+        <button class="share-btn" onclick="shareCode()">Share</button>
         <span class="shortcut-hint">Ctrl+Enter</span>
         <span id="status-badge" class="status-badge" style="display:none;"></span>
         <span id="exec-time" class="exec-time"></span>
@@ -666,15 +688,26 @@ const runBtn = document.getElementById('run-btn');
 const statusBadge = document.getElementById('status-badge');
 const execTime = document.getElementById('exec-time');
 
-// Check if code was passed from Learn page
-const learnCode = localStorage.getItem('pyro_playground_code');
-if (learnCode) {
-  editor.value = learnCode;
-  localStorage.removeItem('pyro_playground_code');
-  updateLineNumbers();
+// Check if code was shared via URL hash
+const hash = window.location.hash;
+if (hash.startsWith('#code=')) {
+  try {
+    editor.value = atob(hash.substring(6));
+    updateLineNumbers();
+  } catch(e) {
+    loadExample('hello');
+  }
 } else {
-  // Load default example
-  loadExample('hello');
+  // Check if code was passed from Learn page
+  const learnCode = localStorage.getItem('pyro_playground_code');
+  if (learnCode) {
+    editor.value = learnCode;
+    localStorage.removeItem('pyro_playground_code');
+    updateLineNumbers();
+  } else {
+    // Load default example
+    loadExample('hello');
+  }
 }
 
 // Line numbers
@@ -804,6 +837,15 @@ async function runCode() {
 
     execTime.textContent = elapsed + 's';
 
+    // Update URL hash with current code for sharing
+    try {
+      const encoded = btoa(editor.value);
+      history.replaceState(null, '', '#code=' + encoded);
+    } catch(e) {}
+
+    // Auto-scroll output to bottom if content is long
+    output.scrollTop = output.scrollHeight;
+
   } catch (err) {
     output.textContent = 'Network error: Could not reach the Pyro server.\n\n' + err.message;
     output.classList.add('has-error');
@@ -814,6 +856,20 @@ async function runCode() {
     runBtn.classList.remove('loading');
     runBtn.disabled = false;
   }
+}
+
+// Share code via URL
+function shareCode() {
+  const encoded = btoa(editor.value);
+  const url = window.location.origin + window.location.pathname + '#code=' + encoded;
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = document.querySelector('.share-btn');
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Share', 2000);
+  }).catch(() => {
+    // Fallback for older browsers
+    prompt('Copy this URL to share:', url);
+  });
 }
 
 // Mobile nav toggle (same as other pages)

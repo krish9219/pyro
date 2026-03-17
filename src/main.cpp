@@ -373,6 +373,53 @@ void show_friendly_errors(const std::string& err_file, const std::string& source
 
             std::cerr << std::endl;
             std::cerr << "  \033[31m" << error_msg << "\033[0m" << std::endl;
+
+            // "Did you mean?" for module function typos
+            if (error_msg.find("no member named") != std::string::npos || error_msg.find("not declared") != std::string::npos) {
+                auto quote1 = error_msg.find("'");
+                auto quote2 = error_msg.find("'", quote1 + 1);
+                if (quote1 != std::string::npos && quote2 != std::string::npos) {
+                    std::string wrong_name = error_msg.substr(quote1 + 1, quote2 - quote1 - 1);
+
+                    static const std::unordered_map<std::string, std::vector<std::string>> MODULE_FNS = {
+                        {"pyro_math", {"PI","E","TAU","sqrt","abs","pow","sin","cos","tan","floor","ceil","round","log","exp","min","max","random"}},
+                        {"pyro_json", {"parse","stringify","pretty"}},
+                        {"pyro_web", {"app","html","json","text","redirect","render"}},
+                        {"pyro_http", {"get","post","put","del","patch","request","download"}},
+                        {"pyro_db", {"connect"}},
+                        {"pyro_ai", {"chat","ask","summarize","translate","classify","extract","generate_code","provider","conversation","set_key","set_model"}},
+                        {"pyro_ml", {"load_csv","split","normalize","linear_regression","logistic","knn_predict","kmeans","mse","mae","r2_score","accuracy"}},
+                        {"pyro_tensor", {"create","zeros","ones","eye","random","range","sum","mean","dot","matmul","transpose","det","inverse"}},
+                        {"pyro_nlp", {"tokenize","sentiment","keywords","similarity","ner","summarize","stem"}},
+                        {"pyro_test", {"run","eq","neq","ok","fail","gt","lt","summary","bench"}},
+                        {"pyro_time", {"now","sleep","format","date","wait","every","after"}},
+                    };
+
+                    std::string best_match;
+                    int best_score = 999;
+                    for (auto& [mod, fns] : MODULE_FNS) {
+                        for (auto& fn : fns) {
+                            int dist = 0;
+                            std::string a = wrong_name, b = fn;
+                            for (auto& c : a) c = std::tolower(c);
+                            for (auto& c : b) c = std::tolower(c);
+                            if (a.size() > b.size()) dist = a.size() - b.size();
+                            else dist = b.size() - a.size();
+                            size_t minlen = std::min(a.size(), b.size());
+                            for (size_t i = 0; i < minlen; i++) if (a[i] != b[i]) dist++;
+                            if (dist < best_score && dist <= 3) {
+                                best_score = dist;
+                                best_match = fn;
+                            }
+                        }
+                    }
+
+                    if (!best_match.empty()) {
+                        std::cerr << "  \033[33mDid you mean: " << best_match << " ?\033[0m" << std::endl;
+                    }
+                }
+            }
+
             showed_error = true;
             break; // Show only the first error
         }
