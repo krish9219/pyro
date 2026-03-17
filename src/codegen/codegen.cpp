@@ -855,6 +855,8 @@ std::string CodeGenerator::generate(const Program& program, const std::string& s
     if (!has_main_) {
         emit_line("int main() {");
         indent();
+        emit_line("try {");
+        indent();
         for (const auto& stmt : program.statements) {
             if (!std::holds_alternative<FnDef>(stmt->node) &&
                 !std::holds_alternative<StructDef>(stmt->node) &&
@@ -864,6 +866,18 @@ std::string CodeGenerator::generate(const Program& program, const std::string& s
             }
         }
         emit_line("return 0;");
+        dedent();
+        emit_line("} catch (const std::exception& e) {");
+        indent();
+        emit_line("std::cerr << \"\\033[31mRuntime Error: \" << e.what() << \"\\033[0m\" << std::endl;");
+        emit_line("return 1;");
+        dedent();
+        emit_line("} catch (...) {");
+        indent();
+        emit_line("std::cerr << \"\\033[31mRuntime Error: Unknown error\\033[0m\" << std::endl;");
+        emit_line("return 1;");
+        dedent();
+        emit_line("}");
         dedent();
         emit_line("}");
     } else {
@@ -1041,11 +1055,27 @@ void CodeGenerator::emit_fn(const FnDef& fn) {
         emit_line(ret + " " + name + "(" + params_str + ")" + const_qual + " {");
         indent();
         if (has_self) emit_line("const auto& self = *this;");
+        if (name == "main") {
+            emit_line("try {");
+            indent();
+        }
         for (const auto& s : fn.body) {
             emit_statement(s);
         }
         if (name == "main") {
             emit_line("return 0;");
+            dedent();
+            emit_line("} catch (const std::exception& e) {");
+            indent();
+            emit_line("std::cerr << \"\\033[31mRuntime Error: \" << e.what() << \"\\033[0m\" << std::endl;");
+            emit_line("return 1;");
+            dedent();
+            emit_line("} catch (...) {");
+            indent();
+            emit_line("std::cerr << \"\\033[31mRuntime Error: Unknown error\\033[0m\" << std::endl;");
+            emit_line("return 1;");
+            dedent();
+            emit_line("}");
         }
         dedent();
         emit_line("}");
@@ -1769,6 +1799,7 @@ void CodeGenerator::emit_import(const ImportStmt& stmt) {
         emit_line("");
     } else if (stmt.module == "web") {
         // Platform-agnostic socket abstraction
+        emit_line("#define PYRO_SOCK_DEFINED");
         emit_line("namespace pyro_sock {");
         indent();
         emit_line("#ifdef _WIN32");
@@ -1984,8 +2015,49 @@ void CodeGenerator::emit_import(const ImportStmt& stmt) {
         emit_line("}");
         dedent();
         emit_line("}");
+        emit_line("");
+        // SSE endpoint - server push to client
+        emit_line("// SSE endpoint - server push to client");
+        emit_line("void sse(const std::string& path, std::function<std::string()> generator, int interval_ms = 1000) {");
+        indent();
+        emit_line("routes[\"GET\"][path] = [=](const Request& req) -> Response {");
+        indent();
+        emit_line("// Return SSE headers + initial data");
+        emit_line("std::string body = generator();");
+        emit_line("return {200, body, \"text/event-stream\"};");
         dedent();
         emit_line("};");
+        dedent();
+        emit_line("}");
+        emit_line("");
+        // Long-polling endpoint for real-time updates
+        emit_line("// Long-polling endpoint for real-time updates");
+        emit_line("template<typename F>");
+        emit_line("void live(const std::string& path, F handler) {");
+        indent();
+        emit_line("routes[\"GET\"][path] = [handler](const Request& req) -> Response {");
+        indent();
+        emit_line("std::string data = handler();");
+        emit_line("return {200, data, \"application/json\"};");
+        dedent();
+        emit_line("};");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("};");
+        emit_line("");
+        // MessageBus - in-memory message bus for real-time broadcast
+        emit_line("// In-memory message bus for real-time broadcast");
+        emit_line("struct MessageBus {");
+        indent();
+        emit_line("std::vector<std::string> messages;");
+        emit_line("std::mutex mtx;");
+        emit_line("void send(const std::string& msg) { std::lock_guard<std::mutex> lock(mtx); messages.push_back(msg); }");
+        emit_line("std::vector<std::string> poll(size_t from = 0) { std::lock_guard<std::mutex> lock(mtx); if(from>=messages.size()) return {}; return std::vector<std::string>(messages.begin()+from, messages.end()); }");
+        emit_line("size_t count() { std::lock_guard<std::mutex> lock(mtx); return messages.size(); }");
+        dedent();
+        emit_line("};");
+        emit_line("MessageBus bus() { return MessageBus{}; }");
         emit_line("");
         emit_line("App app() { return App{}; }");
         emit_line("Response html(const std::string& body) { return {200, body, \"text/html\"}; }");
@@ -4643,9 +4715,54 @@ void CodeGenerator::emit_import(const ImportStmt& stmt) {
     } else if (stmt.module == "websocket") {
         emit_line("namespace pyro_websocket {");
         indent();
+        emit_line("");
+        emit_line("// Platform-agnostic socket helpers (reuse pyro_sock if available)");
+        emit_line("#ifndef PYRO_SOCK_DEFINED");
+        emit_line("namespace _ws_sock {");
+        emit_line("#ifdef _WIN32");
+        emit_line("  static bool _wsa_init = false;");
+        emit_line("  void init() { if (!_wsa_init) { WSADATA w; WSAStartup(MAKEWORD(2,2), &w); _wsa_init = true; } }");
+        emit_line("  void sock_close(int fd) { closesocket(fd); }");
+        emit_line("  int sock_read(int fd, char* buf, int len) { return recv(fd, buf, len, 0); }");
+        emit_line("  int sock_write(int fd, const char* buf, int len) { return send(fd, buf, len, 0); }");
+        emit_line("#else");
+        emit_line("  void init() {}");
+        emit_line("  void sock_close(int fd) { close(fd); }");
+        emit_line("  int sock_read(int fd, char* buf, int len) { return ::read(fd, buf, len); }");
+        emit_line("  int sock_write(int fd, const char* buf, int len) { return ::write(fd, buf, len); }");
+        emit_line("#endif");
+        emit_line("} // namespace _ws_sock");
+        emit_line("#endif");
+        emit_line("");
         emit_line("struct Frame { bool fin=true; int opcode=1; std::string data; friend std::ostream& operator<<(std::ostream& os, const Frame& f) { return os << \"Frame(\" << f.data.size() << \"b)\"; } };");
         emit_line("std::string encode(const std::string& data) { std::string f; f+=(char)0x81; if(data.size()<126) f+=(char)data.size(); else{f+=(char)126;f+=(char)(data.size()>>8);f+=(char)(data.size()&0xFF);} f+=data; return f; }");
-        emit_line("Frame decode(const std::string& frame) { Frame f; if(frame.size()<2) return f; f.fin=(frame[0]&0x80)!=0; f.opcode=frame[0]&0x0F; size_t len=frame[1]&0x7F,off=2; if(len==126){len=((unsigned char)frame[2]<<8)|(unsigned char)frame[3];off=4;} if(off+len<=frame.size()) f.data=frame.substr(off,len); return f; }");
+        emit_line("Frame decode(const std::string& frame) { Frame f; if(frame.size()<2) return f; f.fin=(frame[0]&0x80)!=0; f.opcode=frame[0]&0x0F; size_t len=frame[1]&0x7F,off=2; bool masked=(frame[1]&0x80)!=0; if(len==126){len=((unsigned char)frame[2]<<8)|(unsigned char)frame[3];off=4;} if(masked){unsigned char mask[4]; for(int i=0;i<4;i++) mask[i]=(unsigned char)frame[off+i]; off+=4; f.data.resize(len); for(size_t i=0;i<len;i++) f.data[i]=frame[off+i]^mask[i%4];} else { if(off+len<=frame.size()) f.data=frame.substr(off,len); } return f; }");
+        emit_line("");
+        emit_line("// Send a WebSocket frame over a socket fd");
+        emit_line("void send_frame(int fd, const std::string& data) {");
+        indent();
+        emit_line("std::string frame = encode(data);");
+        emit_line("#ifdef PYRO_SOCK_DEFINED");
+        emit_line("pyro_sock::sock_write(fd, frame.c_str(), frame.size());");
+        emit_line("#else");
+        emit_line("_ws_sock::sock_write(fd, frame.c_str(), frame.size());");
+        emit_line("#endif");
+        dedent();
+        emit_line("}");
+        emit_line("");
+        emit_line("// Receive a WebSocket frame from a socket fd");
+        emit_line("Frame recv_frame(int fd) {");
+        indent();
+        emit_line("char buf[8192] = {0};");
+        emit_line("#ifdef PYRO_SOCK_DEFINED");
+        emit_line("int n = pyro_sock::sock_read(fd, buf, sizeof(buf)-1);");
+        emit_line("#else");
+        emit_line("int n = _ws_sock::sock_read(fd, buf, sizeof(buf)-1);");
+        emit_line("#endif");
+        emit_line("if (n <= 0) return Frame{true, 8, \"\"};");
+        emit_line("return decode(std::string(buf, n));");
+        dedent();
+        emit_line("}");
         dedent();
         emit_line("} // namespace pyro_websocket");
         emit_line("");

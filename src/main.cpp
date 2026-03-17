@@ -479,7 +479,12 @@ void cmd_run(const std::string& source_path, const std::string& source) {
     fs::remove(tmp_cpp);
     fs::remove(tmp_bin);
 
-    exit(WEXITSTATUS(ret));
+    if (ret != 0) {
+        // The program already printed its own error (from the try-catch wrapper)
+        // Just exit with the appropriate status code
+        exit(WEXITSTATUS(ret));
+    }
+    exit(0);
 }
 
 void cmd_init() {
