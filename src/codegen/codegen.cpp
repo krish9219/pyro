@@ -284,6 +284,23 @@ void CodeGenerator::emit_headers() {
     emit_line("V get(const std::unordered_map<K,V>& m, const K& key, const V& def) { auto it = m.find(key); return it != m.end() ? it->second : def; }");
     emit_line("template<typename K, typename V>");
     emit_line("int64_t map_size(const std::unordered_map<K,V>& m) { return m.size(); }");
+    emit_line("template<typename K, typename V>");
+    emit_line("std::vector<std::pair<K,V>> items(const std::unordered_map<K,V>& m) { std::vector<std::pair<K,V>> r; for(const auto& [k,v]:m) r.push_back({k,v}); return r; }");
+    emit_line("template<typename K, typename V>");
+    emit_line("void map_remove(std::unordered_map<K,V>& m, const K& key) { m.erase(key); }");
+    emit_line("template<typename K, typename V>");
+    emit_line("void map_clear(std::unordered_map<K,V>& m) { m.clear(); }");
+    emit_line("template<typename K, typename V>");
+    emit_line("std::unordered_map<K,V> map_merge(const std::unordered_map<K,V>& a, const std::unordered_map<K,V>& b) { auto r=a; for(const auto& [k,v]:b) r[k]=v; return r; }");
+    emit_line("");
+    // --- String format ---
+    emit_line("std::string str_format(const std::string& tmpl, const std::unordered_map<std::string,std::string>& vals) {");
+    indent();
+    emit_line("std::string result = tmpl;");
+    emit_line("for(const auto& [k,v] : vals) { std::string key=\"{\"+k+\"}\"; size_t pos; while((pos=result.find(key))!=std::string::npos) result.replace(pos,key.size(),v); }");
+    emit_line("return result;");
+    dedent();
+    emit_line("}");
     emit_line("");
 
     // --- Result type for error handling ---
@@ -777,6 +794,9 @@ std::string CodeGenerator::generate(const Program& program, const std::string& s
         emit_line("#include <regex>");
         emit_line("#include <algorithm>");
         emit_line("#include <set>");
+    }
+    if (imports_.count("validate")) {
+        emit_line("#include <regex>");
     }
     if (imports_.count("cv")) {
         emit_line("#include <fstream>");
@@ -2253,6 +2273,13 @@ void CodeGenerator::emit_import(const ImportStmt& stmt) {
         emit_line("return score;");
         dedent();
         emit_line("}");
+        emit_line("bool phone(const std::string& s) { return std::regex_match(s, std::regex(R\"(^[+]?[0-9\\-\\s()]{7,15}$)\")); }");
+        emit_line("bool length(const std::string& s, int64_t min_len, int64_t max_len) { return (int64_t)s.size()>=min_len && (int64_t)s.size()<=max_len; }");
+        emit_line("bool number(const std::string& s) { try{std::stod(s);return true;}catch(...){return false;} }");
+        emit_line("bool alpha(const std::string& s) { for(char c:s) if(!std::isalpha(c)) return false; return !s.empty(); }");
+        emit_line("bool alphanumeric(const std::string& s) { for(char c:s) if(!std::isalnum(c)) return false; return !s.empty(); }");
+        emit_line("bool empty(const std::string& s) { return s.empty(); }");
+        emit_line("bool not_empty(const std::string& s) { return !s.empty(); }");
         dedent();
         emit_line("} // namespace pyro_validate");
         emit_line("");
@@ -2295,6 +2322,28 @@ void CodeGenerator::emit_import(const ImportStmt& stmt) {
         dedent();
         emit_line("};");
         emit_line("Timer timer() { return Timer{}; }");
+        emit_line("");
+        emit_line("template<typename F>");
+        emit_line("void every(int64_t interval_ms, F func, int64_t count = 0) {");
+        indent();
+        emit_line("int64_t runs = 0;");
+        emit_line("while (count == 0 || runs < count) {");
+        indent();
+        emit_line("func();");
+        emit_line("runs++;");
+        emit_line("std::this_thread::sleep_for(std::chrono::milliseconds(interval_ms));");
+        dedent();
+        emit_line("}");
+        dedent();
+        emit_line("}");
+        emit_line("");
+        emit_line("template<typename F>");
+        emit_line("void after(int64_t delay_ms, F func) {");
+        indent();
+        emit_line("std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));");
+        emit_line("func();");
+        dedent();
+        emit_line("}");
         dedent();
         emit_line("} // namespace pyro_time");
         emit_line("");
@@ -2595,6 +2644,25 @@ void CodeGenerator::emit_import(const ImportStmt& stmt) {
         emit_line("std::cout << \"\\033[31mResults: \" << _passed << \" passed, \" << _failed << \" failed (\" << (_assertions - _failed) << \"/\" << _assertions << \" assertions)\\033[0m\" << std::endl;");
         dedent();
         emit_line("}");
+        dedent();
+        emit_line("}");
+        emit_line("");
+        emit_line("template<typename F>");
+        emit_line("void bench(const std::string& name, int64_t iterations, F func) {");
+        indent();
+        emit_line("// Warmup");
+        emit_line("for(int i=0;i<3;i++) func();");
+        emit_line("// Benchmark");
+        emit_line("auto start = std::chrono::high_resolution_clock::now();");
+        emit_line("for(int64_t i=0;i<iterations;i++) func();");
+        emit_line("auto end = std::chrono::high_resolution_clock::now();");
+        emit_line("double total_ms = std::chrono::duration<double, std::milli>(end - start).count();");
+        emit_line("double per_op = total_ms / iterations;");
+        emit_line("double ops_sec = iterations / (total_ms / 1000.0);");
+        emit_line("std::cout << \"  \\033[36m\" << name << \"\\033[0m\" << std::endl;");
+        emit_line("std::cout << \"    \" << iterations << \" iterations in \" << std::fixed << std::setprecision(2) << total_ms << \" ms\" << std::endl;");
+        emit_line("std::cout << \"    \" << std::setprecision(4) << per_op << \" ms/op\" << std::endl;");
+        emit_line("std::cout << \"    \" << std::setprecision(0) << ops_sec << \" ops/sec\" << std::endl;");
         dedent();
         emit_line("}");
         emit_line("");
@@ -5885,7 +5953,10 @@ std::string CodeGenerator::emit_call(const CallExpr& expr) {
             "upper", "lower", "split", "trim", "starts_with", "ends_with",
             "replace", "slice", "repeat", "chars",
             // Map methods
-            "keys", "values", "has", "size"
+            "keys", "values", "has", "size",
+            "items", "remove", "clear", "merge", "contains_key",
+            // Additional string methods
+            "format"
         };
         if (is_simple && intercepted_methods.count(method)) {
             return emit_method_call(obj, method, expr.args);
@@ -5940,6 +6011,14 @@ std::string CodeGenerator::emit_method_call(const std::string& object, const std
     if (method == "has") return "pyro::has(" + object + args_str + ")";
     if (method == "get" && args.size() == 2) return "pyro::get(" + object + args_str + ")";
     if (method == "size") return "pyro::map_size(" + object + ")";
+    if (method == "items") return "pyro::items(" + object + ")";
+    if (method == "remove") return "pyro::map_remove(" + object + args_str + ")";
+    if (method == "clear") return "pyro::map_clear(" + object + ")";
+    if (method == "merge") return "pyro::map_merge(" + object + args_str + ")";
+    if (method == "contains_key") return "pyro::has(" + object + args_str + ")";
+
+    // String format method
+    if (method == "format") return "pyro::str_format(" + object + args_str + ")";
 
     // Fallback: regular method call
     return object + "." + method + "(" + (args_str.size() > 2 ? args_str.substr(2) : "") + ")";

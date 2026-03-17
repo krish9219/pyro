@@ -1,0 +1,24 @@
+# Test new map methods
+
+mut scores = {"alice": 95, "bob": 87, "charlie": 92}
+
+# Test keys, values, has, size (existing)
+print(scores.keys())
+print(scores.size())
+print(scores.has("alice"))
+
+# Test contains_key (alias for has)
+print(scores.contains_key("bob"))
+
+# Test remove
+scores.remove("charlie")
+print(scores.keys())
+
+# Test merge
+let more = {"dave": 88, "eve": 91}
+let all_scores = scores.merge(more)
+print(all_scores.keys())
+
+# Test clear
+scores.clear()
+print(scores.size())
