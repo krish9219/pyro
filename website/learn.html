@@ -1913,94 +1913,83 @@ task = Status.Pending
 print("Task: {task}")'>Try in Playground &rarr;</a>
     </div>
 
-    <!-- 33. Async Functions -->
+    <!-- 33. Timing & Performance -->
     <div class="example" id="ex-33">
-      <h3><span class="ex-num">33.</span> Async Functions</h3>
-      <p>Concurrent programming with <code>async</code>/<code>await</code>. No GIL like Python — true parallelism compiled to C++ threads.</p>
+      <h3><span class="ex-num">33.</span> Timing &amp; Performance</h3>
+      <p>Measure execution time with the <code>time</code> module. Pyro compiles to native C++ for maximum speed.</p>
       <pre><code><span class="kw">import</span> time
 
-<span class="cm"># Define async functions</span>
-<span class="kw">async</span> <span class="kw">fn</span> <span class="fn">fetch_user</span>()
-    time.sleep(<span class="num">100</span>)
-    <span class="kw">return</span> <span class="str">"Aravind"</span>
+<span class="kw">fn</span> <span class="fn">compute</span>()
+    <span class="kw">mut</span> sum = <span class="num">0</span>
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="num">0</span>..<span class="num">1000000</span>
+        sum = sum + i
+    <span class="kw">return</span> sum
 
-<span class="kw">async</span> <span class="kw">fn</span> <span class="fn">fetch_posts</span>()
-    time.sleep(<span class="num">100</span>)
-    <span class="kw">return</span> [<span class="str">"Hello Pyro"</span>, <span class="str">"First post"</span>]
+start = time.now()
+result = compute()
+elapsed = time.now() - start
 
-<span class="cm"># Run concurrently — both execute at the same time</span>
-user = <span class="kw">await</span> fetch_user()
-posts = <span class="kw">await</span> fetch_posts()
-
-<span class="bi">print</span>(<span class="str">"User: {user}"</span>)
-<span class="bi">print</span>(<span class="str">"Posts: {posts}"</span>)
-<span class="bi">print</span>(<span class="str">"Both fetched concurrently!"</span>)</code></pre>
-      <div class="output">User: Aravind
-Posts: [Hello Pyro, First post]
-Both fetched concurrently!</div>
+<span class="bi">print</span>(<span class="str">"Result: {result}"</span>)
+<span class="bi">print</span>(<span class="str">"Time: {elapsed} ms"</span>)
+<span class="bi">print</span>(<span class="str">"Native speed!"</span>)</code></pre>
+      <div class="output">Result: 499999500000
+Time: 2 ms
+Native speed!</div>
       <a class="try-btn" data-code='import time
 
-async fn fetch_user()
-    time.sleep(100)
-    return "Aravind"
+fn compute()
+    mut sum = 0
+    for i in 0..1000000
+        sum = sum + i
+    return sum
 
-async fn fetch_posts()
-    time.sleep(100)
-    return ["Hello Pyro", "First post"]
+start = time.now()
+result = compute()
+elapsed = time.now() - start
 
-user = await fetch_user()
-posts = await fetch_posts()
-
-print("User: {user}")
-print("Posts: {posts}")
-print("Both fetched concurrently!")'>Try in Playground &rarr;</a>
+print("Result: {result}")
+print("Time: {elapsed} ms")
+print("Native speed!")'>Try in Playground &rarr;</a>
     </div>
 
-    <!-- 34. Channels -->
+    <!-- 34. Message Passing -->
     <div class="example" id="ex-34">
-      <h3><span class="ex-num">34.</span> Channels</h3>
-      <p>Communicate between concurrent tasks using channels. Send and receive messages safely across threads.</p>
-      <pre><code><span class="kw">import</span> time
+      <h3><span class="ex-num">34.</span> Message Passing</h3>
+      <p>Use lists as message queues to pass data between functions.</p>
+      <pre><code><span class="cm"># Simple message queue pattern</span>
+<span class="kw">mut</span> queue = []
 
-<span class="cm"># Create a channel for message passing</span>
-ch = channel()
+<span class="kw">fn</span> <span class="fn">produce</span>(q)
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="num">0</span>..<span class="num">5</span>
+        q.push(<span class="str">"msg-{i}"</span>)
 
-<span class="cm"># Producer: sends data into the channel</span>
-<span class="kw">async</span> <span class="kw">fn</span> <span class="fn">producer</span>(ch)
-    <span class="kw">for</span> i <span class="kw">in</span> <span class="num">0</span><span class="op">..</span><span class="num">5</span>
-        ch.send(<span class="str">"msg-{i}"</span>)
-    ch.close()
-
-<span class="cm"># Consumer: reads from channel</span>
-<span class="kw">async</span> <span class="kw">fn</span> <span class="fn">consumer</span>(ch)
-    <span class="kw">for</span> msg <span class="kw">in</span> ch
+<span class="kw">fn</span> <span class="fn">consume</span>(q)
+    <span class="kw">for</span> msg <span class="kw">in</span> q
         <span class="bi">print</span>(<span class="str">"Received: {msg}"</span>)
 
-<span class="bi">print</span>(<span class="str">"Channel communication demo"</span>)
-<span class="bi">print</span>(<span class="str">"Producer sends 5 messages"</span>)
-<span class="bi">print</span>(<span class="str">"Consumer reads them concurrently"</span>)</code></pre>
-      <div class="output">Channel communication demo
-Producer sends 5 messages
-Consumer reads them concurrently</div>
-      <a class="try-btn" data-code='import time
+produce(queue)
+consume(queue)
+<span class="bi">print</span>(<span class="str">"All messages processed"</span>)</code></pre>
+      <div class="output">Received: msg-0
+Received: msg-1
+Received: msg-2
+Received: msg-3
+Received: msg-4
+All messages processed</div>
+      <a class="try-btn" data-code='# Simple message queue pattern
+mut queue = []
 
-# Create a channel for message passing
-ch = channel()
-
-# Producer sends data
-async fn producer(ch)
+fn produce(q)
     for i in 0..5
-        ch.send("msg-{i}")
-    ch.close()
+        q.push("msg-{i}")
 
-# Consumer reads from channel
-async fn consumer(ch)
-    for msg in ch
+fn consume(q)
+    for msg in q
         print("Received: {msg}")
 
-print("Channel communication demo")
-print("Producer sends 5 messages")
-print("Consumer reads them concurrently")'>Try in Playground &rarr;</a>
+produce(queue)
+consume(queue)
+print("All messages processed")'>Try in Playground &rarr;</a>
     </div>
 
     <!-- 35. Template Rendering -->
@@ -2186,7 +2175,7 @@ wrong = crypto.verify_password(<span class="str">"wrong-password"</span>, hashed
 token = crypto.random_token(<span class="num">32</span>)
 <span class="bi">print</span>(<span class="str">"Token: {token}"</span>)
 
-hash256 = crypto.sha256(<span class="str">"Pyro"</span>)
+hash256 = crypto.hash_sha256(<span class="str">"Pyro"</span>)
 <span class="bi">print</span>(<span class="str">"SHA256: {hash256}"</span>)</code></pre>
       <div class="output">Hash: pbkdf2$10000$...
 Valid password: true
@@ -2208,7 +2197,7 @@ print("Wrong password: {wrong}")
 token = crypto.random_token(32)
 print("Token: {token}")
 
-hash256 = crypto.sha256("Pyro")
+hash256 = crypto.hash_sha256("Pyro")
 print("SHA256: {hash256}")'>Try in Playground &rarr;</a>
     </div>
 

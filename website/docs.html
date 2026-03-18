@@ -123,10 +123,9 @@ name = io.<span class="fn">readline</span>()
 <span class="bi">print</span>(<span class="str">"Hello, "</span> + name + <span class="str">"! Welcome to Pyro."</span>)
 
 <span class="cm"># Pipe operator example</span>
-[<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>]
-    |&gt; <span class="fn">map</span>(|x| x * x)
-    |&gt; <span class="fn">filter</span>(|x| x &gt; <span class="num">5</span>)
-    |&gt; <span class="fn">each</span>(|x| <span class="bi">print</span>(<span class="str">"Square: "</span> + <span class="fn">str</span>(x)))</code></pre>
+squares = [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>] |&gt; <span class="fn">map</span>(|x| x * x)
+big = squares |&gt; <span class="fn">filter</span>(|x| x &gt; <span class="num">5</span>)
+big |&gt; <span class="fn">each</span>(|x| <span class="bi">print</span>(<span class="str">"Square: {x}"</span>))</code></pre>
 
     <h2 id="repl">Using the REPL</h2>
     <p>Start the interactive REPL with:</p>
@@ -231,27 +230,27 @@ tuple = (<span class="num">1</span>, <span class="str">"hello"</span>, <span cla
     <h2 id="structs">Structs</h2>
     <pre><button class="copy-btn">Copy</button><code><span class="kw">import</span> math
 
+<span class="cm"># Structs hold data</span>
 <span class="kw">struct</span> <span class="type">Point</span>
     x = <span class="num">0.0</span>
     y = <span class="num">0.0</span>
 
-    <span class="kw">fn</span> <span class="fn">distance</span>(self, other)
-        dx = self.x - other.x
-        dy = self.y - other.y
-        <span class="kw">return</span> math.<span class="fn">sqrt</span>(dx * dx + dy * dy)
+<span class="cm"># Use functions to operate on structs</span>
+<span class="kw">fn</span> <span class="fn">distance</span>(a, b)
+    dx = a.x - b.x
+    dy = a.y - b.y
+    <span class="kw">return</span> math.sqrt(dx * dx + dy * dy)
 
-    <span class="kw">fn</span> <span class="fn">to_string</span>(self)
-        <span class="kw">return</span> <span class="str">"({self.x}, {self.y})"</span>
-
-<span class="kw">mut</span> a = <span class="type">Point</span>()
+<span class="kw">mut</span> a = Point()
 a.x = <span class="num">0.0</span>
 a.y = <span class="num">0.0</span>
 
-<span class="kw">mut</span> b = <span class="type">Point</span>()
+<span class="kw">mut</span> b = Point()
 b.x = <span class="num">3.0</span>
 b.y = <span class="num">4.0</span>
 
-<span class="bi">print</span>(a.<span class="fn">distance</span>(b))   <span class="cm"># 5.0</span></code></pre>
+<span class="bi">print</span>(distance(a, b))   <span class="cm"># 5.0</span>
+<span class="bi">print</span>(<span class="str">"Point: ({b.x}, {b.y})"</span>)</code></pre>
 
     <h2 id="enums">Enums</h2>
     <pre><button class="copy-btn">Copy</button><code><span class="kw">enum</span> <span class="type">Color</span>
@@ -260,22 +259,26 @@ b.y = <span class="num">4.0</span>
     Blue
 
 <span class="kw">fn</span> <span class="fn">describe</span>(c)
-    <span class="kw">match</span> c
-        Color.Red   =&gt; <span class="kw">return</span> <span class="str">"red"</span>
-        Color.Green =&gt; <span class="kw">return</span> <span class="str">"green"</span>
-        Color.Blue  =&gt; <span class="kw">return</span> <span class="str">"blue"</span>
+    <span class="kw">if</span> c == Color.Red
+        <span class="kw">return</span> <span class="str">"red"</span>
+    <span class="kw">if</span> c == Color.Green
+        <span class="kw">return</span> <span class="str">"green"</span>
+    <span class="kw">return</span> <span class="str">"blue"</span>
 
 <span class="bi">print</span>(<span class="fn">describe</span>(Color.Red))    <span class="cm"># "red"</span>
 <span class="bi">print</span>(<span class="fn">describe</span>(Color.Green))  <span class="cm"># "green"</span></code></pre>
 
     <h2 id="match">Pattern Matching</h2>
     <pre><button class="copy-btn">Copy</button><code><span class="kw">fn</span> <span class="fn">classify</span>(n)
-    <span class="kw">match</span> n
-        <span class="num">0</span>          =&gt; <span class="kw">return</span> <span class="str">"zero"</span>
-        <span class="num">1</span>..<span class="num">10</span>      =&gt; <span class="kw">return</span> <span class="str">"small"</span>
-        <span class="num">10</span>..<span class="num">100</span>    =&gt; <span class="kw">return</span> <span class="str">"medium"</span>
-        <span class="num">100</span>..<span class="num">1000</span>  =&gt; <span class="kw">return</span> <span class="str">"large"</span>
-        _          =&gt; <span class="kw">return</span> <span class="str">"huge"</span>
+    <span class="kw">if</span> n == <span class="num">0</span>
+        <span class="kw">return</span> <span class="str">"zero"</span>
+    <span class="kw">if</span> n &lt; <span class="num">10</span>
+        <span class="kw">return</span> <span class="str">"small"</span>
+    <span class="kw">if</span> n &lt; <span class="num">100</span>
+        <span class="kw">return</span> <span class="str">"medium"</span>
+    <span class="kw">if</span> n &lt; <span class="num">1000</span>
+        <span class="kw">return</span> <span class="str">"large"</span>
+    <span class="kw">return</span> <span class="str">"huge"</span>
 
 <span class="bi">print</span>(<span class="fn">classify</span>(<span class="num">0</span>))      <span class="cm"># "zero"</span>
 <span class="bi">print</span>(<span class="fn">classify</span>(<span class="num">5</span>))      <span class="cm"># "small"</span>
@@ -283,23 +286,23 @@ b.y = <span class="num">4.0</span>
 <span class="bi">print</span>(<span class="fn">classify</span>(<span class="num">500</span>))    <span class="cm"># "large"</span>
 <span class="bi">print</span>(<span class="fn">classify</span>(<span class="num">5000</span>))   <span class="cm"># "huge"</span></code></pre>
 
-    <h2 id="traits">Traits</h2>
-    <pre><button class="copy-btn">Copy</button><code><span class="cm"># Pyro uses structs with methods (no trait/impl keywords)</span>
+    <h2 id="traits">Structs &amp; Functions</h2>
+    <pre><button class="copy-btn">Copy</button><code><span class="cm"># Structs are data containers; use functions to operate on them</span>
 <span class="kw">import</span> math
 
 <span class="kw">struct</span> <span class="type">Circle</span>
     radius = <span class="num">0.0</span>
 
-    <span class="kw">fn</span> <span class="fn">area</span>(self)
-        <span class="kw">return</span> math.PI * self.radius * self.radius
+<span class="kw">fn</span> <span class="fn">circle_area</span>(c)
+    <span class="kw">return</span> math.PI * c.radius * c.radius
 
-    <span class="kw">fn</span> <span class="fn">to_string</span>(self)
-        <span class="kw">return</span> <span class="str">"Circle(r={self.radius})"</span>
+<span class="kw">fn</span> <span class="fn">circle_info</span>(c)
+    <span class="kw">return</span> <span class="str">"Circle(r={c.radius})"</span>
 
-<span class="kw">mut</span> c = <span class="type">Circle</span>()
+<span class="kw">mut</span> c = Circle()
 c.radius = <span class="num">5.0</span>
-<span class="bi">print</span>(c.<span class="fn">area</span>())        <span class="cm"># 78.539...</span>
-<span class="bi">print</span>(c.<span class="fn">to_string</span>())   <span class="cm"># Circle(r=5.0)</span></code></pre>
+<span class="bi">print</span>(circle_area(c))   <span class="cm"># 78.539...</span>
+<span class="bi">print</span>(circle_info(c))   <span class="cm"># Circle(r=5.0)</span></code></pre>
 
     <h2 id="pipes">Pipe Operator</h2>
     <p>The pipe operator <code>|&gt;</code> passes the result of the left expression as the first argument to the right function. This makes data transformations read naturally from left to right.</p>
@@ -307,11 +310,9 @@ c.radius = <span class="num">5.0</span>
 <span class="bi">print</span>(<span class="fn">join</span>(<span class="fn">sort</span>(<span class="fn">filter</span>(<span class="fn">map</span>(data, square), is_even)), <span class="str">", "</span>))
 
 <span class="cm"># With pipes (clear, left to right)</span>
-data |&gt; <span class="fn">map</span>(square)
-     |&gt; <span class="fn">filter</span>(is_even)
-     |&gt; <span class="fn">sort</span>
-     |&gt; <span class="fn">join</span>(<span class="str">", "</span>)
-     |&gt; <span class="bi">print</span></code></pre>
+result = data |&gt; <span class="fn">map</span>(square) |&gt; <span class="fn">filter</span>(is_even)
+result = result |&gt; <span class="fn">sort</span> |&gt; <span class="fn">join</span>(<span class="str">", "</span>)
+<span class="bi">print</span>(result)</code></pre>
 
     <h2 id="closures">Closures</h2>
     <pre><button class="copy-btn">Copy</button><code><span class="cm"># Closures capture their environment</span>
@@ -323,10 +324,7 @@ add5 = <span class="fn">make_adder</span>(<span class="num">5</span>)
 
 <span class="cm"># Lambdas with pipe operator</span>
 data = [<span class="num">-3</span>, <span class="num">1</span>, <span class="num">-1</span>, <span class="num">4</span>, <span class="num">2</span>]
-result = data
-    |&gt; <span class="fn">filter</span>(|x| x &gt; <span class="num">0</span>)
-    |&gt; <span class="fn">map</span>(|x| x * <span class="num">2</span>)
-    |&gt; <span class="fn">sort</span>
+result = data |&gt; <span class="fn">filter</span>(|x| x &gt; <span class="num">0</span>) |&gt; <span class="fn">map</span>(|x| x * <span class="num">2</span>) |&gt; <span class="fn">sort</span>
 <span class="bi">print</span>(result)  <span class="cm"># [2, 4, 8]</span></code></pre>
 
     <h2 id="error-handling">Error Handling</h2>
@@ -355,22 +353,19 @@ result = data
     <span class="bi">print</span>(<span class="str">"Cleanup done"</span>)</code></pre>
 
     <h2 id="async-await">Async / Await</h2>
-    <pre><button class="copy-btn">Copy</button><code><span class="kw">import</span> async
-<span class="kw">import</span> http
+    <p>Pyro supports timing and scheduling with the <code>time</code> module. For concurrent tasks, use the <code>thread</code> module.</p>
+    <pre><button class="copy-btn">Copy</button><code><span class="kw">import</span> time
 
-<span class="kw">async</span> <span class="kw">fn</span> <span class="fn">fetch</span>(url)
-    resp = <span class="kw">await</span> http.<span class="fn">get</span>(url)
-    <span class="kw">return</span> resp
+<span class="cm"># Measure execution time</span>
+start = time.now()
 
-<span class="cm"># Concurrent execution</span>
-tasks = [
-    <span class="fn">fetch</span>(<span class="str">"https://api.example.com/a"</span>),
-    <span class="fn">fetch</span>(<span class="str">"https://api.example.com/b"</span>)
-]
-results = <span class="kw">await</span> async.<span class="fn">join_all</span>(tasks)
+<span class="kw">mut</span> sum = <span class="num">0</span>
+<span class="kw">for</span> i <span class="kw">in</span> <span class="num">0</span>..<span class="num">1000000</span>
+    sum = sum + i
 
-<span class="kw">for</span> r <span class="kw">in</span> results
-    <span class="bi">print</span>(r)</code></pre>
+elapsed = time.now() - start
+<span class="bi">print</span>(<span class="str">"Sum: {sum}"</span>)
+<span class="bi">print</span>(<span class="str">"Computed in {elapsed} ms"</span>)</code></pre>
 
     <h2 id="modules-guide">Modules</h2>
     <pre><button class="copy-btn">Copy</button><code><span class="cm"># Import a standard library module</span>
@@ -594,7 +589,7 @@ data = json.<span class="fn">parse</span>(<span class="str">"{\"key\": \"value\"
         <tr><td><code>|&gt;</code></td><td>Pipe</td><td><code>x |&gt; f</code></td></tr>
         <tr><td><code>..</code></td><td>Range</td><td><code>0..10</code></td></tr>
         <tr><td><code>?</code></td><td>Error propagation</td><td><code>val?</code></td></tr>
-        <tr><td><code>::</code></td><td>Path separator</td><td><code>Module::func</code></td></tr>
+        <tr><td><code>.</code></td><td>Member access</td><td><code>module.func</code></td></tr>
         <tr><td><code>=&gt;</code></td><td>Match arm</td><td><code>1 =&gt; "one"</code></td></tr>
       </tbody>
     </table>

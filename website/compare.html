@@ -245,8 +245,10 @@ print(f"Sum: {a + b}")</code></pre></div>
         <h3>Web Server</h3>
         <div class="vs-code">
           <div><div class="label winner">Pyro &mdash; built-in, 5 lines</div><pre><code>import web
+fn home(r)
+    return web.html("Hi!")
 app = web.app()
-app.get("/", fn(r) = web.html("Hi!"))
+app.get("/", home)
 app.listen(8080)</code></pre></div>
           <div><div class="label loser">Python &mdash; needs pip install</div><pre><code>from flask import Flask # pip install flask
 app = Flask(__name__)
@@ -260,9 +262,8 @@ app.run(port=8080)</code></pre></div>
         <h3>Crypto / Security</h3>
         <div class="vs-code">
           <div><div class="label winner">Pyro &mdash; real OpenSSL built-in</div><pre><code>import crypto
-hash = crypto.sha256("data")
-encrypted = crypto.encrypt("secret", "key")
-token = crypto.uuid()</code></pre></div>
+hash = crypto.hash_sha256("data")
+print("Hash: {hash}")</code></pre></div>
           <div><div class="label loser">Python &mdash; needs pip install</div><pre><code># pip install cryptography pyjwt
 from cryptography.fernet import Fernet
 import hashlib
@@ -273,16 +274,12 @@ h = hashlib.sha256(b"data").hexdigest()</code></pre></div>
       <div class="vs-card">
         <h3>Error Handling</h3>
         <div class="vs-code">
-          <div><div class="label winner">Pyro &mdash; try/catch/finally + Result</div><pre><code>try
+          <div><div class="label winner">Pyro &mdash; try/catch/finally</div><pre><code>try
     result = risky()
 catch err
     print("Error: {err}")
 finally
-    cleanup()
-
-# Also: Result type
-val = ok(42)
-err = err("failed")</code></pre></div>
+    cleanup()</code></pre></div>
           <div><div class="label">Python</div><pre><code>try:
     result = risky()
 except Exception as err:
@@ -303,9 +300,11 @@ finally:
       <div class="vs-card">
         <h3>Pyro vs Go &mdash; HTTP Server</h3>
         <div class="vs-code">
-          <div><div class="label winner">Pyro &mdash; 4 lines, zero deps</div><pre><code>import web
+          <div><div class="label winner">Pyro &mdash; 5 lines, zero deps</div><pre><code>import web
+fn home(r)
+    return web.json("{\"ok\":true}")
 app = web.app()
-app.get("/", fn(r) = web.json("{\"ok\":true}"))
+app.get("/", home)
 app.listen(8080)</code></pre></div>
           <div><div class="label">Go &mdash; verbose, manual routing</div><pre><code>package main
 import (
@@ -325,8 +324,10 @@ func main() {
       <div class="vs-card">
         <h3>Pyro vs Go &mdash; Error Handling</h3>
         <div class="vs-code">
-          <div><div class="label winner">Pyro &mdash; try/catch</div><pre><code>try
-    data = read_file("config.json")
+          <div><div class="label winner">Pyro &mdash; try/catch</div><pre><code>import fs
+import json
+try
+    data = fs.read("config.json")
     config = json.parse(data)
 catch e
     print("Error: {e}")</code></pre></div>
@@ -376,11 +377,11 @@ println!("{}", msg);
           <div><div class="label winner">Pyro &mdash; built-in, zero npm</div><pre><code>import web
 import json
 
+fn api_handler(req)
+    return web.json("{\"status\": \"ok\"}")
+
 app = web.app()
-app.get("/api", fn(req)
-    data = json.stringify({"status": "ok"})
-    return web.json(data)
-)
+app.get("/api", api_handler)
 app.listen(3000)</code></pre></div>
           <div><div class="label loser">Node.js &mdash; npm init, install express</div><pre><code>// npm init -y &amp;&amp; npm install express
 const express = require('express');
@@ -397,6 +398,7 @@ app.listen(3000);</code></pre></div>
         <h3>Pyro vs Node.js &mdash; Async</h3>
         <div class="vs-code">
           <div><div class="label winner">Pyro &mdash; no callback hell</div><pre><code>import web
+import json
 
 data = web.get("https://api.example.com/data")
 parsed = json.parse(data)

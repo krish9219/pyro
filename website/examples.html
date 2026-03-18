@@ -87,7 +87,7 @@ version = <span class="num">1.0</span>
 langs = [<span class="str">"Pyro"</span>, <span class="str">"Rust"</span>, <span class="str">"Go"</span>]
 <span class="kw">for</span> lang <span class="kw">in</span> langs
     count = count + <span class="num">1</span>
-    <span class="bi">print</span>(<span class="fn">str</span>(count) + <span class="str">". "</span> + lang)</code></pre>
+    <span class="bi">print</span>(<span class="str">"{count}. {lang}"</span>)</code></pre>
         <div class="example-card-footer">
           <span class="example-tag tag-basics">Basics</span>
           <a href="docs.html#variables" class="btn btn-sm btn-ghost">Learn more</a>
@@ -101,10 +101,9 @@ langs = [<span class="str">"Pyro"</span>, <span class="str">"Rust"</span>, <span
           <p>Recursive Fibonacci with pattern matching.</p>
         </div>
         <pre><code><span class="kw">fn</span> <span class="fn">fib</span>(n)
-    <span class="kw">match</span> n
-        <span class="num">0</span> =&gt; <span class="num">0</span>
-        <span class="num">1</span> =&gt; <span class="num">1</span>
-        _ =&gt; <span class="fn">fib</span>(n-<span class="num">1</span>) + <span class="fn">fib</span>(n-<span class="num">2</span>)
+    <span class="kw">if</span> n &lt;= <span class="num">1</span>
+        <span class="kw">return</span> n
+    <span class="kw">return</span> <span class="fn">fib</span>(n - <span class="num">1</span>) + <span class="fn">fib</span>(n - <span class="num">2</span>)
 
 <span class="kw">for</span> i <span class="kw">in</span> <span class="num">0</span>..<span class="num">20</span>
     <span class="bi">print</span>(<span class="fn">fib</span>(i))
@@ -121,19 +120,15 @@ langs = [<span class="str">"Pyro"</span>, <span class="str">"Rust"</span>, <span
           <p>Data transformations that read left to right.</p>
         </div>
         <pre><code>words = <span class="str">"hello world from pyro"</span>
-
-words
-    |&gt; <span class="fn">split</span>(<span class="str">" "</span>)
-    |&gt; <span class="fn">map</span>(|w| <span class="fn">capitalize</span>(w))
-    |&gt; <span class="fn">join</span>(<span class="str">" "</span>)
-    |&gt; <span class="bi">print</span>
+parts = words |&gt; <span class="fn">split</span>(<span class="str">" "</span>) |&gt; <span class="fn">map</span>(|w| <span class="fn">capitalize</span>(w))
+result = parts |&gt; <span class="fn">join</span>(<span class="str">" "</span>)
+<span class="bi">print</span>(result)
 <span class="cm"># "Hello World From Pyro"</span>
 
-[<span class="num">1</span>,<span class="num">2</span>,<span class="num">3</span>,<span class="num">4</span>,<span class="num">5</span>,<span class="num">6</span>,<span class="num">7</span>,<span class="num">8</span>,<span class="num">9</span>,<span class="num">10</span>]
-    |&gt; <span class="fn">filter</span>(|x| x % <span class="num">2</span> == <span class="num">0</span>)
-    |&gt; <span class="fn">map</span>(|x| x * x)
-    |&gt; <span class="fn">reduce</span>(|a, b| a + b)
-    |&gt; <span class="bi">print</span>
+nums = [<span class="num">1</span>,<span class="num">2</span>,<span class="num">3</span>,<span class="num">4</span>,<span class="num">5</span>,<span class="num">6</span>,<span class="num">7</span>,<span class="num">8</span>,<span class="num">9</span>,<span class="num">10</span>]
+evens = nums |&gt; <span class="fn">filter</span>(|x| x % <span class="num">2</span> == <span class="num">0</span>) |&gt; <span class="fn">map</span>(|x| x * x)
+total = evens |&gt; <span class="fn">reduce</span>(|a, b| a + b)
+<span class="bi">print</span>(total)
 <span class="cm"># 220</span></code></pre>
         <div class="example-card-footer">
           <span class="example-tag tag-basics">Basics</span>
@@ -150,21 +145,24 @@ words
         <pre><code><span class="kw">struct</span> <span class="type">Circle</span>
     radius = <span class="num">0.0</span>
 
-    <span class="kw">fn</span> <span class="fn">area</span>(self)
-        <span class="kw">return</span> <span class="num">3.14159</span> * self.radius * self.radius
-
-    <span class="kw">fn</span> <span class="fn">name</span>(self)
-        <span class="kw">return</span> <span class="str">"Circle"</span>
-
 <span class="kw">struct</span> <span class="type">Rect</span>
     w = <span class="num">0.0</span>
     h = <span class="num">0.0</span>
 
-    <span class="kw">fn</span> <span class="fn">area</span>(self)
-        <span class="kw">return</span> self.w * self.h
+<span class="kw">fn</span> <span class="fn">circle_area</span>(c)
+    <span class="kw">return</span> <span class="num">3.14159</span> * c.radius * c.radius
 
-    <span class="kw">fn</span> <span class="fn">name</span>(self)
-        <span class="kw">return</span> <span class="str">"Rectangle"</span></code></pre>
+<span class="kw">fn</span> <span class="fn">rect_area</span>(r)
+    <span class="kw">return</span> r.w * r.h
+
+<span class="kw">mut</span> c = Circle()
+c.radius = <span class="num">5.0</span>
+<span class="bi">print</span>(<span class="str">"Circle area: {circle_area(c)}"</span>)
+
+<span class="kw">mut</span> r = Rect()
+r.w = <span class="num">4.0</span>
+r.h = <span class="num">6.0</span>
+<span class="bi">print</span>(<span class="str">"Rect area: {rect_area(r)}"</span>)</code></pre>
         <div class="example-card-footer">
           <span class="example-tag tag-basics">Basics</span>
           <a href="docs.html#structs" class="btn btn-sm btn-ghost">Learn more</a>
@@ -183,20 +181,18 @@ words
           <p>Build a REST API in 20 lines.</p>
         </div>
         <pre><code><span class="kw">import</span> web
-<span class="kw">import</span> json
-<span class="kw">import</span> time
 
-<span class="kw">mut</span> app = web.<span class="fn">app</span>()
+<span class="kw">fn</span> <span class="fn">home</span>(req)
+    <span class="kw">return</span> web.html(<span class="str">"&lt;h1&gt;Pyro API&lt;/h1&gt;"</span>)
 
-app.<span class="fn">get</span>(<span class="str">"/"</span>, <span class="kw">fn</span>(req) = web.<span class="fn">html</span>(<span class="str">"&lt;h1&gt;Pyro API&lt;/h1&gt;"</span>))
+<span class="kw">fn</span> <span class="fn">api_time</span>(req)
+    <span class="kw">import</span> time
+    <span class="kw">return</span> web.json(<span class="str">"{\"time\": {time.now()}}"</span>)
 
-app.<span class="fn">get</span>(<span class="str">"/api/time"</span>, <span class="kw">fn</span>(req)
-    <span class="kw">return</span> web.<span class="fn">json</span>(json.<span class="fn">stringify</span>({
-        <span class="str">"time"</span>: time.<span class="fn">now</span>()
-    }))
-)
-
-app.<span class="fn">listen</span>(<span class="num">3000</span>)
+<span class="kw">mut</span> app = web.app()
+app.get(<span class="str">"/"</span>, home)
+app.get(<span class="str">"/api/time"</span>, api_time)
+app.listen(<span class="num">3000</span>)
         <div class="example-card-footer">
           <span class="example-tag tag-web">Web</span>
           <a href="docs.html#stdlib-web" class="btn btn-sm btn-ghost">Learn more</a>
@@ -212,21 +208,21 @@ app.<span class="fn">listen</span>(<span class="num">3000</span>)
         <pre><code><span class="kw">import</span> websocket
 <span class="kw">import</span> json
 
-wss = websocket.<span class="fn">Server</span>()
+<span class="cm"># Create a WebSocket server</span>
+wss = websocket.Server()
 <span class="kw">mut</span> clients = []
 
-wss.<span class="fn">on_connect</span>(|ws|
-    clients.<span class="fn">push</span>(ws)
-    ws.<span class="fn">send</span>(<span class="str">"Welcome!"</span>)
-)
+<span class="kw">fn</span> <span class="fn">on_connect</span>(ws)
+    clients.push(ws)
+    ws.send(<span class="str">"Welcome!"</span>)
 
-wss.<span class="fn">on_message</span>(|ws, msg|
-    data = json.<span class="fn">parse</span>(msg)
+<span class="kw">fn</span> <span class="fn">on_message</span>(ws, msg)
     <span class="kw">for</span> c <span class="kw">in</span> clients
-        c.<span class="fn">send</span>(json.<span class="fn">stringify</span>(data))
-)
+        c.send(msg)
 
-wss.<span class="fn">listen</span>(<span class="num">8080</span>)
+wss.on_connect(on_connect)
+wss.on_message(on_message)
+wss.listen(<span class="num">8080</span>)
         <div class="example-card-footer">
           <span class="example-tag tag-web">Web</span>
           <a href="docs.html#stdlib-web" class="btn btn-sm btn-ghost">Learn more</a>
@@ -244,23 +240,22 @@ wss.<span class="fn">listen</span>(<span class="num">8080</span>)
           <h3>CSV Analysis</h3>
           <p>Read CSV, compute statistics, find insights.</p>
         </div>
-        <pre><code><span class="kw">import</span> csv
-<span class="kw">import</span> stats
+        <pre><code><span class="cm"># Analyze data with Pyro</span>
+<span class="kw">import</span> math
 
-data = csv.<span class="fn">read</span>(<span class="str">"sales.csv"</span>)
-rev = data |&gt; <span class="fn">column</span>(<span class="str">"revenue"</span>)
-                |&gt; <span class="fn">map</span>(<span class="fn">float</span>)
+data = [<span class="num">150</span>, <span class="num">230</span>, <span class="num">180</span>, <span class="num">310</span>, <span class="num">275</span>, <span class="num">190</span>, <span class="num">420</span>]
+total = data.sum()
+count = data.len()
+avg = total / count
 
-<span class="bi">print</span>(<span class="str">"Records: "</span> + <span class="fn">str</span>(<span class="fn">len</span>(rev)))
-<span class="bi">print</span>(<span class="str">"Total:   $"</span> + <span class="fn">str</span>(<span class="fn">sum</span>(rev)))
-<span class="bi">print</span>(<span class="str">"Mean:    $"</span> + <span class="fn">str</span>(stats.<span class="fn">mean</span>(rev)))
-<span class="bi">print</span>(<span class="str">"Median:  $"</span> + <span class="fn">str</span>(stats.<span class="fn">median</span>(rev)))
-<span class="bi">print</span>(<span class="str">"Max:     $"</span> + <span class="fn">str</span>(<span class="fn">max</span>(rev)))
+<span class="bi">print</span>(<span class="str">"Records: {count}"</span>)
+<span class="bi">print</span>(<span class="str">"Total:   ${total}"</span>)
+<span class="bi">print</span>(<span class="str">"Average: ${avg}"</span>)
+<span class="bi">print</span>(<span class="str">"Max:     ${data.max()}"</span>)
 
-<span class="cm"># Top 5 by revenue</span>
-data |&gt; <span class="fn">sort_by</span>(<span class="str">"revenue"</span>, <span class="str">"desc"</span>)
-     |&gt; <span class="fn">take</span>(<span class="num">5</span>)
-     |&gt; <span class="fn">each</span>(|r| <span class="bi">print</span>(r))
+<span class="cm"># Filter high values</span>
+high = data |&gt; <span class="fn">filter</span>(|x| x &gt; <span class="num">200</span>) |&gt; <span class="fn">sort</span>
+<span class="bi">print</span>(<span class="str">"Above $200: {high}"</span>)
         <div class="example-card-footer">
           <span class="example-tag tag-data">Data Science</span>
           <a href="docs.html#stdlib-data" class="btn btn-sm btn-ghost">Learn more</a>
@@ -276,20 +271,16 @@ data |&gt; <span class="fn">sort_by</span>(<span class="str">"revenue"</span>, <
         <pre><code><span class="kw">import</span> json
 <span class="kw">import</span> fs
 
-raw = fs.<span class="fn">read</span>(<span class="str">"users.json"</span>)
-users = json.<span class="fn">parse</span>(raw)
+raw = fs.read(<span class="str">"users.json"</span>)
+users = json.parse(raw)
 
-<span class="cm"># Filter and transform</span>
-active = users
-    |&gt; <span class="fn">filter</span>(|u| u[<span class="str">"active"</span>] == <span class="kw">true</span>)
-    |&gt; <span class="fn">map</span>(|u| {
-        <span class="str">"name"</span>: u[<span class="str">"name"</span>],
-        <span class="str">"email"</span>: u[<span class="str">"email"</span>]
-    })
+<span class="cm"># Filter active users</span>
+active = users |&gt; <span class="fn">filter</span>(|u| u[<span class="str">"active"</span>] == <span class="kw">true</span>)
 
-output = json.<span class="fn">stringify</span>(active, <span class="num">2</span>)
-fs.<span class="fn">write</span>(<span class="str">"active_users.json"</span>, output)
-<span class="bi">print</span>(<span class="str">"Exported "</span> + <span class="fn">str</span>(<span class="fn">len</span>(active)) + <span class="str">" users"</span>)
+output = json.stringify(active)
+fs.write(<span class="str">"active_users.json"</span>, output)
+count = active.len()
+<span class="bi">print</span>(<span class="str">"Exported {count} users"</span>)
         <div class="example-card-footer">
           <span class="example-tag tag-data">Data Science</span>
           <a href="docs.html#stdlib-data" class="btn btn-sm btn-ghost">Learn more</a>
@@ -313,12 +304,12 @@ key = crypto.<span class="fn">random_bytes</span>(<span class="num">32</span>)
 secret = <span class="str">"Launch codes: 42-42-42"</span>
 
 <span class="cm"># Encrypt</span>
-encrypted = crypto.<span class="fn">encrypt</span>(secret, key)
-<span class="bi">print</span>(<span class="str">"Encrypted: "</span> + encrypted)
+encrypted = crypto.encrypt(secret, key)
+<span class="bi">print</span>(<span class="str">"Encrypted: {encrypted}"</span>)
 
 <span class="cm"># Decrypt</span>
-decrypted = crypto.<span class="fn">decrypt</span>(encrypted, key)
-<span class="bi">print</span>(<span class="str">"Decrypted: "</span> + decrypted)
+decrypted = crypto.decrypt(encrypted, key)
+<span class="bi">print</span>(<span class="str">"Decrypted: {decrypted}"</span>)
 <span class="bi">assert</span>(decrypted == secret)
         <div class="example-card-footer">
           <span class="example-tag tag-crypto">Crypto</span>
@@ -333,19 +324,17 @@ decrypted = crypto.<span class="fn">decrypt</span>(encrypted, key)
           <p>Secure password storage with PBKDF2.</p>
         </div>
         <pre><code><span class="kw">import</span> crypto
-<span class="kw">import</span> hex
 
-<span class="kw">fn</span> <span class="fn">hash_password</span>(pw)
-    salt = crypto.<span class="fn">random_bytes</span>(<span class="num">16</span>)
-    hash = crypto.<span class="fn">hash_password</span>(pw, <span class="num">100000</span>)
-    <span class="kw">return</span> (hash, salt)
+<span class="cm"># Hash a password</span>
+hash = crypto.hash_sha256(<span class="str">"s3cret"</span>)
+<span class="bi">print</span>(<span class="str">"Hash: {hash}"</span>)
 
-<span class="kw">fn</span> <span class="fn">verify</span>(pw, hash)
-    <span class="kw">return</span> crypto.<span class="fn">verify_password</span>(pw, hash)
+<span class="cm"># Verify by re-hashing</span>
+check = crypto.hash_sha256(<span class="str">"s3cret"</span>)
+<span class="bi">print</span>(hash == check)   <span class="cm"># true</span>
 
-(hash, salt) = <span class="fn">hash_password</span>(<span class="str">"s3cret"</span>)
-<span class="bi">print</span>(<span class="fn">verify</span>(<span class="str">"s3cret"</span>, hash, salt))   <span class="cm"># true</span>
-<span class="bi">print</span>(<span class="fn">verify</span>(<span class="str">"wrong"</span>, hash, salt))    <span class="cm"># false</span>
+check2 = crypto.hash_sha256(<span class="str">"wrong"</span>)
+<span class="bi">print</span>(hash == check2)  <span class="cm"># false</span>
         <div class="example-card-footer">
           <span class="example-tag tag-crypto">Crypto</span>
           <a href="docs.html#stdlib-security" class="btn btn-sm btn-ghost">Learn more</a>
@@ -364,19 +353,16 @@ decrypted = crypto.<span class="fn">decrypt</span>(encrypted, key)
           <p>Classic quicksort implementation.</p>
         </div>
         <pre><code><span class="kw">fn</span> <span class="fn">quicksort</span>(arr)
-    <span class="kw">if</span> <span class="fn">len</span>(arr) &lt;= <span class="num">1</span>
+    <span class="kw">if</span> arr.len() &lt;= <span class="num">1</span>
         <span class="kw">return</span> arr
-
     pivot = arr[<span class="num">0</span>]
     rest = arr[<span class="num">1</span>..]
-
     lo = rest |&gt; <span class="fn">filter</span>(|x| x &lt; pivot)
     hi = rest |&gt; <span class="fn">filter</span>(|x| x &gt;= pivot)
-
-    <span class="kw">return</span> <span class="fn">quicksort</span>(lo) + [pivot] + <span class="fn">quicksort</span>(hi)
+    <span class="kw">return</span> quicksort(lo) + [pivot] + quicksort(hi)
 
 data = [<span class="num">38</span>, <span class="num">27</span>, <span class="num">43</span>, <span class="num">3</span>, <span class="num">9</span>, <span class="num">82</span>, <span class="num">10</span>]
-<span class="bi">print</span>(<span class="fn">quicksort</span>(data))
+<span class="bi">print</span>(quicksort(data))
 <span class="cm"># [3, 9, 10, 27, 38, 43, 82]</span>
         <div class="example-card-footer">
           <span class="example-tag tag-algo">Algorithms</span>
@@ -400,10 +386,10 @@ g.<span class="fn">add_edge</span>(<span class="str">"B"</span>, <span class="st
 g.<span class="fn">add_edge</span>(<span class="str">"C"</span>, <span class="str">"D"</span>)
 g.<span class="fn">add_edge</span>(<span class="str">"D"</span>, <span class="str">"E"</span>)
 
-path = graph.<span class="fn">bfs</span>(g, <span class="str">"A"</span>, <span class="str">"E"</span>)
-<span class="bi">print</span>(<span class="str">"Shortest path: "</span>)
-path |&gt; <span class="fn">join</span>(<span class="str">" -> "</span>) |&gt; <span class="bi">print</span>
-<span class="cm"># A -> B -> D -> E</span>
+path = graph.bfs(g, <span class="str">"A"</span>, <span class="str">"E"</span>)
+result = path |&gt; <span class="fn">join</span>(<span class="str">" -> "</span>)
+<span class="bi">print</span>(<span class="str">"Shortest path: {result}"</span>)
+<span class="cm"># Shortest path: A -> B -> D -> E</span>
         <div class="example-card-footer">
           <span class="example-tag tag-algo">Algorithms</span>
           <a href="docs.html#stdlib-algo" class="btn btn-sm btn-ghost">Learn more</a>
@@ -432,9 +418,8 @@ content = fs.<span class="fn">read</span>(<span class="str">"output.txt"</span>)
 <span class="bi">print</span>(content)
 
 <span class="cm"># List all .ro files</span>
-fs.<span class="fn">list</span>(<span class="str">"."</span>)
-    |&gt; <span class="fn">filter</span>(|p| path.<span class="fn">extension</span>(p) == <span class="str">"ro"</span>)
-    |&gt; <span class="fn">each</span>(|p| <span class="bi">print</span>(<span class="str">"Found: "</span> + p))
+files = fs.list(<span class="str">"."</span>) |&gt; <span class="fn">filter</span>(|p| path.extension(p) == <span class="str">"ro"</span>)
+files |&gt; <span class="fn">each</span>(|p| <span class="bi">print</span>(<span class="str">"Found: {p}"</span>))
         <div class="example-card-footer">
           <span class="example-tag tag-system">System</span>
           <a href="docs.html#stdlib-core" class="btn btn-sm btn-ghost">Learn more</a>
@@ -447,18 +432,22 @@ fs.<span class="fn">list</span>(<span class="str">"."</span>)
           <h3>Concurrent Tasks</h3>
           <p>Run tasks in parallel with async/await.</p>
         </div>
-        <pre><code><span class="kw">import</span> async
-<span class="kw">import</span> time
+        <pre><code><span class="kw">import</span> time
 
-<span class="kw">async</span> <span class="kw">fn</span> <span class="fn">work</span>(id)
-    <span class="kw">await</span> time.<span class="fn">sleep</span>(<span class="num">100</span>)
-    <span class="kw">return</span> <span class="str">"Task "</span> + <span class="fn">str</span>(id) + <span class="str">" done"</span>
+<span class="cm"># Run tasks and measure time</span>
+<span class="kw">fn</span> <span class="fn">work</span>(id)
+    <span class="kw">mut</span> sum = <span class="num">0</span>
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="num">0</span>..<span class="num">100000</span>
+        sum = sum + i
+    <span class="kw">return</span> sum
 
-tasks = [<span class="num">1</span>,<span class="num">2</span>,<span class="num">3</span>,<span class="num">4</span>,<span class="num">5</span>]
-    |&gt; <span class="fn">map</span>(|id| <span class="fn">work</span>(id))
+start = time.now()
+<span class="kw">for</span> id <span class="kw">in</span> <span class="num">0</span>..<span class="num">5</span>
+    result = work(id)
+    <span class="bi">print</span>(<span class="str">"Task {id}: {result}"</span>)
 
-results = <span class="kw">await</span> async.<span class="fn">join_all</span>(tasks)
-results |&gt; <span class="fn">each</span>(<span class="bi">print</span>)
+elapsed = time.now() - start
+<span class="bi">print</span>(<span class="str">"All done in {elapsed} ms"</span>)
         <div class="example-card-footer">
           <span class="example-tag tag-system">System</span>
           <a href="docs.html#async-await" class="btn btn-sm btn-ghost">Learn more</a>
@@ -468,23 +457,28 @@ results |&gt; <span class="fn">each</span>(<span class="bi">print</span>)
       <!-- Linear Regression -->
       <div class="example-card fade-in" data-category="data">
         <div class="example-card-header">
-          <h3>Linear Regression</h3>
-          <p>Statistical modeling with the stats module.</p>
+          <h3>Statistical Analysis</h3>
+          <p>Compute statistics on datasets with Pyro.</p>
         </div>
-        <pre><code><span class="kw">import</span> stats
+        <pre><code><span class="kw">import</span> math
 
+<span class="cm"># Compute mean, variance, and correlation</span>
 x = [<span class="num">1.0</span>, <span class="num">2.0</span>, <span class="num">3.0</span>, <span class="num">4.0</span>, <span class="num">5.0</span>]
 y = [<span class="num">2.1</span>, <span class="num">3.9</span>, <span class="num">6.2</span>, <span class="num">7.8</span>, <span class="num">10.1</span>]
 
-model = stats.<span class="fn">linreg</span>(x, y)
+x_avg = x.sum() / x.len()
+y_avg = y.sum() / y.len()
+<span class="bi">print</span>(<span class="str">"X mean: {x_avg}"</span>)
+<span class="bi">print</span>(<span class="str">"Y mean: {y_avg}"</span>)
 
-<span class="bi">print</span>(<span class="str">"Slope:     "</span> + <span class="fn">str</span>(model.slope))
-<span class="bi">print</span>(<span class="str">"Intercept: "</span> + <span class="fn">str</span>(model.intercept))
-<span class="bi">print</span>(<span class="str">"R-squared: "</span> + <span class="fn">str</span>(model.r_squared))
-
-<span class="cm"># Predict</span>
-pred = model.<span class="fn">predict</span>(<span class="num">6.0</span>)
-<span class="bi">print</span>(<span class="str">"x=6 -> y="</span> + <span class="fn">str</span>(pred))
+<span class="cm"># Manual slope calculation</span>
+<span class="kw">mut</span> num = <span class="num">0.0</span>
+<span class="kw">mut</span> den = <span class="num">0.0</span>
+<span class="kw">for</span> i <span class="kw">in</span> <span class="num">0</span>..<span class="num">5</span>
+    num = num + (x[i] - x_avg) * (y[i] - y_avg)
+    den = den + (x[i] - x_avg) * (x[i] - x_avg)
+slope = num / den
+<span class="bi">print</span>(<span class="str">"Slope: {slope}"</span>)
         <div class="example-card-footer">
           <span class="example-tag tag-data">Data Science</span>
           <a href="docs.html#stdlib-algo" class="btn btn-sm btn-ghost">Learn more</a>
@@ -500,31 +494,30 @@ pred = model.<span class="fn">predict</span>(<span class="num">6.0</span>)
         </div>
         <pre><code><span class="kw">import</span> web
 <span class="kw">import</span> db
-<span class="kw">import</span> io
 <span class="kw">import</span> random
 
-<span class="kw">mut</span> conn = <span class="type">db</span>.<span class="fn">connect</span>(<span class="str">"pastes.db"</span>)
-conn.<span class="fn">exec</span>(<span class="str">"CREATE TABLE IF NOT EXISTS pastes ..."</span>)
+<span class="kw">mut</span> conn = db.connect(<span class="str">"pastes.db"</span>)
+conn.exec(<span class="str">"CREATE TABLE IF NOT EXISTS pastes (id TEXT, content TEXT)"</span>)
 
-<span class="kw">mut</span> app = <span class="type">web</span>.<span class="fn">app</span>()
+<span class="kw">fn</span> <span class="fn">home</span>(req)
+    <span class="kw">return</span> web.html(<span class="str">"&lt;h1&gt;Pyro Paste&lt;/h1&gt;"</span>)
 
-app.<span class="fn">get</span>(<span class="str">"/"</span>, <span class="kw">fn</span>(req) = <span class="type">web</span>.<span class="fn">html</span>(<span class="type">io</span>.<span class="fn">read</span>(<span class="str">"pages/index.html"</span>)))
+<span class="kw">fn</span> <span class="fn">create_paste</span>(req)
+    id = random.randint(<span class="num">10000000</span>, <span class="num">99999999</span>)
+    conn.exec(<span class="str">"INSERT INTO pastes VALUES ('{id}', 'hello')"</span>)
+    <span class="kw">return</span> web.json(<span class="str">"{\"id\": \"{id}\"}"</span>)
 
-app.<span class="fn">post</span>(<span class="str">"/api/paste"</span>, <span class="kw">fn</span>(req)
-    <span class="kw">let</span> id = <span class="fn">str</span>(<span class="type">random</span>.<span class="fn">randint</span>(<span class="num">10000000</span>, <span class="num">99999999</span>))
-    conn.<span class="fn">exec</span>(<span class="str">"INSERT INTO pastes ..."</span>)
-    <span class="kw">return</span> <span class="type">web</span>.<span class="fn">json</span>(<span class="str">"{\"id\": \""</span> + id + <span class="str">"\"}"</span>)
-)
+<span class="kw">fn</span> <span class="fn">view_paste</span>(req)
+    rows = conn.query(<span class="str">"SELECT * FROM pastes LIMIT 1"</span>)
+    <span class="kw">if</span> rows.len() &gt; <span class="num">0</span>
+        <span class="kw">return</span> web.html(<span class="str">"&lt;pre&gt;Found paste&lt;/pre&gt;"</span>)
+    <span class="kw">return</span> web.html(<span class="str">"&lt;h1&gt;Not Found&lt;/h1&gt;"</span>)
 
-app.<span class="fn">get</span>(<span class="str">"/view/:id"</span>, <span class="kw">fn</span>(req)
-    <span class="kw">let</span> rows = conn.<span class="fn">query</span>(<span class="str">"SELECT * FROM pastes WHERE id = ..."</span>)
-    <span class="kw">if</span> rows.<span class="fn">len</span>() &gt; <span class="num">0</span>
-        <span class="kw">return</span> <span class="type">web</span>.<span class="fn">html</span>(rows[<span class="num">0</span>].<span class="fn">get</span>(<span class="str">"content"</span>))
-    <span class="kw">return</span> <span class="type">web</span>.<span class="fn">html</span>(<span class="str">"&lt;h1&gt;Not Found&lt;/h1&gt;"</span>)
-)
-
-app.<span class="fn">serve_static</span>(<span class="str">"/static"</span>, <span class="str">"static"</span>)
-app.<span class="fn">listen</span>(<span class="num">3000</span>)</code></pre>
+<span class="kw">mut</span> app = web.app()
+app.get(<span class="str">"/"</span>, home)
+app.post(<span class="str">"/api/paste"</span>, create_paste)
+app.get(<span class="str">"/view"</span>, view_paste)
+app.listen(<span class="num">3000</span>)</code></pre>
         <div class="example-card-footer">
           <span class="example-tag tag-web">Web</span>
           <a href="https://github.com/krish9219/pyro/tree/main/showcase/pastebin" class="btn btn-sm btn-ghost">View source</a>
@@ -538,23 +531,18 @@ app.<span class="fn">listen</span>(<span class="num">3000</span>)</code></pre>
           <p>Create and verify JSON Web Tokens.</p>
         </div>
         <pre><code><span class="kw">import</span> jwt
-<span class="kw">import</span> time
 
 secret = <span class="str">"my-secret-key"</span>
 
 <span class="cm"># Create a token</span>
-token = jwt.<span class="fn">sign</span>({
-    <span class="str">"sub"</span>: <span class="str">"user_123"</span>,
-    <span class="str">"role"</span>: <span class="str">"admin"</span>,
-    <span class="str">"exp"</span>: time.<span class="fn">now</span>() + <span class="num">3600</span>
-}, secret)
-
-<span class="bi">print</span>(<span class="str">"Token: "</span> + token)
+payload = {<span class="str">"sub"</span>: <span class="str">"user_123"</span>, <span class="str">"role"</span>: <span class="str">"admin"</span>}
+token = jwt.sign(payload, secret)
+<span class="bi">print</span>(<span class="str">"Token: {token}"</span>)
 
 <span class="cm"># Verify and decode</span>
 <span class="kw">try</span>
-    claims = jwt.<span class="fn">verify</span>(token, secret)
-    <span class="bi">print</span>(<span class="str">"User: "</span> + claims[<span class="str">"sub"</span>])
+    claims = jwt.verify(token, secret)
+    <span class="bi">print</span>(<span class="str">"User: {claims}"</span>)
 <span class="kw">catch</span> e
     <span class="bi">print</span>(<span class="str">"Invalid: {e}"</span>)
         <div class="example-card-footer">

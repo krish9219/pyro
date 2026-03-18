@@ -49,9 +49,8 @@
 <span class="bi">print</span>(<span class="str">"Hello, World!"</span>)
 
 nums = [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>]
-nums |&gt; <span class="fn">filter</span>(|x| x &gt; <span class="num">2</span>)
-     |&gt; <span class="fn">map</span>(|x| x * x)
-     |&gt; <span class="bi">print</span></code></pre>
+result = nums |&gt; <span class="fn">filter</span>(|x| x &gt; <span class="num">2</span>) |&gt; <span class="fn">map</span>(|x| x * x)
+<span class="bi">print</span>(result)</code></pre>
       </div>
       <div class="hero-code-panel">
         <div class="code-label">Python</div>
@@ -317,12 +316,11 @@ name = <span class="str">"World"</span>
     <span class="bi">print</span>(<span class="str">"Count: {i}"</span>)</code></pre>
         </div>
         <div class="tab-content" data-tab-content="functions">
-          <pre><button class="copy-btn">Copy</button><code><span class="cm"># Functions, closures, and pattern matching</span>
+          <pre><button class="copy-btn">Copy</button><code><span class="cm"># Functions, closures, and recursion</span>
 <span class="kw">fn</span> <span class="fn">fibonacci</span>(n)
-    <span class="kw">match</span> n
-        <span class="num">0</span> =&gt; <span class="kw">return</span> <span class="num">0</span>
-        <span class="num">1</span> =&gt; <span class="kw">return</span> <span class="num">1</span>
-        _ =&gt; <span class="kw">return</span> <span class="fn">fibonacci</span>(n - <span class="num">1</span>) + <span class="fn">fibonacci</span>(n - <span class="num">2</span>)
+    <span class="kw">if</span> n &lt;= <span class="num">1</span>
+        <span class="kw">return</span> n
+    <span class="kw">return</span> <span class="fn">fibonacci</span>(n - <span class="num">1</span>) + <span class="fn">fibonacci</span>(n - <span class="num">2</span>)
 
 <span class="kw">fn</span> <span class="fn">apply</span>(f, val)
     <span class="kw">return</span> f(val)
@@ -333,113 +331,79 @@ double = |x| x * <span class="num">2</span>
         </div>
         <div class="tab-content" data-tab-content="lists">
           <pre><button class="copy-btn">Copy</button><code><span class="cm"># Lists, maps, and the pipe operator</span>
-<span class="kw">import</span> math
-<span class="kw">import</span> collections
-
 data = [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>, <span class="num">6</span>, <span class="num">7</span>, <span class="num">8</span>, <span class="num">9</span>, <span class="num">10</span>]
 
 <span class="cm"># Pipe operator: data flows left to right</span>
-result = data
-    |&gt; <span class="fn">filter</span>(|x| x % <span class="num">2</span> == <span class="num">0</span>)
-    |&gt; <span class="fn">map</span>(|x| x * x)
-    |&gt; <span class="fn">reduce</span>(|a, b| a + b)
-
-<span class="bi">print</span>(<span class="str">"Sum of even squares: "</span> + <span class="fn">str</span>(result))
+evens = data |&gt; <span class="fn">filter</span>(|x| x % <span class="num">2</span> == <span class="num">0</span>)
+squares = evens |&gt; <span class="fn">map</span>(|x| x * x)
+total = squares |&gt; <span class="fn">reduce</span>(|a, b| a + b)
+<span class="bi">print</span>(<span class="str">"Sum of even squares: {total}"</span>)
 <span class="cm"># Sum of even squares: 220</span>
 
-<span class="cm"># Map with method chaining</span>
+<span class="cm"># Maps (dictionaries)</span>
 scores = {<span class="str">"Alice"</span>: <span class="num">95</span>, <span class="str">"Bob"</span>: <span class="num">87</span>, <span class="str">"Carol"</span>: <span class="num">92</span>}
-
 <span class="bi">print</span>(scores[<span class="str">"Alice"</span>])   <span class="cm"># 95</span>
 <span class="bi">print</span>(scores[<span class="str">"Bob"</span>])     <span class="cm"># 87</span></code></pre>
         </div>
         <div class="tab-content" data-tab-content="web">
           <pre><button class="copy-btn">Copy</button><code><span class="cm"># HTTP web server in Pyro</span>
 <span class="kw">import</span> web
-<span class="kw">import</span> json
 
-<span class="kw">mut</span> app = web.<span class="fn">app</span>()
+<span class="kw">fn</span> <span class="fn">home</span>(req)
+    <span class="kw">return</span> web.html(<span class="str">"&lt;h1&gt;Welcome to Pyro!&lt;/h1&gt;"</span>)
 
-app.<span class="fn">get</span>(<span class="str">"/"</span>, <span class="kw">fn</span>(req) = web.<span class="fn">html</span>(<span class="str">"&lt;h1&gt;Welcome to Pyro!&lt;/h1&gt;"</span>))
+<span class="kw">fn</span> <span class="fn">api_users</span>(req)
+    <span class="kw">return</span> web.json(<span class="str">"[{\"name\": \"Alice\"}, {\"name\": \"Bob\"}]"</span>)
 
-app.<span class="fn">get</span>(<span class="str">"/api/users"</span>, <span class="kw">fn</span>(req)
-    users = [
-        {<span class="str">"name"</span>: <span class="str">"Alice"</span>, <span class="str">"age"</span>: <span class="num">30</span>},
-        {<span class="str">"name"</span>: <span class="str">"Bob"</span>,   <span class="str">"age"</span>: <span class="num">25</span>}
-    ]
-    <span class="kw">return</span> web.<span class="fn">json</span>(json.<span class="fn">stringify</span>(users))
-)
+<span class="kw">mut</span> app = web.app()
+app.get(<span class="str">"/"</span>, home)
+app.get(<span class="str">"/api/users"</span>, api_users)
 
 <span class="bi">print</span>(<span class="str">"Server running on :8080"</span>)
-app.<span class="fn">listen</span>(<span class="num">8080</span>)</code></pre>
+app.listen(<span class="num">8080</span>)</code></pre>
         </div>
         <div class="tab-content" data-tab-content="data">
-          <pre><button class="copy-btn">Copy</button><code><span class="cm"># Data science with Pyro</span>
-<span class="kw">import</span> csv
+          <pre><button class="copy-btn">Copy</button><code><span class="cm"># Data analysis in Pyro</span>
 <span class="kw">import</span> math
-<span class="kw">import</span> stats
-<span class="kw">import</span> plot
 
-<span class="cm"># Read CSV data</span>
-data = csv.<span class="fn">read</span>(<span class="str">"sales.csv"</span>)
+<span class="cm"># Compute stats on a dataset</span>
+data = [<span class="num">23</span>, <span class="num">45</span>, <span class="num">12</span>, <span class="num">67</span>, <span class="num">34</span>, <span class="num">89</span>, <span class="num">56</span>]
+total = data.sum()
+count = data.len()
+avg = total / count
+<span class="bi">print</span>(<span class="str">"Sum: {total}"</span>)
+<span class="bi">print</span>(<span class="str">"Count: {count}"</span>)
+<span class="bi">print</span>(<span class="str">"Average: {avg}"</span>)
+<span class="bi">print</span>(<span class="str">"Min: {data.min()}, Max: {data.max()}"</span>)
 
-<span class="cm"># Compute statistics with pipes</span>
-revenue = data
-    |&gt; <span class="fn">column</span>(<span class="str">"revenue"</span>)
-    |&gt; <span class="fn">map</span>(<span class="fn">float</span>)
-
-<span class="bi">print</span>(<span class="str">"Mean:   "</span> + <span class="fn">str</span>(stats.<span class="fn">mean</span>(revenue)))
-<span class="bi">print</span>(<span class="str">"Median: "</span> + <span class="fn">str</span>(stats.<span class="fn">median</span>(revenue)))
-<span class="bi">print</span>(<span class="str">"Std:    "</span> + <span class="fn">str</span>(stats.<span class="fn">stdev</span>(revenue)))
-
-<span class="cm"># Linear regression</span>
-months = data |&gt; <span class="fn">column</span>(<span class="str">"month"</span>) |&gt; <span class="fn">map</span>(<span class="fn">float</span>)
-model = stats.<span class="fn">linreg</span>(months, revenue)
-<span class="bi">print</span>(<span class="str">"Slope: "</span> + <span class="fn">str</span>(model.slope))</code></pre>
+<span class="cm"># Filter and transform with pipes</span>
+big = data |&gt; <span class="fn">filter</span>(|x| x &gt; <span class="num">30</span>)
+<span class="bi">print</span>(<span class="str">"Values &gt; 30: {big}"</span>)</code></pre>
         </div>
         <div class="tab-content" data-tab-content="crypto">
-          <pre><button class="copy-btn">Copy</button><code><span class="cm"># Cryptography with built-in OpenSSL bindings</span>
+          <pre><button class="copy-btn">Copy</button><code><span class="cm"># Built-in crypto — zero pip install</span>
 <span class="kw">import</span> crypto
+<span class="kw">import</span> validate
 
-<span class="cm"># SHA-256 hashing</span>
-hash = crypto.<span class="fn">sha256</span>(<span class="str">"Hello, Pyro!"</span>)
-<span class="bi">print</span>(<span class="str">"SHA-256: "</span> + hash)
+<span class="cm"># Hash a password</span>
+hash = crypto.hash_sha256(<span class="str">"my_password"</span>)
+<span class="bi">print</span>(<span class="str">"SHA-256: {hash}"</span>)
 
-<span class="cm"># AES-256-GCM encryption</span>
-key = crypto.<span class="fn">random_bytes</span>(<span class="num">32</span>)
-plaintext = <span class="str">"Top secret message"</span>
-
-encrypted = crypto.<span class="fn">encrypt</span>(plaintext, key)
-decrypted = crypto.<span class="fn">decrypt</span>(encrypted, key)
-
-<span class="bi">assert</span>(decrypted == plaintext)
-
-<span class="cm"># PBKDF2 key derivation</span>
-password = <span class="str">"my_password"</span>
-salt = crypto.<span class="fn">random_bytes</span>(<span class="num">16</span>)
-derived = crypto.<span class="fn">hash_password</span>(password, <span class="num">100000</span>)
-<span class="bi">print</span>(<span class="str">"Key derived successfully"</span>)</code></pre>
+<span class="cm"># Validate input</span>
+<span class="bi">print</span>(validate.email(<span class="str">"test@email.com"</span>))
+<span class="bi">print</span>(validate.url(<span class="str">"https://pyro.dev"</span>))</code></pre>
         </div>
         <div class="tab-content" data-tab-content="async">
-          <pre><button class="copy-btn">Copy</button><code><span class="cm"># Async/await concurrency</span>
-<span class="kw">import</span> http
-<span class="kw">import</span> async
+          <pre><button class="copy-btn">Copy</button><code><span class="cm"># Timing and scheduling</span>
+<span class="kw">import</span> time
 
-<span class="kw">async</span> <span class="kw">fn</span> <span class="fn">fetch_data</span>(url)
-    resp = <span class="kw">await</span> http.<span class="fn">get</span>(url)
-    <span class="kw">return</span> resp
-
-<span class="cm"># Run multiple requests concurrently</span>
-urls = [
-    <span class="str">"https://api.example.com/users"</span>,
-    <span class="str">"https://api.example.com/posts"</span>,
-    <span class="str">"https://api.example.com/comments"</span>
-]
-
-tasks = urls |&gt; <span class="fn">map</span>(<span class="fn">fetch_data</span>)
-results = <span class="kw">await</span> async.<span class="fn">join_all</span>(tasks)
-
-results |&gt; <span class="fn">each</span>(|r| <span class="bi">print</span>(<span class="fn">len</span>(r)))</code></pre>
+start = time.now()
+<span class="kw">mut</span> sum = <span class="num">0</span>
+<span class="kw">for</span> i <span class="kw">in</span> <span class="num">0</span>..<span class="num">1000000</span>
+    sum = sum + i
+elapsed = time.now() - start
+<span class="bi">print</span>(<span class="str">"Sum: {sum}"</span>)
+<span class="bi">print</span>(<span class="str">"Time: {elapsed} ms"</span>)</code></pre>
         </div>
       </div>
     </div>
