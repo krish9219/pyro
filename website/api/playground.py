@@ -57,8 +57,8 @@ def run_code():
         if error:
             # Remove temp file paths from error messages
             error = error.replace(temp_path, "playground.ro")
-            # Remove [pyro] debug lines
-            error = "\n".join(line for line in error.split("\n") if not line.startswith("[pyro]"))
+            # Remove [pyro] debug lines and [compiled in] timing
+            error = "\n".join(line for line in error.split("\n") if not line.startswith("[pyro]") and not line.startswith("[compiled in"))
 
         return jsonify({
             "output": output,
