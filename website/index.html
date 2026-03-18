@@ -309,8 +309,12 @@ age = <span class="num">25</span>
       <div class="tab-body">
         <div class="tab-content active" data-tab-content="hello">
           <pre><button class="copy-btn">Copy</button><code><span class="cm"># Hello World in Pyro — no main() needed</span>
-<span class="bi">print</span>(<span class="str">"Hello, World!"</span>)
-<span class="bi">print</span>(<span class="str">"Welcome to Pyro "</span> + <span class="fn">version</span>())</code></pre>
+name = <span class="str">"World"</span>
+<span class="bi">print</span>(<span class="str">"Hello, {name}!"</span>)
+
+<span class="cm"># No imports, no main(), no semicolons, no types</span>
+<span class="kw">for</span> i <span class="kw">in</span> <span class="num">0</span>..<span class="num">5</span>
+    <span class="bi">print</span>(<span class="str">"Count: {i}"</span>)</code></pre>
         </div>
         <div class="tab-content" data-tab-content="functions">
           <pre><button class="copy-btn">Copy</button><code><span class="cm"># Functions, closures, and pattern matching</span>
